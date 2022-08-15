@@ -1,4 +1,4 @@
-package tech.molecules.leet.chem.properties;
+package tech.molecules.leet.chem.mutator.properties;
 
 import com.actelion.research.chem.StereoMolecule;
 import com.actelion.research.chem.prediction.MolecularPropertyHelper;

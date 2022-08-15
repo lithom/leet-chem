@@ -528,9 +528,7 @@ public class SynthonShredder {
         StereoMolecule ma = new StereoMolecule();
 
         try {
-            spa.parse(ma,"Cc(cc1)ccc1-c1c(CN(CCN(C)C)C(Cn2c(cccc3)c3nc2)=O)cccc1");
-            //spa.parse(ma,"Cc(cc1)ccc1-c1c(CN(CCN(C)C)C(Cn2c(cccc3)c3nc2)=O)cccc1");
-            //spa.parse(ma,"CC(C)c1ccc([C@@](C2(C)CN(C)C2)(c2cc(-c3noc(CC(C)(C)O)n3)cnc2)O)cc1");
+            spa.parse(ma,"");
         } catch (Exception e) {
             e.printStackTrace();
         }

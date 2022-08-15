@@ -144,7 +144,7 @@ public class FragmentDecompositionShredder {
 
 
     public static void main(String args[]) {
-        String ma = "ea[^HL@CBfeo`\\]@IABPpdLbdLRTtJbRffbReTRrRbPbdVPrtvwpKOMT@Pt@QMSMKUUPMP@@";//"dkL@@DiUUUjjjj@@";//"fbupa@@isspI@tadTTRbrRVaTYIVhHIJjYhP@@";//;
+        String ma = "";//;
         StereoMolecule mi = ChemUtils.parseIDCode(ma);
 
         List<FragmentDecomposition> decompositions = computeFragmentDecompositions(mi,"test",16,0.4,3,4);

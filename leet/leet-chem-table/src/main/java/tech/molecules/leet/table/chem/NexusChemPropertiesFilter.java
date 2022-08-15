@@ -3,7 +3,7 @@ package tech.molecules.leet.table.chem;
 import com.actelion.research.chem.IDCodeParser;
 import com.actelion.research.chem.Molecule;
 import com.actelion.research.chem.StereoMolecule;
-import tech.molecules.leet.chem.properties.ChemPropertyCounts;
+import tech.molecules.leet.chem.mutator.properties.ChemPropertyCounts;
 import tech.molecules.leet.table.NColumn;
 import tech.molecules.leet.table.NStructureDataProvider;
 import tech.molecules.leet.table.NexusTableModel;
