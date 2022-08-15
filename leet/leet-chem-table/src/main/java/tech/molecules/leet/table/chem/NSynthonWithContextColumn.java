@@ -2,9 +2,12 @@ package tech.molecules.leet.table.chem;
 
 import tech.molecules.leet.table.NColumn;
 import tech.molecules.leet.table.NexusTableModel;
+import tech.molecules.leet.table.NumericalDatasource;
 
 import javax.swing.table.TableCellEditor;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class NSynthonWithContextColumn implements NColumn<NSynthonWithContextDataProvider,String> {
 
@@ -30,13 +33,18 @@ public class NSynthonWithContextColumn implements NColumn<NSynthonWithContextDat
     }
 
     @Override
-    public List<String> getNumericalDataSources() {
-        return null;
+    public Map<String, NumericalDatasource<NSynthonWithContextDataProvider>> getNumericalDataSources() {
+        return new HashMap<>();
     }
 
     @Override
     public double evaluateNumericalDataSource(NSynthonWithContextDataProvider dp, String datasource, String rowid) {
         return 0;
+    }
+
+    @Override
+    public void startAsyncInitialization(NexusTableModel model, NSynthonWithContextDataProvider dataprovider) {
+
     }
 
     @Override

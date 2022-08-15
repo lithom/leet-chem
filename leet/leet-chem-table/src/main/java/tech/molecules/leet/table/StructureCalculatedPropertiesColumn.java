@@ -14,8 +14,7 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.EventObject;
+import java.util.*;
 import java.util.List;
 
 public class StructureCalculatedPropertiesColumn implements NColumn<NStructureDataProvider, StructureCalculatedPropertiesColumn.CalculatedProperties> {
@@ -34,6 +33,11 @@ public class StructureCalculatedPropertiesColumn implements NColumn<NStructureDa
         }
     }
 
+
+    @Override
+    public void startAsyncInitialization(NexusTableModel model, NStructureDataProvider dataprovider) {
+
+    }
 
     public StructureCalculatedPropertiesColumn() {
 
@@ -56,8 +60,8 @@ public class StructureCalculatedPropertiesColumn implements NColumn<NStructureDa
     }
 
     @Override
-    public List<String> getNumericalDataSources() {
-        return new ArrayList<>();
+    public Map<String, NumericalDatasource<NStructureDataProvider>> getNumericalDataSources() {
+        return new HashMap<>();
     }
 
     @Override

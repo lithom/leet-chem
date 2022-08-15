@@ -74,7 +74,10 @@ public class ChemUtils {
     public static List<Integer> findNeighbors(StereoMolecule mi, int a) {
         List<Integer> neighbors = new ArrayList<>();
         //mi.ensureHelperArrays(Molecule.cHelperNeighbours);
-        for(int za=0;za<mi.getAllConnAtoms(a);za++) {
+        if(mi.getAtoms()<=a) {
+            return new ArrayList<>();
+        }
+        for(int za=0;za<mi.getConnAtoms(a);za++) {
             neighbors.add(mi.getConnAtom(a,za));
         }
         return neighbors;
@@ -139,7 +142,7 @@ public class ChemUtils {
      *
      * @return
      */
-    public static StereoMolecule createProximalFragment(StereoMolecule mi_pre, List<Integer> seed_atoms, int region_size, boolean omit_connectors) {
+    public static StereoMolecule createProximalFragment(StereoMolecule mi_pre, List<Integer> seed_atoms, int region_size, boolean omit_connectors, boolean[] neglectAtom) {
         StereoMolecule mi_conn = new StereoMolecule(mi_pre);
 
         //mi_pre.setFragment(true);
@@ -160,7 +163,7 @@ public class ChemUtils {
                     }
                 }
                 // NOTE! this returns -1 if no path is found within connector_region_size (I think..)
-                int path_length = mi_conn.getPathLength(ci,zi,region_size,null);
+                int path_length = mi_conn.getPathLength(ci,zi,region_size,neglectAtom);
                 if ( path_length>=0 ){
                     if(path_length<=region_size ) {
                         keep_atoms[zi] = true;
@@ -177,7 +180,6 @@ public class ChemUtils {
         }
         return mi_cut;
     }
-
 
 
     public static int hac(StereoMolecule m) {
@@ -236,6 +238,39 @@ public class ChemUtils {
 
 
 
+    public static boolean checkIfAllAtomsAreInSameFragment(StereoMolecule mi, List<Integer> atoms) {
+        mi.ensureHelperArrays(Molecule.cHelperCIP);
+        if(atoms.size()==0) {return true;} // hmm.. or false? I dont know.. :)
+        if(atoms.size()==1) {return true;} // this one is clear I think :)
+        int[] frag = mi.getFragmentAtoms(atoms.get(0));
+        BitSet bsi = toBitSet(frag);
+
+        BitSet bs_atoms = toBitSet( atoms );
+
+        BitSet bsi_and_bsa = (BitSet) bs_atoms.clone();
+        bsi_and_bsa.and(bs_atoms);
+
+        return bs_atoms.cardinality()==bsi_and_bsa.cardinality();
+    }
+
+
+    public static List<Integer> getSelectedAtoms(StereoMolecule m) {
+        ArrayList<Integer> sel = new ArrayList<>();
+        m.ensureHelperArrays(Molecule.cHelperCIP);
+        for(int zi=0;zi<m.getAtoms();zi++) {
+            if(m.isSelectedAtom(zi)) { sel.add(zi); }
+        }
+        return sel;
+    }
+    public static List<Integer> getSelectedBonds(StereoMolecule m) {
+        ArrayList<Integer> sel = new ArrayList<>();
+        m.ensureHelperArrays(Molecule.cHelperCIP);
+        for(int zi=0;zi<m.getBonds();zi++) {
+            if(m.isSelectedBond(zi)) { sel.add(zi); }
+        }
+        return sel;
+    }
+
 
 
     public static BitSet toBitSet(int arr[]) {
@@ -244,8 +279,33 @@ public class ChemUtils {
         return bs;
     }
 
+    public static BitSet toBitSet(List<Integer> val) {
+        BitSet bsi = new BitSet();
+        for(int zi=0;zi<val.size();zi++) { bsi.set(val.get(zi),true);}
+        return bsi;
+    }
+
     public static int[] toIntArray(BitSet bs) {
         return bs.stream().toArray();
+    }
+
+    public static int[] toIntArray(List<Integer> list) {
+        int[] arr = new int[list.size()];
+        for(int zi=0;zi<arr.length;zi++) { arr[zi] = list.get(zi); }
+        return arr;
+    }
+
+    public static List<Integer> toIntList(BitSet bsi) {
+        List<Integer> li = new ArrayList<>();
+        bsi.stream().forEach( ii -> li.add(ii) );
+        return li;
+    }
+
+
+    public static Map<Integer,Integer> inverseMap(int[] map) {
+        Map<Integer,Integer> inv = new HashMap<>();
+        for(int zi=0;zi<map.length;zi++) { inv.put( map[zi] , zi ); }
+        return inv;
     }
 
     /**

@@ -4,7 +4,10 @@ import com.actelion.research.chem.StereoMolecule;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.lang3.tuple.Pair;
 import tech.molecules.leet.chem.ChemUtils;
+import tech.molecules.leet.chem.CombinatoricsUtils;
 import tech.molecules.leet.chem.LeetSerialization;
+import tech.molecules.leet.chem.mutator.FragmentDecompositionSynthon;
+import tech.molecules.leet.chem.mutator.SimpleSynthonWithContext;
 import tech.molecules.leet.chem.shredder.FragmentDecomposition;
 import tech.molecules.leet.chem.shredder.FragmentDecompositionShredder;
 import tech.molecules.leet.io.CSVIterator;
@@ -14,10 +17,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class FragmentDBCreator {
 
-    List<Pair<String,String>> molecules = new ArrayList<>();
+    private List<Pair<String,String>> molecules = new ArrayList<>();
 
     /**
      *
@@ -67,7 +71,11 @@ public class FragmentDBCreator {
             if(fdi.getInnerNeighborAtomicNos().stream().allMatch( ci -> ci==6 )) {
                 addDecomposition(fdi);
             }
+            //if(decompositions.size()>20){break;}
+            //FragmentDecompositionSynthon fds = new FragmentDecompositionSynthon(fdi);
+            //fds.
         }
+
     }
 
 
@@ -119,7 +127,69 @@ public class FragmentDBCreator {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
 
+    public static Map<String,List<Pair<String,Integer>>> loadFragments() {
+        Map<String,List<Pair<String,Integer>>> fragdb = new HashMap<>();
+        String file = "C:\\Temp\\leet\\fragdb.csv";
+        List<Integer> cols = new ArrayList<>();
+        CSVIterator it = null;
+        try {
+            it = new CSVIterator(file,true, CombinatoricsUtils.intSeq(3));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        while(it.hasNext()) {
+            try {
+                List<String> line = it.next();
+                if (!fragdb.containsKey(line.get(1))) {
+                    fragdb.put(line.get(1), new ArrayList<>());
+                }
+                fragdb.get(line.get(1)).add(Pair.of(line.get(0), Integer.parseInt(line.get(2))));
+            }
+            catch(Exception ex) {
+                System.out.println("[WARN] skip line, error parsing..");
+            }
+        }
+        return fragdb;
+    }
+
+    /**
+     *
+     * @return serialized simple synthon objects with count
+     */
+    public static List<Pair<String,Integer>> loadFragments2() {
+        //Map<String,List<Pair<String,Integer>>> fragdb = new HashMap<>();
+        List<Pair<String,Integer>> fragmentdb = new ArrayList<>();
+        String file = "C:\\Temp\\leet\\fragdb.csv";
+        List<Integer> cols = new ArrayList<>();
+        CSVIterator it = null;
+        try {
+            it = new CSVIterator(file,true, CombinatoricsUtils.intSeq(3));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        while(it.hasNext()) {
+            try {
+                List<String> line = it.next();
+                StereoMolecule synthon = ChemUtils.parseIDCode(line.get(0));
+                StereoMolecule context = ChemUtils.parseIDCode(line.get(1));
+                List<SimpleSynthonWithContext> synthons = SimpleSynthonWithContext.createAllPossibleFromSynthonAndBidirectionalContext(synthon,context);
+
+                fragmentdb.addAll(synthons.stream().map(si -> {
+                    try {
+                        return Pair.of( LeetSerialization.OBJECT_MAPPER.writeValueAsString(si) ,Integer.parseInt(line.get(2)));
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).collect(Collectors.toList()));
+            }
+            catch(Exception ex) {
+                System.out.println("[WARN] skip line, error parsing..");
+                ex.printStackTrace();
+            }
+        }
+        return fragmentdb;
     }
 
 }

@@ -96,7 +96,8 @@ public class NexusTable extends JTable {
     private MouseListener headerMouseListener = null;
 
     public void updateColumns() {
-        List<Pair<NColumn, NStructureDataProvider>> ncolumns = this.getTableModel().getNexusColumnsWithDataProviders();
+        //List<Pair<NColumn, NStructureDataProvider>> ncolumns = this.getTableModel().getNexusColumnsWithDataProviders();
+        List<Pair<NColumn, NDataProvider>> ncolumns = this.getTableModel().getNexusColumnsWithDataProviders();
         for( int zi=0;zi<ncolumns.size();zi++) {
             if(ncolumns.get(zi).getLeft().getCellEditor()!=null) {
                 this.getColumnModel().getColumn(zi).setCellEditor(ncolumns.get(zi).getLeft().getCellEditor());
@@ -127,12 +128,13 @@ public class NexusTable extends JTable {
                             public void actionPerformed(ActionEvent e) {
                                 //NColumn.NexusRowFilter filter = model.getNexusColumns().get(column).getLeft().createRowFilter( model , (String) filtertype );
                                 NColumn.NexusRowFilter filter = ncolumns.get(column).getLeft().createRowFilter( model , (String) filtertype );
-                                filter.setupFilter(model);
+                                filter.setupFilter(model,ncolumns.get(column).getRight());
                                 model.addRowFilter(col,filter);
                                 filterPanel.addFilter(filter);
                                 //filterPanel.add(filter.getFilterGUI());
                                 filterPanel.invalidate();
                                 invalidate();
+                                filterPanel.repaint();
                             }
                         });
                     }

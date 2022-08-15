@@ -3,6 +3,7 @@ package tech.molecules.leet.chem.shredder;
 import com.actelion.research.calc.combinatorics.CombinationGenerator;
 import com.actelion.research.chem.StereoMolecule;
 import tech.molecules.leet.chem.ChemUtils;
+import tech.molecules.leet.chem.mutator.FragmentDecompositionSynthon;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -151,10 +152,14 @@ public class FragmentDecompositionShredder {
         List<StereoMolecule> mols   = decompositions.stream().map( di -> di.getFragmentsWithHighlighting() ).collect(Collectors.toList());
         List<StereoMolecule> mols_1 = decompositions.stream().map( di -> di.getBidirectionalConnectorProximalRegion(1) ).collect(Collectors.toList());
         List<StereoMolecule> mols_2 = decompositions.stream().map( di -> di.getBidirectionalConnectorProximalRegion(2) ).collect(Collectors.toList());
+        List<StereoMolecule> mols_3 = decompositions.stream().map( di -> new FragmentDecompositionSynthon(di).getContextBidirectirectional(3,2) ).collect(Collectors.toList());
+        List<StereoMolecule> mols_4 = decompositions.stream().map( di -> new FragmentDecompositionSynthon(di).getContextBidirectirectional(1,1) ).collect(Collectors.toList());
 
         ChemUtils.DebugOutput.plotMolecules("test",mols.toArray(new StereoMolecule[0]),8,8);
         ChemUtils.DebugOutput.plotMolecules("test1",mols_1.toArray(new StereoMolecule[0]),8,8);
         ChemUtils.DebugOutput.plotMolecules("test2",mols_2.toArray(new StereoMolecule[0]),8,8);
+        ChemUtils.DebugOutput.plotMolecules("test3",mols_3.toArray(new StereoMolecule[0]),8,8);
+        ChemUtils.DebugOutput.plotMolecules("test4",mols_4.toArray(new StereoMolecule[0]),8,8);
         System.out.println("mkay");
     }
 

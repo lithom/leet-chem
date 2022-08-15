@@ -1,8 +1,10 @@
 package tech.molecules.leet.chem.mutator;
 
 import com.actelion.research.chem.Molecule;
+import com.actelion.research.chem.SSSearcher;
 import com.actelion.research.chem.StereoMolecule;
 import com.actelion.research.chem.chemicalspaces.synthon.SynthonReactor;
+import tech.molecules.leet.chem.shredder.SynthonUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +13,11 @@ public interface SynthonWithContext {
 
     public StereoMolecule getSynthon();
     public StereoMolecule getContext();
+
+    public StereoMolecule getContext(int depthInBonds);
+
+    public StereoMolecule getContextBidirectirectional(int depthInBondsSynthon, int depthInBondsContext);
+
     public int[][] getMapFromSynthonConnectorsToContextConnectors();
 
     /**
@@ -20,6 +27,39 @@ public interface SynthonWithContext {
      */
     public List<int[][]> computePossibleAssemblies(SynthonWithContext other);
 
+
+    public static List<int[][]> computeAssemblies_MatchingBondAndFirstAtom(SynthonWithContext a, SynthonWithContext b) {
+
+        int map_a[] = new int[a.getContext().getAtoms()];
+        int map_b[] = new int[b.getContext().getAtoms()];
+
+        StereoMolecule ca = SynthonUtils.createConnectorProximalFragment(a.getContext(),1,map_a);
+        StereoMolecule cb = SynthonUtils.createConnectorProximalFragment(b.getContext(),1,map_b);
+
+        SSSearcher ss = new SSSearcher();
+        ss.setMol(ca,cb);
+        ss.findFragmentInMolecule();
+        ArrayList<int[]> matches = ss.getMatchList();
+
+        List<int[][]> assemblies = new ArrayList<>();
+        for(int[] mi : matches) {
+            int[][] assembly_i = new int[a.getMapFromSynthonConnectorsToContextConnectors().length][];
+            for(int zs=0;zs<assembly_i.length;zs++) {
+                int[] ci = a.getMapFromSynthonConnectorsToContextConnectors()[zs];
+                //find matched conni in b:
+                int found = -1;
+                for(int zi=0;zi<mi.length;zi++) {
+                    if( ci[0] == mi[zi]) { found = zi; break; }
+                }
+                if(found<0) {throw new Error("Something wrong..");}
+
+                // now connect b:found and a:ci[0]
+                assembly_i[zs] = new int[]{ ci[0] , found };
+            }
+            assemblies.add(assembly_i);
+        }
+        return assemblies;
+    }
 
     /**
      *

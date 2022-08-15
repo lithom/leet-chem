@@ -2,24 +2,40 @@ package tech.molecules.leet.chem.mutator;
 
 import com.actelion.research.chem.Molecule;
 import com.actelion.research.chem.StereoMolecule;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import tech.molecules.leet.chem.ChemUtils;
 import tech.molecules.leet.chem.shredder.FragmentDecomposition;
+import tech.molecules.leet.chem.shredder.SynthonUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class FragmentDecompositionSynthon implements SynthonWithContext {
 
+    @JsonPropertyDescription("underlying fragment decomposition")
+    @JsonProperty("decomp")
     private FragmentDecomposition decomp;
-    private StereoMolecule synthon;
-    private StereoMolecule context;
 
+    @JsonPropertyDescription("synthon")
+    @JsonProperty("synthon")
+    private StereoMolecule synthon;
+
+    @JsonPropertyDescription("context")
+    @JsonProperty("context")
+    private StereoMolecule context;
+    @JsonPropertyDescription("map from synthon connectors to context connectors")
+    @JsonProperty("connectorMap")
     private int[][] mapSynthonConnectorsToContextConnectors;
 
 
     public FragmentDecompositionSynthon(FragmentDecomposition decomp) {
         //this.synthon = new StereoMolecule( decomp.getCentralFrag() );
         int cpos[][] = new int[decomp.getNumberOfConnectors()][2];
-        StereoMolecule combined = decomp.createCombinedFragmentsMoleculeWithLinkerConnectors(cpos,false);
+        List<int[]> frag_amaps = new ArrayList<>();
+        StereoMolecule combined = decomp.createCombinedFragmentsMoleculeWithLinkerConnectors(cpos,false,frag_amaps);
         this.synthon = new StereoMolecule();
         this.synthon.setFragment(combined.isFragment());
 
@@ -59,13 +75,35 @@ public class FragmentDecompositionSynthon implements SynthonWithContext {
     }
 
     @Override
+    public StereoMolecule getContext(int depthInBonds) {
+        StereoMolecule mi = new StereoMolecule();
+        mi.ensureHelperArrays(Molecule.cHelperCIP);
+
+        StereoMolecule ci = ChemUtils.createProximalFragment(mi, ChemUtils.toIntList(SynthonUtils.findConnectorAtoms(mi)), depthInBonds,false,null);
+        ci.ensureHelperArrays(Molecule.cHelperCIP);
+        return ci;
+    }
+
+    @Override
+    public StereoMolecule getContextBidirectirectional(int depthInBondsSynthon, int depthInBondsContext) {
+        // not like this, instead we do this separately for every connector
+        //return SynthonUtils.createConnectorProximalFragment(this.createCombinedFragmentsMoleculeWithLinkerConnectors(),region_size);
+        int[][] cp_pair_positions = new int[this.decomp.getSplitResult().connector_positions.get(0).length][2];
+
+        List<int[]> sr_atom_maps = new ArrayList<>();
+        StereoMolecule lc = this.decomp.createCombinedFragmentsMoleculeWithLinkerConnectors(cp_pair_positions,true, sr_atom_maps);
+
+        return SynthonUtils.cutBidirectionalContext(lc,cp_pair_positions,depthInBondsSynthon,depthInBondsContext,null);
+    }
+
+    @Override
     public int[][] getMapFromSynthonConnectorsToContextConnectors() {
         return this.mapSynthonConnectorsToContextConnectors;
     }
 
     @Override
     public List<int[][]> computePossibleAssemblies(SynthonWithContext other) {
-        return null;
+        return SynthonWithContext.computeAssemblies_MatchingBondAndFirstAtom(this,other);
     }
 
 }

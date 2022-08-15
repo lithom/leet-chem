@@ -1,5 +1,6 @@
 package tech.molecules.leet.table;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
@@ -11,6 +12,12 @@ import java.util.stream.Collectors;
 public class NexusTableModel extends AbstractTableModel {
 
     //private NexusOsirisDataset data;
+
+    /**
+     * Here we register IDs for all objects that we need for
+     * serialization / deserialization etc.
+     */
+    private Map<Integer,Pair<Class,Object>> registry;
 
     private List<String> allRows                 = new ArrayList<>();
     private List<String> visibleRows             = new ArrayList<>();
@@ -70,7 +77,27 @@ public class NexusTableModel extends AbstractTableModel {
         for(int zi=0;zi<this.columns.size();zi++) {
             NColumn cp = columns.get(zi);
             //NDataProvider dp = //this.columnDataProviders.get(cp);
-            this.setDataProviderForColumn(cp,cols.get(zi).getRight());
+            this.setDataProviderForColumn(cp, cols.get(zi).getRight());
+        }
+        reinitNexusColumns();
+    }
+
+    public void addNexusColumn(NDataProvider ndp, NColumn nc) {
+        this.setNexusColumnWithDataProvider(this.columns.size(),Pair.of(nc,ndp));
+    }
+
+    /**
+     * Provides mapping from table model row index to row id.
+     *
+     * @param visible_row_index
+     * @return
+     */
+    public String getRowIdForVisibleRow(int visible_row_index) {
+        return this.visibleRows.get(visible_row_index);
+    }
+    private void reinitNexusColumns() {
+        for(int zi=0;zi<this.columns.size();zi++) {
+            NColumn cp = columns.get(zi);
             if(!columnListeners.containsKey(cp)) {
                 NColumn.ColumnDataListener cdpl = new NColumn.ColumnDataListener() {
                     @Override
@@ -85,6 +112,34 @@ public class NexusTableModel extends AbstractTableModel {
         this.updateFiltering();
         fireTableStructureChanged();
         fireNexusTableStructureChangedEvent();
+    }
+
+    public void setNexusColumnWithDataProvider(int idx, Pair<NColumn, NDataProvider> column) {
+        this.columns.add(idx, column.getLeft());
+        this.setDataProviderForColumn(column.getLeft(),column.getRight());
+        reinitNexusColumns();
+    }
+
+    private void registerNexusColumn(NColumn nci) {
+        Random ri = new Random();
+        boolean found = false;
+        int ii = -1;
+        while(!found) {
+            ii = Math.abs(ri.nextInt());
+            found = !this.registry.containsKey(ii);
+        }
+        this.registry.put(ii, Pair.of(nci.getClass(),nci));
+    }
+
+    private void registerNexusDataProvider(NDataProvider ndp) {
+        Random ri = new Random();
+        boolean found = false;
+        int ii = -1;
+        while(!found) {
+            ii = Math.abs(ri.nextInt());
+            found = !this.registry.containsKey(ii);
+        }
+        this.registry.put(ii, Pair.of(ndp.getClass(),ndp));
     }
 
     public <U extends NDataProvider,T> void setDataProviderForColumn(NColumn<U,T> c, U np) {
@@ -111,8 +166,8 @@ public class NexusTableModel extends AbstractTableModel {
         return columns.get(columnIndex).getData( columnDataProviders.get(columns.get(columnIndex)),visibleRows.get(rowIndex));
     }
 
-    public <U,T> void  addRowFilter(NColumn<U,T> col, NColumn.NexusRowFilter<U> filter ) {
-        filter.setupFilter(this);
+    public <U,T> void  addRowFilter(NColumn<U,T> col, NColumn.NexusRowFilter<T> filter ) {
+        filter.setupFilter(this, this.getDatasetForColumn(col));
         if( !this.rowFilters.containsKey(col) ) {this.rowFilters.put(col,new ArrayList<>());}
         this.rowFilters.get(col).add(filter);
         this.updateFiltering();
@@ -171,16 +226,87 @@ public class NexusTableModel extends AbstractTableModel {
         }
     }
 
-    public List<Pair<NColumn, NStructureDataProvider>> getNexusColumnsWithDataProviders() {
-        List<Pair<NColumn, NStructureDataProvider>> colwdp = new ArrayList<>();
+    public List<Pair<NColumn, NDataProvider>> getNexusColumnsWithDataProviders() {
+        //List<Pair<NColumn, NStructureDataProvider>> colwdp = new ArrayList<>();
+        List<Pair<NColumn, NDataProvider>> colwdp = new ArrayList<>();
         for(NColumn ci : this.columns) {
-            colwdp.add(Pair.of(ci, (NStructureDataProvider) this.getDatasetForColumn(ci)));
+            //colwdp.add(Pair.of(ci, (NStructureDataProvider) this.getDatasetForColumn(ci)));
+            colwdp.add(Pair.of(ci, (NDataProvider) this.getDatasetForColumn(ci)));
         }
         return colwdp;
     }
 
+    public Map<NColumn,Map<String,NumericalDatasource>> collectNumericDataSources() {
+        Map<NColumn,Map<String,NumericalDatasource>> nds = new HashMap<>();
+        for(NColumn nci : this.getNexusColumns()) {
+            if(nci.getNumericalDataSources()!=null && nci.getNumericalDataSources().size()>0 ) {
+                nds.put(nci,nci.getNumericalDataSources());
+            }
+        }
+        return nds;
+    }
+
     public static interface NexusTableModelListener {
         public void nexusTableStructureChanged();
+    }
+
+
+    public static class NexusEvent {
+        private Object source;
+
+        public NexusEvent(Object source) {
+            this.source = source;
+        }
+
+        public Object getSource() {
+            return this.source;
+        }
+
+    }
+
+    public static class NexusSelectionChangedEvent extends NexusEvent {
+        Set<String> rows;
+
+        public NexusSelectionChangedEvent(Object source, Set<String> rows) {
+            super(source);
+            this.rows = rows;
+        }
+
+        public Set<String> getRows() {return this.rows;}
+    }
+
+    public static class NexusHighlightingChangedEvent extends NexusEvent {
+        Set<String> rows;
+
+        public NexusHighlightingChangedEvent(Object source, Set<String> rows) {
+            super(source);
+            this.rows = rows;
+        }
+
+        public Set<String> getRows() {return this.rows;}
+    }
+
+
+
+    /**
+     * This registers all necessary serializers in the Jackson object
+     * mapper. After calling this, the mapper can correctly serialize
+     * Nexus-related fields in Config objects (NColumn, NDataProvider etc.).
+     *
+     */
+    public static void equipJacksonSerializer(ObjectMapper mapper) {
+
+    }
+
+    /**
+     * Registers all necessary deserializers required for the Jackson
+     * object mapper. For this, we require the information stored in the
+     * registry, i.e. we must be able to fill the id-referenced values.
+     *
+     * @param mapper
+     */
+    public static void equipJacksonDeserializer(ObjectMapper mapper, Map<Integer,Pair<Class,Object>> registry) {
+
     }
 
 }

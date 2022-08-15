@@ -93,7 +93,7 @@ public class NexusChemPropertiesFilter implements NColumn.NexusRowFilter<NStruct
     }
 
     @Override
-    public void setupFilter(NexusTableModel model) {
+    public void setupFilter(NexusTableModel model, NStructureDataProvider dp) {
         this.model = model;
         // init ranges
         initRanges(model);
@@ -115,6 +115,11 @@ public class NexusChemPropertiesFilter implements NColumn.NexusRowFilter<NStruct
             }
             this.ranges.put(ci,new int[]{min,max});
         }
+    }
+
+    @Override
+    public boolean isReady() {
+        return true;
     }
 
     private JPanel jFilterPanel;

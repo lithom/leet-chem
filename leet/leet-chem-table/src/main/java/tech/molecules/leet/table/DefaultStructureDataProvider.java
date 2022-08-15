@@ -12,6 +12,11 @@ public class DefaultStructureDataProvider implements NStructureDataProvider {
 
     Map<String,StructureWithID> data = new HashMap<>();
 
+    /**
+     *
+     *
+     * @param data "id","idcode"
+     */
     public DefaultStructureDataProvider(List<String[]> data) {
         this.data.clear();
         IDCodeParser icp = new IDCodeParser();

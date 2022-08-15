@@ -14,6 +14,9 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.actelion.research.chem.Molecule.cESRTypeAnd;
+import static com.actelion.research.chem.Molecule.cESRTypeOr;
+
 /**
  * leet-chem
  * Thomas Liphardt 2022
@@ -99,7 +102,7 @@ public class SynthonShredder {
                 sm_cfi.ensureHelperArrays(Molecule.cHelperCIP);
                 frag_copy[fi] = sm_cfi;
             }
-            results.add(new SplitResult(frag_copy,connector_config,si.cutset_hash+"_p_"+cutset_perm_hash,si.connector_positions));
+            results.add(new SplitResult(frag_copy,connector_config,si.cutset_hash+"_p_"+cutset_perm_hash,si.connector_positions,si.fragment_positions));
         }
 
         return results;
@@ -222,7 +225,16 @@ public class SynthonShredder {
 //            }
         //mi.ensureHelperArrays(StereoMolecule.cHelperCIP);
         mi.ensureHelperArrays(StereoMolecule.cHelperNeighbours);
-        StereoMolecule frags[] = mi.getFragments();
+
+
+
+        //StereoMolecule frags[] = mi.getFragments();
+        //we do this in the following way, such that we also get the old atom to fragment map:
+        int[] fragmentNo = new int[mi.getAllAtoms()];
+        int fragments = mi.getFragmentNumbers(fragmentNo, false, false);
+        StereoMolecule frags[] = mi.getFragments(fragmentNo, fragments);
+
+
 
         //System.out.println("Fragments: ");
         for (StereoMolecule fi : frags) {
@@ -347,19 +359,30 @@ public class SynthonShredder {
             frag_order_before_sort.put(frags[zi],zi);
         }
 
+
+
         // find the largest fragment: (AND WE USE THE IDCODE LEXICOGRAPHIC ORDER AS TIEBREAKER, TO ENSURE CANONICAL ORDER!)
-        Arrays.sort(frags, (a, b) -> (-Integer.compare(a.getBonds(), b.getBonds()) != 0) ? (-Integer.compare(a.getBonds(), b.getBonds())) : a.getIDCode().compareTo(b.getIDCode()));
+        //Arrays.sort(frags, (a, b) -> (-Integer.compare(a.getBonds(), b.getBonds()) != 0) ? (-Integer.compare(a.getBonds(), b.getBonds())) : a.getIDCode().compareTo(b.getIDCode()));
+        // we now do it in this way, such that we can also reorder the fragmentNo array..
+        List<Integer> fraglist = CombinatoricsUtils.intSeq(frags.length);
+        fraglist.sort( (x,y) -> (-Integer.compare(frags[x].getBonds(), frags[y].getBonds()) != 0) ? (-Integer.compare(frags[x].getBonds(), frags[y].getBonds())) : frags[x].getIDCode().compareTo(frags[y].getIDCode()) );
+        StereoMolecule frags_sorted[] = new StereoMolecule[frags.length];
+        for(int zi=0;zi<frags_sorted.length;zi++) {frags_sorted[zi] = frags[fraglist.get(zi)];}
+        int fragmentNo_sorted[] = new int[fragmentNo.length];
+        for(int zi=0;zi<fragmentNo_sorted.length;zi++) { fragmentNo_sorted[zi] = fraglist.get(fragmentNo[zi]); }
+        //frags = frags_sorted;
+        //fragmentNo = fragmentNo_sorted;
+
 
         // order the connector positions according to the sorting of the fragments:
         List<int[]> sorted_connector_pos = new ArrayList<>();
-        for(StereoMolecule fi : frags) {
+        for(StereoMolecule fi : frags_sorted) {
             sorted_connector_pos.add( connector_positions.get(frag_order_before_sort.get(fi)));
         }
 
-
         // does not yet have a connector config (this will be computed only in the second step..)
         String hash_bond_cutset =  "cs_" + Arrays.stream(bond_cutset).mapToObj( xi -> ""+xi ).collect(Collectors.joining(","));
-        return new SplitResult(frags,null,hash_bond_cutset,sorted_connector_pos);
+        return new SplitResult(frags_sorted,null,hash_bond_cutset,sorted_connector_pos,fragmentNo_sorted);
     }
 
     /**
@@ -400,7 +423,12 @@ public class SynthonShredder {
         @JsonPropertyDescription("connector positions")
         @JsonProperty("cpos")
         public final List<int[]> connector_positions;
-        public SplitResult(StereoMolecule fragments[], List<Set<Integer>> connector_config_pre, String cutset_hash, List<int[]> connector_positions) {
+
+        @JsonPropertyDescription("fragment positions, i.e. map from original molecule atoms to fragment no")
+        @JsonProperty("fragpos")
+        public final int[] fragment_positions;
+
+        public SplitResult(StereoMolecule fragments[], List<Set<Integer>> connector_config_pre, String cutset_hash, List<int[]> connector_positions, int[] fragmentPos) {
             List<BitSet> connector_config = new ArrayList<>();
             if(connector_config_pre!=null) {
                 for (Set<Integer> si : connector_config_pre) {
@@ -420,6 +448,7 @@ public class SynthonShredder {
             this.fragments = fragments;
             this.cutset_hash = cutset_hash;
             this.connector_positions = connector_positions;
+            this.fragment_positions = fragmentPos;
         }
 
         /**
@@ -671,5 +700,46 @@ public class SynthonShredder {
         }
         return bsi;
     }
+
+
+
+
+
+    /**
+    public static StereoMolecule[] getFragments(StereoMolecule m, int[] fragmentNo, int fragmentCount, int[] map) {
+        StereoMolecule[] fragment = new StereoMolecule[fragmentCount];
+        int[] atoms = new int[fragmentCount];
+        int[] bonds = new int[fragmentCount];
+        int[] atomMap = new int[m.getAllAtoms()];
+        for (int atom=0; atom<m.getAllAtoms(); atom++)
+            if (fragmentNo[atom] != -1)
+                atomMap[atom] = atoms[fragmentNo[atom]]++;
+        for (int bond=0; bond<m.getAllBonds(); bond++) {
+            int f1 = fragmentNo[m.getBondAtom(0,bond)];;//fragmentNo[mBondAtom[0][bond]];
+            int f2 = fragmentNo[m.getBondAtom(1,bond)];;//fragmentNo[mBondAtom[1][bond]];
+            if (f1 == f2 && f1 != -1)
+                bonds[f1]++;
+        }
+        for (int i=0; i<fragmentCount; i++) {
+            fragment[i] = m.createMolecule(atoms[i], bonds[i]);
+            m.copyMoleculeProperties(fragment[i]);
+        }
+        for (int atom=0; atom<m.getAtoms(); atom++)
+            if (fragmentNo[atom] != -1)
+                m.copyAtom(fragment[fragmentNo[atom]], atom, 0, 0);
+        for (int bond=0; bond<m.getAllBonds(); bond++) {
+            int f1 = m.getBondAtom(0,bond);//fragmentNo[mBondAtom[0][bond]];
+            int f2 = m.getBondAtom(1,bond);//fragmentNo[mBondAtom[1][bond]];
+            if (f1 == f2 && f1 != -1)
+                m.copyBond(fragment[f1], bond, 0, 0, atomMap, false);
+        }
+        for (StereoMolecule f:fragment) {
+            f.renumberESRGroups(cESRTypeAnd);
+            f.renumberESRGroups(cESRTypeOr);
+        }
+
+        return fragment;
+    } **/
+
 
 }

@@ -59,7 +59,7 @@ public class ChemPropertyCounts {
 
 
     public static final ChemPropertyCount CountRings                = new ChemPropertyCount("Ring Count",(x) -> ChemUtils.countRings(x));
-    public static final ChemPropertyCount CountAromaticRings        = new ChemPropertyCount("Aromatic Ring Count",(x) -> ChemUtils.countRings(x)-ChemUtils.countRingsAromatic(x) );
+    public static final ChemPropertyCount CountAromaticRings        = new ChemPropertyCount("Aromatic Ring Count",(x) -> ChemUtils.countRingsAromatic(x) );
     public static final ChemPropertyCount CountHeteroaromaticRings  = new ChemPropertyCount("Heteroaromatic Ring Count",(x) -> x.getAtoms()-ChemUtils.countRingsHeteroaromatic(x) );
 
     public static final ChemPropertyCount CountBonds                = new ChemPropertyCount("Bond Count",(x) -> x.getBonds());

@@ -3,6 +3,9 @@ package tech.molecules.leet.chem.injector.gui;
 import com.actelion.research.chem.StereoMolecule;
 import com.actelion.research.gui.JEditableStructureView;
 import com.actelion.research.gui.editor.SwingEditorPanel;
+import tech.molecules.leet.chem.injector.InjectorTools;
+import tech.molecules.leet.chem.injector.action.ProposeStructuresFromSelectionAction;
+import tech.molecules.leet.chem.shredder.FragmentDecomposition;
 import tech.molecules.leet.table.gui.JExtendedEditorPanel;
 
 import javax.swing.*;
@@ -56,7 +59,7 @@ public class JInjectorMainPanel extends JPanel {
 
     private void initEditorMenuBar() {
         JMenu jm_injector = new JMenu("Injector");
-        JMenuItem jmi_proposeStructures = new JMenuItem("Propose structures for selection");
+        JMenuItem jmi_proposeStructures = new JMenuItem(new ProposeStructuresFromSelectionAction( () -> this.editor.getSwingEditorPanel().getDrawArea().getMolecule() ));//new JMenuItem("Propose structures for selection");
         jm_injector.add(jmi_proposeStructures);
         this.editor.getMenuBar().add(jm_injector);
     }
