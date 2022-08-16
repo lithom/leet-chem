@@ -15,6 +15,22 @@
 
     <name>leet-chem-core</name>
 
+    <description>Cheminformatics and computational chemistry algorithms and workflows.</description>
+    <url>https://github.com/lithom/leet-chem</url>
+
+    <developers>
+        <developer>
+            <name>Thomas Liphardt</name>
+            <email>liphardtt@gmail.com</email>
+            <organization>Idorsia Pharmaceuticals Ltd.</organization>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/lithom/leet-chem.git</connection>
+        <developerConnection>scm:git:ssh://github.com:lithom/leet-chem.git</developerConnection>
+        <url>https://github.com/lithom/leet-chem</url>
+    </scm>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

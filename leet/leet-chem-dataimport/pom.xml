@@ -14,9 +14,22 @@
     <packaging>jar</packaging>
 
     <name>leet-chem-dataimport</name>
-    <description>A simple leet-chem-dataimport.</description>
-    <!-- FIXME change it to the project's website -->
-    <url>http://www.example.com</url>
+    <description>Tools for importing chemistry data, e.g. from chembl and similar resources.</description>
+    <url>https://github.com/lithom/leet-chem</url>
+
+    <developers>
+        <developer>
+            <name>Thomas Liphardt</name>
+            <email>liphardtt@gmail.com</email>
+            <organization>Idorsia Pharmaceuticals Ltd.</organization>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/lithom/leet-chem.git</connection>
+        <developerConnection>scm:git:ssh://github.com:lithom/leet-chem.git</developerConnection>
+        <url>https://github.com/lithom/leet-chem</url>
+    </scm>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -49,7 +62,24 @@
     </dependencies>
 
     <build>
-
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <minimizeJar>true</minimizeJar>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 
     <reporting>

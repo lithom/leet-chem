@@ -10,9 +10,48 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>external-umap-java</artifactId>
-  <version>1.0</version>
+  <version>${revision}</version>
+  <packaging>jar</packaging>
     <!--<artifactId>umap-java</artifactId>-->
     <!--<version>1.0-SNAPSHOT</version>-->
+
+  <name>Umap Implementation in Java</name>
+
+  <description>Umap implementation in Java, included from umap-java github project.</description>
+  <url>https://github.com/lithom/leet-chem/tree/main/leet/external-umap-java</url>
+
+  <developers>
+    <developer>
+      <name>Jesse Paquette</name>
+    </developer>
+    <developer>
+      <name>Richard Littin</name>
+    </developer>
+    <developer>
+      <name>Jonathan Purvis</name>
+    </developer>
+    <developer>
+      <name>Sean A. Irvine</name>
+    </developer>
+    <developer>
+      <name>John Cleary</name>
+    </developer>
+    <developer>
+      <name>Leland McInnes</name>
+    </developer>
+    <developer>
+      <name>Thomas Liphardt</name>
+      <email>liphardtt@gmail.com</email>
+      <organization>Idorsia Pharmaceuticals Ltd.</organization>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:git://github.com/lithom/leet-chem.git</connection>
+    <developerConnection>scm:git:ssh://github.com:lithom/leet-chem.git</developerConnection>
+    <url>https://github.com/lithom/leet-chem</url>
+  </scm>
+
 
   <dependencies>
     <dependency>
@@ -39,23 +78,22 @@
           <target>1.8</target>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>3.1.0</version>
-        <configuration>
-          <consoleOutput>true</consoleOutput>
-        </configuration>
-        <executions>
-          <execution>
-            <id>checkstyle</id>
-            <goals>
-              <goal>checkstyle</goal>
-            </goals>
-            <phase>prepare-package</phase>
-          </execution>
-        </executions>
-      </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>3.2.4</version>
+          <executions>
+            <execution>
+              <phase>package</phase>
+              <goals>
+                <goal>shade</goal>
+              </goals>
+              <configuration>
+                <minimizeJar>true</minimizeJar>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
     </plugins>
   </build>
 </project>
