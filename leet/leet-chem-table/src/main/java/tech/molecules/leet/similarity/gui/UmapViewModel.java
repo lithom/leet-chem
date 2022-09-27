@@ -27,7 +27,8 @@ public class UmapViewModel {
 
     public UmapViewModel(ClusterAppModel clusterAppModel) {
         this.clusterAppModel = clusterAppModel;
-        this.initSimilarities(clusterAppModel.getNtm().getAllRows());
+        //this.initSimilarities(clusterAppModel.getNtm().getAllRows());
+        this.initSimilarities(clusterAppModel.getNtm().getVisibleRows());
     }
 
     public void initSimilarities(List<String> rowids) {

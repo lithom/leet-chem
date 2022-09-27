@@ -8,10 +8,21 @@ import java.util.Map;
 
 public class MultiNumericDataColumn implements NColumn<NDataProvider.NMultiNumericDataProvider,double[]> {
 
+    private NDataProvider.NMultiNumericDataProvider dp;
     private String name;
 
     public MultiNumericDataColumn(String name) {
         this.name = name;
+    }
+
+    @Override
+    public void setDataProvider(NDataProvider.NMultiNumericDataProvider dataprovider) {
+        this.dp = dataprovider;
+    }
+
+    @Override
+    public NDataProvider.NMultiNumericDataProvider getDataProvider() {
+        return this.dp;
     }
 
     @Override
@@ -20,8 +31,8 @@ public class MultiNumericDataColumn implements NColumn<NDataProvider.NMultiNumer
     }
 
     @Override
-    public double[] getData(NDataProvider.NMultiNumericDataProvider data, String rowid) {
-        return data.getMultiNumericData(rowid);
+    public double[] getData(String rowid) {
+        return this.dp.getMultiNumericData(rowid);
     }
 
     @Override
@@ -35,12 +46,7 @@ public class MultiNumericDataColumn implements NColumn<NDataProvider.NMultiNumer
     }
 
     @Override
-    public double evaluateNumericalDataSource(NDataProvider.NMultiNumericDataProvider dp, String datasource, String rowid) {
-        return 0;
-    }
-
-    @Override
-    public void startAsyncInitialization(NexusTableModel model, NDataProvider.NMultiNumericDataProvider dataprovider) {
+    public void startAsyncReinitialization(NexusTableModel model) {
 
     }
 

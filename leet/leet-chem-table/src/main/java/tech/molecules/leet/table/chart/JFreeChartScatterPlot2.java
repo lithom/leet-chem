@@ -7,11 +7,16 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.entity.ChartEntity;
 import org.jfree.chart.entity.EntityCollection;
 import org.jfree.chart.entity.XYItemEntity;
+import tech.molecules.leet.table.NumericalDatasource;
+import tech.molecules.leet.table.gui.JNumericalDataSourceSelector;
+import tech.molecules.leet.util.ColorMapHelper;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,10 +27,21 @@ public class JFreeChartScatterPlot2 extends JPanel {
     //private JPanel chart;
     private ChartPanel cp;
 
-    public JFreeChartScatterPlot2(ScatterPlotModel mi) {
-        this.model = mi;
+    private boolean initMenuBar;
+    private JMenuBar jmb;
 
+    public JFreeChartScatterPlot2(ScatterPlotModel mi) {
+        this(mi,true);
+    }
+
+    public JFreeChartScatterPlot2(ScatterPlotModel mi, boolean createMenuBar) {
+        this.model = mi;
+        this.initMenuBar = createMenuBar;
         init();
+    }
+
+    public ChartPanel getChartPanel() {
+        return this.cp;
     }
 
     private void init() {
@@ -33,9 +49,22 @@ public class JFreeChartScatterPlot2 extends JPanel {
         JFreeChart chart = model.getChart();
         this.cp = new ChartPanel(chart);
 
+        this.jmb = new JMenuBar();
+        //initMenu(jmb);
+
+
         this.removeAll();
+
         this.setLayout(new BorderLayout());
         this.add(cp,BorderLayout.CENTER);
+
+
+        if(initMenuBar) {
+            this.jmb = new JMenuBar();
+            JScatterPlotConfigurationMenuBar.initMenuBar(jmb,model.getNexusTableModel(), Collections.singletonList(model));
+            this.add(jmb,BorderLayout.NORTH);
+        }
+
 
         this.cp.addMouseListener(new MouseAdapter() {
             @Override
@@ -95,8 +124,35 @@ public class JFreeChartScatterPlot2 extends JPanel {
         return new double[] { kpx, kpy };
     }
 
-
     public ScatterPlotModel getModel() {
         return this.model;
     }
+
+
+//    private void initMenu(JMenuBar jmb) {
+//        JMenu jmsize = new JMenu("Marker");
+//        jmsize.add(new SetPointSizeAction(2));
+//        jmsize.add(new SetPointSizeAction(4));
+//        jmsize.add(new SetPointSizeAction(8));
+//        jmsize.add(new SetPointSizeAction(16));
+//        jmb.add(jmsize);
+//        JMenu jmcolor = new JMenu("Color");
+//        JNumericalDataSourceSelector jndss = new JNumericalDataSourceSelector(new JNumericalDataSourceSelector.NumericalDataSourceSelectorModel(model.getNexusTableModel()), JNumericalDataSourceSelector.SELECTOR_MODE.OnlyJMenu);
+//        JMenu jnds = jndss.getMenu();
+//        jnds.setText("From Numerical Datasource");
+//        jmcolor.add(jnds);
+//        jndss.addSelectionListener(new JNumericalDataSourceSelector.SelectionListener() {
+//            @Override
+//            public void selectionChanged() {
+//                // set coloring according to values of nds
+//                model.setColorValues( jndss.getModel().getSelectedDatasource());
+//            }
+//        });
+//        jmb.add(jmcolor);
+//    }
+
+
+
+
+
 }

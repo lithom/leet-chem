@@ -34,36 +34,38 @@ public class ChemPropertyCounts {
 
     public static class ChemPropertyCount {
         public final String name;
+        public final String shortName;
         public final Function<StereoMolecule,Integer> evaluator;
-        public ChemPropertyCount(String name, Function<StereoMolecule, Integer> evaluator) {
+        public ChemPropertyCount(String name, String shortname, Function<StereoMolecule, Integer> evaluator) {
             this.name = name;
+            this.shortName = shortname;
             this.evaluator = evaluator;
         }
     }
 
-    public static final ChemPropertyCount CountAtomsHeavy       = new ChemPropertyCount("Heavy Atom Count",(x) -> x.getAtoms());
-    public static final ChemPropertyCount CountAtomsRing        = new ChemPropertyCount("Ring Atom Count",(x) -> ChemUtils.countRingAtoms(x));
+    public static final ChemPropertyCount CountAtomsHeavy       = new ChemPropertyCount("Heavy Atom Count","HAC",(x) -> x.getAtoms());
+    public static final ChemPropertyCount CountAtomsRing        = new ChemPropertyCount("Ring Atom Count","RiAC",(x) -> ChemUtils.countRingAtoms(x));
 
-    public static final ChemPropertyCount CountAtomsNonRing        = new ChemPropertyCount("Non-Ring Atom Count",(x) -> ChemUtils.countRingAtoms(x));
-    public static final ChemPropertyCount CountAtomsAromatic    = new ChemPropertyCount("Aromatic Atom Count",(x) -> ChemUtils.countAromaticAtoms(x));
-    public static final ChemPropertyCount CountAtomsC           = new ChemPropertyCount("C Atom Count",(x) -> ChemUtils.countAtoms(x, Collections.singletonList(6)));
-    public static final ChemPropertyCount CountAtomsNonC        = new ChemPropertyCount("Non-C Atom Count",(x) -> x.getAtoms()-ChemUtils.countAtoms(x, Collections.singletonList(6)));
+    public static final ChemPropertyCount CountAtomsNonRing        = new ChemPropertyCount("Non-Ring Atom Count","NoRiAC",(x) -> ChemUtils.countRingAtoms(x));
+    public static final ChemPropertyCount CountAtomsAromatic    = new ChemPropertyCount("Aromatic Atom Count","AromAC",(x) -> ChemUtils.countAromaticAtoms(x));
+    public static final ChemPropertyCount CountAtomsC           = new ChemPropertyCount("C Atom Count","C-AC",(x) -> ChemUtils.countAtoms(x, Collections.singletonList(6)));
+    public static final ChemPropertyCount CountAtomsNonC        = new ChemPropertyCount("Non-C Atom Count","NoC-AC",(x) -> x.getAtoms()-ChemUtils.countAtoms(x, Collections.singletonList(6)));
 
-    public static final ChemPropertyCount CountAtomsHDonors     = new ChemPropertyCount("H-Donor Atom Count",(x) -> (int) MolecularPropertyHelper.calculateProperty(x,MolecularPropertyHelper.MOLECULAR_PROPERTY_HDONORS));
-    public static final ChemPropertyCount CountAtomsHAcceptors  = new ChemPropertyCount("H-Acceptor Atom Count",(x) -> (int) MolecularPropertyHelper.calculateProperty(x,MolecularPropertyHelper.MOLECULAR_PROPERTY_HACCEPTORS));
+    public static final ChemPropertyCount CountAtomsHDonors     = new ChemPropertyCount("H-Donor Atom Count","HDonAC",(x) -> (int) MolecularPropertyHelper.calculateProperty(x,MolecularPropertyHelper.MOLECULAR_PROPERTY_HDONORS));
+    public static final ChemPropertyCount CountAtomsHAcceptors  = new ChemPropertyCount("H-Acceptor Atom Count","HAccAC",(x) -> (int) MolecularPropertyHelper.calculateProperty(x,MolecularPropertyHelper.MOLECULAR_PROPERTY_HACCEPTORS));
 
-    public static final ChemPropertyCount CountAtomsHalogens    = new ChemPropertyCount("Halogen Atom Count",(x) -> ChemUtils.countAtoms(x, Arrays.stream( new int[]{9,17,35,53} ).boxed().collect(Collectors.toList()) ));
-    public static final ChemPropertyCount CountAtomsN           = new ChemPropertyCount("N Atom Count",(x) -> ChemUtils.countAtoms(x, Collections.singletonList(7)));
-    public static final ChemPropertyCount CountAtomsO           = new ChemPropertyCount("O Atom Count",(x) -> ChemUtils.countAtoms(x, Collections.singletonList(8)));
-    public static final ChemPropertyCount CountAtomsS           = new ChemPropertyCount("S Atom Count",(x) -> ChemUtils.countAtoms(x, Collections.singletonList(16)));
+    public static final ChemPropertyCount CountAtomsHalogens    = new ChemPropertyCount("Halogen Atom Count","HaloAC",(x) -> ChemUtils.countAtoms(x, Arrays.stream( new int[]{9,17,35,53} ).boxed().collect(Collectors.toList()) ));
+    public static final ChemPropertyCount CountAtomsN           = new ChemPropertyCount("N Atom Count","N-AC",(x) -> ChemUtils.countAtoms(x, Collections.singletonList(7)));
+    public static final ChemPropertyCount CountAtomsO           = new ChemPropertyCount("O Atom Count","O-AC",(x) -> ChemUtils.countAtoms(x, Collections.singletonList(8)));
+    public static final ChemPropertyCount CountAtomsS           = new ChemPropertyCount("S Atom Count","S-AC",(x) -> ChemUtils.countAtoms(x, Collections.singletonList(16)));
 
 
-    public static final ChemPropertyCount CountRings                = new ChemPropertyCount("Ring Count",(x) -> ChemUtils.countRings(x));
-    public static final ChemPropertyCount CountAromaticRings        = new ChemPropertyCount("Aromatic Ring Count",(x) -> ChemUtils.countRingsAromatic(x) );
-    public static final ChemPropertyCount CountHeteroaromaticRings  = new ChemPropertyCount("Heteroaromatic Ring Count",(x) -> x.getAtoms()-ChemUtils.countRingsHeteroaromatic(x) );
+    public static final ChemPropertyCount CountRings                = new ChemPropertyCount("Ring Count","RiC",(x) -> ChemUtils.countRings(x));
+    public static final ChemPropertyCount CountAromaticRings        = new ChemPropertyCount("Aromatic Ring Count","AroRiC",(x) -> ChemUtils.countRingsAromatic(x) );
+    public static final ChemPropertyCount CountHeteroaromaticRings  = new ChemPropertyCount("Heteroaromatic Ring Count","HetAroRiC",(x) -> x.getAtoms()-ChemUtils.countRingsHeteroaromatic(x) );
 
-    public static final ChemPropertyCount CountBonds                = new ChemPropertyCount("Bond Count",(x) -> x.getBonds());
-    public static final ChemPropertyCount CountRotatableBonds       = new ChemPropertyCount("Rotatable Bond Count",(x) -> x.getRotatableBondCount());
+    public static final ChemPropertyCount CountBonds                = new ChemPropertyCount("Bond Count","BC",(x) -> x.getBonds());
+    public static final ChemPropertyCount CountRotatableBonds       = new ChemPropertyCount("Rotatable Bond Count","RotBC",(x) -> x.getRotatableBondCount());
 
 
 

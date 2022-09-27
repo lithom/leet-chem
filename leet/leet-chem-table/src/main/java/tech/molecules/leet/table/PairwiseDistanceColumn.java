@@ -13,6 +13,7 @@ import java.util.Map;
 
 public class PairwiseDistanceColumn implements NSimilarityColumn<NDataProvider.StructureDataProvider, StereoMolecule> {
 
+    private NDataProvider.StructureDataProvider dp;
     private Map<String,Integer> rowPos;
     private double[][] dist;
 
@@ -35,25 +36,28 @@ public class PairwiseDistanceColumn implements NSimilarityColumn<NDataProvider.S
     }
 
     @Override
-    public StereoMolecule getData(NDataProvider.StructureDataProvider data, String rowid) {
+    public void setDataProvider(NDataProvider.StructureDataProvider dataprovider) {
+        this.dp = dataprovider;
+    }
+
+    @Override
+    public NDataProvider.StructureDataProvider getDataProvider() {
+        return this.dp;
+    }
+
+    @Override
+    public void startAsyncReinitialization(NexusTableModel model) {
+
+    }
+
+    @Override
+    public StereoMolecule getData(String rowid) {
         return null;
     }
 
     @Override
     public TableCellEditor getCellEditor() {
         return null;
-    }
-
-
-
-    @Override
-    public double evaluateNumericalDataSource(NDataProvider.StructureDataProvider dp, String datasource, String rowid) {
-        return 0;
-    }
-
-    @Override
-    public void startAsyncInitialization(NexusTableModel model, NDataProvider.StructureDataProvider dataprovider) {
-
     }
 
     @Override

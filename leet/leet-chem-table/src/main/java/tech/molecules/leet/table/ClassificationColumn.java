@@ -2,6 +2,7 @@ package tech.molecules.leet.table;
 
 import org.apache.commons.lang3.tuple.Pair;
 import tech.molecules.leet.clustering.ClusterAppModel;
+import tech.molecules.leet.table.gui.DispatchingMouseAdapter;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
@@ -14,12 +15,22 @@ import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.List;
 
-public class ClassificationColumn implements NColumn<NDataProvider.StructureDataProvider, List<NClassification.NClass>> {
+public class ClassificationColumn implements NColumn<NDataProvider.ClassificationProvider, List<NClassification.NClass>> {
 
-    private NClassification classification;
+    private NDataProvider.ClassificationProvider dp;
+
+    @Override
+    public void setDataProvider(NDataProvider.ClassificationProvider dataprovider) {
+        this.dp = dataprovider;
+    }
+
+    @Override
+    public NDataProvider.ClassificationProvider getDataProvider() {
+        return this.dp;
+    }
 
     public ClassificationColumn(NClassification classification) {
-        this.classification = classification;
+        //this.classification = classification;
 
         classification.addClassificationListener(new NClassification.ClassificationListener() {
             @Override
@@ -43,7 +54,7 @@ public class ClassificationColumn implements NColumn<NDataProvider.StructureData
     private NexusTableModel ntm;
 
     @Override
-    public void startAsyncInitialization(NexusTableModel model, NDataProvider.StructureDataProvider dataprovider) {
+    public void startAsyncReinitialization(NexusTableModel model) {
         this.ntm = model;
     }
 
@@ -56,9 +67,9 @@ public class ClassificationColumn implements NColumn<NDataProvider.StructureData
     }
 
     @Override
-    public List<NClassification.NClass> getData(NDataProvider.StructureDataProvider data, String rowid) {
-        List<NClassification.NClass> classes = new ArrayList<>();
-        return classes;
+    public List<NClassification.NClass> getData(String rowid) {
+        //List<NClassification.NClass> classes = new ArrayList<>();
+        return this.dp.getClassification().getClassesForRow(rowid);
     }
 
     @Override
@@ -67,22 +78,17 @@ public class ClassificationColumn implements NColumn<NDataProvider.StructureData
     }
 
     @Override
-    public Map<String, NumericalDatasource<NDataProvider.StructureDataProvider>> getNumericalDataSources() {
+    public Map<String, NumericalDatasource<NDataProvider.ClassificationProvider>> getNumericalDataSources() {
         return new HashMap<>();
     }
 
     @Override
-    public double evaluateNumericalDataSource(NDataProvider.StructureDataProvider dp, String datasource, String rowid) {
-        return 0;
-    }
-
-    @Override
     public List<String> getRowFilterTypes() {
-        return null;
+        return new ArrayList<>();
     }
 
     @Override
-    public NexusRowFilter<NDataProvider.StructureDataProvider> createRowFilter(NexusTableModel tableModel, String name) {
+    public NexusRowFilter<NDataProvider.ClassificationProvider> createRowFilter(NexusTableModel tableModel, String name) {
         return null;
     }
 
@@ -98,8 +104,9 @@ public class ClassificationColumn implements NColumn<NDataProvider.StructureData
     }
 
 
-    public class ClassificationRenderer extends JPanel implements TableCellEditor , TableCellRenderer {
+    public class ClassificationRenderer extends AbstractCellEditor implements TableCellEditor , TableCellRenderer {
 
+        private JComponent jp_editor = new JPanel();
 
         public Component getTableCellRendererComponent (JTable table,
                                                         Object value,
@@ -108,11 +115,22 @@ public class ClassificationColumn implements NColumn<NDataProvider.StructureData
                                                         int row,
                                                         int column)
         {
+
+
+            if(table instanceof NexusTable) {
+                NexusTable nt = ((NexusTable) table);
+                //System.out.println("mkay");
+                jp_editor = NexusTable.getDefaultEditorBackgroundPanel(nt,nt.getTableModel().getHighlightingAndSelectionStatus(row));
+            }
+            else {
+                jp_editor = new JPanel();
+            }
+
+
             // As a safety check, it's always good to verify the type of
             // value.
-
             if(value == null) {
-                this.removeAll();
+                jp_editor.removeAll();
             }
 
             if (value instanceof List)
@@ -120,26 +138,27 @@ public class ClassificationColumn implements NColumn<NDataProvider.StructureData
                 List<NClassification.NClass> classes = new ArrayList<>();
                 ((List)value).stream().filter( ci -> ci instanceof NClassification.NClass).forEach( ci -> classes.add((NClassification.NClass)ci) );
 
-                this.removeAll();
-                this.setLayout( new GridLayout(classes.size(),1) );
+                this.jp_editor.removeAll();
+                this.jp_editor.setBorder(BorderFactory.createEmptyBorder(4,4,4,4));
+                this.jp_editor.setLayout( new GridLayout(classes.size(),1) );
 
                 for(int zi=0;zi<classes.size();zi++) {
                     JColorLabel cla = new JColorLabel(classes.get(zi).getName(),classes.get(zi).getColor());
-                    this.add(cla);
+                    this.jp_editor.add(cla);
                 }
 
-                MouseAdapter mli = new MouseAdapter() {
-                    @Override
-                    public void mouseEntered(MouseEvent e) {
-                        if( e.getComponent() instanceof JComponent) {
-                            ((JComponent)e.getComponent()).setBorder(new LineBorder(Color.blue,1));
-                        }
-                    }
-                    @Override
-                    public void mouseExited(MouseEvent e) {
-                        ((JComponent)e.getComponent()).setBorder(null);
-                    }
-                };
+//                MouseAdapter mli = new MouseAdapter() {
+//                    @Override
+//                    public void mouseEntered(MouseEvent e) {
+//                        if( e.getComponent() instanceof JComponent) {
+//                            ((JComponent)e.getComponent()).setBorder(new LineBorder(Color.blue,1));
+//                        }
+//                    }
+//                    @Override
+//                    public void mouseExited(MouseEvent e) {
+//                        ((JComponent)e.getComponent()).setBorder(null);
+//                    }
+//                };
                 //pa.addMouseListener(mli);
                 //pb.addMouseListener(mli);
                 //pc.addMouseListener(mli);
@@ -157,25 +176,43 @@ public class ClassificationColumn implements NColumn<NDataProvider.StructureData
             // Return a reference to the ColorRenderer (JLabel subclass)
             // component. Behind the scenes, that component will be used to
             // paint the pixels.
-            return this;
+            return this.jp_editor;
         }
 
         private Object lastValue = null;
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+
+            System.out.println("Create cell editor: "+row+"/"+column);
             this.lastValue = value;
             Component ci = getTableCellRendererComponent(table,value,isSelected,true,row,column);
+
+
+            //ci.addMouseListener(new DispatchingMouseAdapter(()->ci.getParent()));
+            //JPanel p_editor = new JPanel();
+            //p_editor.setLayout(new BorderLayout());
+
             if(ci instanceof JComponent) {
+            //if(true) {
+                JComponent p_editor = (JComponent) ci;
                 JPopupMenu pop = new JPopupMenu();
-                String ridi =  ntm.getRowIdForVisibleRow(row);
-                for(CellSpecificAction csi : cellPopupActions) {
-                    csi.setRowId(ridi);
+                //String ridi = ntm.getRowIdForVisibleRow(row);
+                for (CellSpecificAction csi : cellPopupActions) {
+                    //csi.setRowId( () -> Collections.singletonList(ridi) );
+                    //CellSpecificAction csia = csi.createArmedVersion(csi.getActionName(),()->Collections.singletonList(ridi));
                     pop.add(csi);
                 }
                 //pop.add(new ClusterAppModel.CreateClusterAction("Create Cluster",()-> Pair.of("cx",Color.blue),()->Collections.singletonList(ridi) ));
-                ((JComponent)ci).setComponentPopupMenu(pop);
+                //p_editor.setComponentPopupMenu(pop);
+
+                ((JComponent) ci).setComponentPopupMenu(pop); // hmm.. this does somehow break the click selection stuff of the jtable.. :(
+                //((JComponent) ci).addMouseListener(new DispatchingMouseAdapter(()->table));
+                return ci;
             }
+            // we should not end up here
+            System.out.println("[ERROR] we should not end up here (ClassificationColumn.ClassificationRenderer)");
             return ci;
+            //p_editor.add(ci, BorderLayout.CENTER);
         }
 
         @Override
@@ -183,42 +220,6 @@ public class ClassificationColumn implements NColumn<NDataProvider.StructureData
             return this.lastValue;
         }
 
-        @Override
-        public boolean isCellEditable(EventObject anEvent) {
-            return true;
-        }
-
-        @Override
-        public boolean shouldSelectCell(EventObject anEvent) {
-            return true;
-//            if( anEvent instanceof MouseEvent) {
-//                MouseEvent me = (MouseEvent) anEvent;
-//                return true;
-//            }
-//            return false;
-        }
-
-
-
-        @Override
-        public boolean stopCellEditing() {
-            return false;
-        }
-
-        @Override
-        public void cancelCellEditing() {
-
-        }
-
-        @Override
-        public void addCellEditorListener(CellEditorListener l) {
-
-        }
-
-        @Override
-        public void removeCellEditorListener(CellEditorListener l) {
-
-        }
     }
 
     public static class JColorLabel extends JLabel {

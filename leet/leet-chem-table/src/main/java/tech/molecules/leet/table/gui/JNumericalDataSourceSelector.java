@@ -55,15 +55,17 @@ public class JNumericalDataSourceSelector  extends JPanel {
     }
 
     private NumericalDataSourceSelectorModel model;
+    private SELECTOR_MODE selectorMode;
 
-    public enum SELECTOR_MODE {Tree,Menu};
+    public enum SELECTOR_MODE {Tree,Menu,OnlyJMenu};
     public JNumericalDataSourceSelector(NumericalDataSourceSelectorModel model, SELECTOR_MODE mode) {
         this.model = model;
+        this.selectorMode = mode;
 
         if(mode.equals(SELECTOR_MODE.Tree)) {
             initTree();
         }
-        else if(mode.equals(SELECTOR_MODE.Menu)) {
+        else if(mode.equals(SELECTOR_MODE.Menu) || mode.equals(SELECTOR_MODE.OnlyJMenu)) {
             initMenu();
         }
     }
@@ -71,9 +73,10 @@ public class JNumericalDataSourceSelector  extends JPanel {
     private JScrollPane jsp;
     private JTree jt;
 
-    private JToolBar jtb;
+    //private JToolBar jtb;
     private JButton jtb2;
     private JMenu    jm;
+    private JMenuBar jmb;
 
     private void initTree() {
         this.removeAll();
@@ -96,22 +99,32 @@ public class JNumericalDataSourceSelector  extends JPanel {
         });
     }
 
-    public JPopupMenu getMenu() {
-        return this.jm.getPopupMenu();
+    public JMenu getMenu() {
+        return this.jm;
     }
+
     private void initMenu() {
         this.removeAll();
         this.setLayout(new BorderLayout());
         //this.jtb = new JToolBar();
         //this.add(this.jtb,BorderLayout.CENTER);
         this.jm = null;
+
         JMenu ji = new JMenu();
         addChildrenToMenu(ji,((DefaultMutableTreeNode)model.getTreeModel().getRoot()));
         //this.jm.add(ji);
         this.jm = ji;
 
-        this.jtb2 = new JButton("Set NDS");
-        this.jtb2.setComponentPopupMenu(this.jm.getPopupMenu());
+        //this.jtb2 = new JButton("Set NDS");
+
+        if(!this.selectorMode.equals(SELECTOR_MODE.OnlyJMenu)) {
+            this.jmb = new JMenuBar();
+            this.jmb.add(this.jm);
+            this.add(this.jmb, BorderLayout.NORTH);
+        }
+
+        //this.add()
+        //this.jtb2.setComponentPopupMenu(this.jm.getPopupMenu());
 //        this.jtb2.addActionListener(new ActionListener() {
 //            @Override
 //            public void actionPerformed(ActionEvent e) {
@@ -119,7 +132,7 @@ public class JNumericalDataSourceSelector  extends JPanel {
 //            }
 //        });
 
-        this.add(jtb2);
+        //this.add(jtb2);
     }
 
     private class SelectAction extends AbstractAction {
@@ -178,6 +191,19 @@ public class JNumericalDataSourceSelector  extends JPanel {
 //            }
 //        }
 //    }
+
+    /**
+      public static Pair<JMenu,Supplier<NumericalDatasource>> getSelectorMenu(NexusTableModel ntm) {
+        JNumericalDataSourceSelector jndss = new JNumericalDataSourceSelector(new NumericalDataSourceSelectorModel(ntm),SELECTOR_MODE.Menu);
+
+        Supplier<NumericalDatasource> snd = () -> jndss.model.getSelectedDatasource();
+        return Pair.of(jndss.getMenu(),snd);
+    }
+     **/
+
+    public JNumericalDataSourceSelector.NumericalDataSourceSelectorModel getModel() {
+        return this.model;
+    }
 
     public static Triple<JPanel, Supplier<NumericalDatasource>, Consumer<NumericalDatasource>> getSelectorPanel2(NexusTableModel ntm, Frame owner) {
         JPanel pi = new JPanel();

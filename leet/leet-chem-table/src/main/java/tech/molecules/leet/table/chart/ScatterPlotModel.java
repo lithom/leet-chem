@@ -17,13 +17,16 @@ import org.jfree.data.general.DatasetChangeListener;
 import org.jfree.data.general.DatasetGroup;
 import org.jfree.data.general.DefaultKeyedValuesDataset;
 import org.jfree.data.general.KeyedValuesDataset;
+import org.knowm.xchart.style.markers.Circle;
 import tech.molecules.leet.table.NDataProvider;
 import tech.molecules.leet.table.NexusTableModel;
 import tech.molecules.leet.table.NumericalDatasource;
+import tech.molecules.leet.util.ColorMapHelper;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.util.*;
 import java.util.List;
@@ -49,6 +52,7 @@ public class ScatterPlotModel {
     private List<XYAnnotation> selectionAnnotations = new ArrayList<>();
     private List<XYAnnotation> multiClassAnnotations = new ArrayList<>();
 
+    private XYShapeRenderer renderer;
 
     public ScatterPlotModel(NexusTableModel ntm, KeyedValuesDataset x, KeyedValuesDataset y) {
         this.ntm = ntm;
@@ -58,12 +62,16 @@ public class ScatterPlotModel {
         //this.initContextMenu(new ArrayList<>(),new ArrayList<>());
     }
 
-    public ScatterPlotModel(NexusTableModel ntm, NDataProvider dp_x , NDataProvider dp_y, NumericalDatasource nd_x, NumericalDatasource nd_y) {
+    public ScatterPlotModel(NexusTableModel ntm, NumericalDatasource nd_x, NumericalDatasource nd_y) {
         this.ntm = ntm;
-        this.dataX = new JFreeChartScatterPlot.NumericalDatasourceKeyedDataset(ntm,nd_x,dp_x);
-        this.dataY = new JFreeChartScatterPlot.NumericalDatasourceKeyedDataset(ntm,nd_y,dp_y);
+        this.dataX = new JFreeChartScatterPlot.NumericalDatasourceKeyedDataset(ntm,nd_x);
+        this.dataY = new JFreeChartScatterPlot.NumericalDatasourceKeyedDataset(ntm,nd_y);
         //this.updatePlot();
         this.reinitPlot();
+    }
+
+    public boolean setMouseOverClass(NexusTableModel.SelectionType st) {
+        return this.ntm.registerSelectionType(st);
     }
 
     public void setColor(DefaultKeyedValuesDataset data_color) {
@@ -71,6 +79,14 @@ public class ScatterPlotModel {
         Map<String,Double> cold = new HashMap<>();
         for(String si : this.ntm.getAllRows()) {cold.put(si,data_color.getValue(si).doubleValue());}
         this.setColorValues(cold);
+    }
+
+    public void setColorExpclicit(PaintScale colors, Map<String,Integer> values) {
+        ((XYShapeRenderer)this.getChart().getXYPlot().getRenderer()).setPaintScale(colors);
+        for(String si : this.ntm.getAllRows()) {
+            this.dataCol.setValue(si,values.get(si));
+        }
+        this.data.setZ(this.dataCol);
     }
 
     public void setColorValues(Map<String,Double> col) {
@@ -87,7 +103,6 @@ public class ScatterPlotModel {
                 c_min = Math.min(cvi,c_min);
                 c_max = Math.max(cvi,c_max);
             }
-
         }
 
         double paintscale_min = c_min-Math.max(0.001, (c_max-c_min)*0.01 );
@@ -98,7 +113,7 @@ public class ScatterPlotModel {
         Colormap cm = net.mahdilamb.colormap.Colormaps.get("Jet");
         if(this.colormap!=null) {cm = this.colormap;}
 
-        PaintScaleFromColormap psfc = new PaintScaleFromColormap(cm,paintscale_min,paintscale_max,0.75, new Color(180,200,210,80));
+        ColorMapHelper.PaintScaleFromColormap psfc = new ColorMapHelper.PaintScaleFromColormap(cm,paintscale_min,paintscale_max,0.75, new Color(180,200,210,80));
         //((XYShapeRenderer)this.cp.getChart().getXYPlot().getRenderer()).setPaintScale(psfc);
         ((XYShapeRenderer)this.getChart().getXYPlot().getRenderer()).setPaintScale(psfc);
 
@@ -111,6 +126,20 @@ public class ScatterPlotModel {
         //PaintScaleLegend psl = new PaintScaleLegend(psfc,new NumberAxis("Value"));
         //psl.setPosition(RectangleEdge.RIGHT);
         //this.cp.getChart().addSubtitle(psl);
+    }
+
+    public void setColorValues(NumericalDatasource nds) {
+        Map<String,Double> cvalues = new HashMap<>();
+        for(String ri : ntm.getAllRows()) {
+            if( nds.hasValue(ri) ) {
+                cvalues.put(ri,nds.getValue(ri));
+            }
+        }
+        setColorValues(cvalues);
+    }
+
+    public NexusTableModel getNexusTableModel() {
+        return this.ntm;
     }
 
     private Colormap colormap;
@@ -199,7 +228,7 @@ public class ScatterPlotModel {
 
 
         if(fireEvent) {
-            //fireHighlightingChangedEvent(new NexusHighlightingChangedEvent(this, highlight));
+            fireHighlightingChangedEvent(new NexusTableModel.NexusHighlightingChangedEvent(this, highlight));
         }
         //this.updatePlot();
     }
@@ -313,7 +342,8 @@ public class ScatterPlotModel {
         if(cc==null) {
             Random rand = new Random();
             DefaultKeyedValuesDataset ccn = new DefaultKeyedValuesDataset();
-            for(String ri : this.ntm.getAllRows()) { ccn.setValue(ri,rand.nextDouble());}
+            //for(String ri : this.ntm.getAllRows()) { ccn.setValue(ri,rand.nextDouble());}
+            for(Object ri : px.getKeys()) { ccn.setValue((String)ri,rand.nextDouble());}
             cc = ccn;
             this.dataCol = ccn;
         }
@@ -338,13 +368,22 @@ public class ScatterPlotModel {
         chart.setBorderPaint(Color.orange.darker());
         chart.setBorderStroke(new BasicStroke(2));
 
-
         //((XYLineAndShapeRenderer)(chart.getXYPlot().getRenderer()).;
-        XYShapeRenderer renderer = new XYShapeRenderer();
-        renderer.setPaintScale(new SpectrumPaintScale(0,1));
+        //XYShapeRenderer renderer = new XYShapeRenderer();
+        this.renderer = new XYShapeRenderer();
+        renderer.setPaintScale(new ColorMapHelper.SpectrumPaintScale(0,1));
 
         chart.getXYPlot().setRenderer(renderer);
         //return chart;
+    }
+
+    public XYShapeRenderer getXYShapeRenderer() {
+        return this.renderer;
+    }
+
+    public void setRendererShapeSize(int size) {
+        Shape ci = new Ellipse2D.Double(-size/2,-size/2,size,size);
+        this.renderer.setSeriesShape(0,ci);
     }
 
     /**
@@ -384,85 +423,16 @@ public class ScatterPlotModel {
         chart.getXYPlot().getRangeAxis().setVisible(false);
     }
 
-    private static class PaintScaleFromColormap implements PaintScale {
 
-        private Colormap cm;
-        private double lb, ub;
-        double transparency;
-        Color nanColor;
-
-        public PaintScaleFromColormap(Colormap cm, double lb, double ub, double transparency, Color nanColor) {
-            this.cm = cm;
-            this.lb = lb; this.ub = ub;
-            this.transparency = transparency;
-            this.nanColor = nanColor;
-        }
-
-        @Override
-        public double getLowerBound() {
-            return this.lb;
-        }
-
-        @Override
-        public double getUpperBound() {
-            return this.ub;
-        }
-
-        @Override
-        public Paint getPaint(double v) {
-            if(Double.isNaN(v)) {
-                if(this.nanColor!=null) {
-                    return this.nanColor;
-                    //return new Color( this.nanColor.getRed() , this.nanColor.getGreen() , this.nanColor.getBlue() , (int)(255*this.transparency) )
-                }
-            }
-            double va = (v-lb)/(ub-lb);
-            //return cm.get( va );
-            Color ca = cm.get( va );
-            return new Color(ca.getRed(),ca.getGreen(),ca.getBlue(), (int)(255*this.transparency) );
-        }
-    }
-
-    private static class SpectrumPaintScale implements PaintScale {
-
-        private static final float H1 = 0.25f;
-        private static final float H2 = 0.75f;
-        private final double lowerBound;
-        private final double upperBound;
-
-        public SpectrumPaintScale(double lowerBound, double upperBound) {
-            this.lowerBound = lowerBound;
-            this.upperBound = upperBound;
-        }
-
-        @Override
-        public double getLowerBound() {
-            return lowerBound;
-        }
-
-        @Override
-        public double getUpperBound() {
-            return upperBound;
-        }
-
-        @Override
-        public Paint getPaint(double value) {
-            float scaledValue = (float) (value / (getUpperBound() - getLowerBound()));
-            float scaledH = H1 + scaledValue * (H2 - H1);
-            return Color.getHSBColor(scaledH, 1f, 1f);
-        }
-    }
 
 
     public static class NumericalDatasourceKeyedDataset<U> implements KeyedValuesDataset {
         private NexusTableModel ntm;
         private NumericalDatasource<U> nds;
-        private U dp;
 
-        public NumericalDatasourceKeyedDataset(NexusTableModel ntm, NumericalDatasource<U> nds, U dp) {
+        public NumericalDatasourceKeyedDataset(NexusTableModel ntm, NumericalDatasource<U> nds) {
             this.ntm = ntm;
             this.nds = nds;
-            this.dp = dp;
             reinit();
         }
 
@@ -487,8 +457,8 @@ public class ScatterPlotModel {
 
         @Override
         public Number getValue(Comparable comparable) {
-            if( nds.hasValue(dp,(String)comparable) ) {
-                return nds.getValue(dp,(String) comparable);
+            if( nds.hasValue((String)comparable) ) {
+                return nds.getValue((String) comparable);
             }
             return null;
         }
@@ -501,8 +471,8 @@ public class ScatterPlotModel {
         @Override
         public Number getValue(int i) {
             String ri = ntm.getVisibleRows().get(i);
-            if( nds.hasValue(dp,ri) ) {
-                return nds.getValue(dp,ri);
+            if( nds.hasValue(ri) ) {
+                return nds.getValue(ri);
             }
             return null;
         }
@@ -531,6 +501,38 @@ public class ScatterPlotModel {
         }
     }
 
+
+    public static class SetPointSizeAction extends AbstractAction {
+        private List<ScatterPlotModel> fcs;
+        private int size;
+        public SetPointSizeAction(List<ScatterPlotModel> fcs,int size) {
+            super("Set point size to "+String.format("%d",size));
+            this.fcs = fcs;
+            this.size = size;
+        }
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            for(ScatterPlotModel fc2 : fcs){
+                fc2.setRendererShapeSize((int) size);
+            }
+        }
+    }
+
+    public static class SetColorNumericalDatasource extends AbstractAction {
+        private List<ScatterPlotModel> fcs;
+        private NumericalDatasource nds;
+        public SetColorNumericalDatasource(List<ScatterPlotModel> fcs,NumericalDatasource nds) {
+            super(nds.getName());
+            this.fcs = fcs;
+            this.nds = nds;
+        }
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            for(ScatterPlotModel fc2 : fcs){
+                fc2.setColorValues(nds);
+            }
+        }
+    }
 
 
     public class SetClusteringAnnotationsAction extends AbstractAction {

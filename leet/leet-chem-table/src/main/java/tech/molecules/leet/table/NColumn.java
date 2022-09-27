@@ -1,38 +1,55 @@
 package tech.molecules.leet.table;
 
+import com.actelion.research.chem.reaction.Classification;
+
 import javax.swing.*;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import java.io.Serializable;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public interface NColumn<U,T> {
 
 
     public String getName();
-    public T getData(U data, String rowid);
+    public T getData(String rowid);
     //public TableCellRenderer getCellRenderer();
-    public void startAsyncInitialization(NexusTableModel model, U dataprovider);
+    public void startAsyncReinitialization(NexusTableModel model);
+
+    public void setDataProvider(U dataprovider);
+    public U getDataProvider();
     public TableCellEditor getCellEditor();
 
     //public List<Pair<String,Class>> getAvailableDataSources();
     //public Object getDataSource(String name);
     public Map<String,NumericalDatasource<U>> getNumericalDataSources();
-    public double evaluateNumericalDataSource(U dp, String datasource, String rowid);
+
+    default Map<String, NClassification> getClassifications() {
+        return new HashMap<>();
+    }
+    //public double evaluateNumericalDataSource(U dp, String datasource, String rowid);
 
     public static abstract class CellSpecificAction extends AbstractAction {
+        private String actionName;
         private NColumn column;
-        private String rowid;
+        private Supplier<List<String>> rowid;
         public NColumn getColumn(){return this.column;}
-        public String  getRowId(){return this.rowid;}
-        public void setRowId(String rowid){this.rowid=rowid;}
-        public CellSpecificAction(String name, NColumn column, String rowid) {
+        public List<String>  getEvaluatedRowIds(){return this.rowid.get();}
+        public void setRowId(Supplier<List<String>> rowid){this.rowid=rowid;}
+        public String getActionName() {
+            return this.actionName;
+        }
+        public CellSpecificAction(String name, NColumn column, Supplier<List<String>> rowid) {
             super(name);
+            this.actionName = name;
             this.column = column;
             this.rowid = rowid;
         }
+        public abstract CellSpecificAction createArmedVersion(String name, Supplier<List<String>> rowids);
     }
 
     //default List<Action> getHeaderActions

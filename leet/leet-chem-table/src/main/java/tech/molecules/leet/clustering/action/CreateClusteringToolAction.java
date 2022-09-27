@@ -19,7 +19,8 @@ public class CreateClusteringToolAction extends AbstractAction {
 
     private NStructureDataProvider dp;
     private JPanel plotPanel;
-    public CreateClusteringToolAction(NexusTableModel ntm, NStructureDataProvider dpi, JPanel plotPanel) {
+    public CreateClusteringToolAction(String name, NexusTableModel ntm, NStructureDataProvider dpi, JPanel plotPanel) {
+        super(name);
         this.ntm  = ntm;
         this.dp = dpi;
         this.plotPanel = plotPanel;
@@ -38,7 +39,7 @@ public class CreateClusteringToolAction extends AbstractAction {
         //this.ntm.addNexusColumn(conf.getDp(), PairwiseDistanceColumn.createFromDescriptor(conf.getDp(),new DescriptorHandlerLongPFP512(),ntm.getAllRows()));
 
         // add classification column to ntm:
-        this.ntm.addNexusColumn(this.dp,capp.getClassificationColumn());
+        this.ntm.addNexusColumn(capp,capp.getClassificationColumn());
 
         JPanel targetPanel = null;
         if(this.plotPanel==null) {

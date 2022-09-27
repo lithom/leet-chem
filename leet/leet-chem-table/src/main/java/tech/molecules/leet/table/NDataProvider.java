@@ -32,7 +32,7 @@ public interface NDataProvider {
         }
         @Override
         public StructureWithID getStructureData(String rowid) {
-            return this.col.getData(this.dataProvider,rowid);
+            return this.col.getData(rowid);
         }
     }
 
@@ -41,8 +41,14 @@ public interface NDataProvider {
         public List<NClassification.NClass> getClassificationData(String rowid);
     }
 
+    public static interface NClassificationProvider<C extends NClassification> extends NDataProvider , ClassificationProvider<C>{};
+
     public static interface StringDataProvider {
         public String getStringData(String rowid);
+    }
+
+    public static interface ClassificationProvider<C extends NClassification> {
+        public C getClassification();
     }
 
     public static interface NStringDataProvider extends NDataProvider , StringDataProvider

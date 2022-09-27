@@ -13,6 +13,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
+/**
+ *
+ * @param <T> data provider
+ */
 public interface NClassification {
     public static interface NClass {
         public String getName();
@@ -51,11 +55,22 @@ public interface NClassification {
     public static class ClassificationTableModel extends AbstractTableModel {
 
         private NClassification nc;
-        private List<NClass> clusters;
+        //private List<NClass> clusters;
 
         public ClassificationTableModel(NClassification nc) {
             this.nc = nc;
-            this.clusters = nc.getClasses();
+            //this.clusters = nc.getClasses();
+            nc.addClassificationListener(new ClassificationListener() {
+                @Override
+                public void classificationChanged() {
+                    fireClustersChanged();
+                }
+
+                @Override
+                public void classChanged(NClass ci) {
+                    fireClustersChanged();
+                }
+            });
         }
 
         @Override
@@ -70,7 +85,7 @@ public interface NClassification {
 
         @Override
         public int getRowCount() {
-            return clusters.size();
+            return nc.getClasses().size();
         }
 
         @Override
@@ -80,8 +95,8 @@ public interface NClassification {
 
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
-            if(rowIndex>=clusters.size()){return null;}
-            NClass ci = clusters.get(rowIndex);
+            if(rowIndex>=nc.getClasses().size()){return null;}
+            NClass ci = nc.getClasses().get(rowIndex);
             switch(columnIndex){
                 case 0: return ci.getName();
                 case 1: return ci.getMembers().size();

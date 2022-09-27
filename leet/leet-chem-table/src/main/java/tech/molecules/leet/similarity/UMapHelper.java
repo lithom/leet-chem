@@ -1,22 +1,32 @@
 package tech.molecules.leet.similarity;
 
+import com.actelion.research.chem.StereoMolecule;
+import com.formdev.flatlaf.FlatLightLaf;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jfree.data.general.DefaultKeyedValuesDataset;
 import org.knowm.xchart.XChartPanel;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.XYSeries;
 import tagbio.umap.Umap;
-import tech.molecules.leet.table.NSimilarityColumn;
-import tech.molecules.leet.table.NStructureDataProvider;
-import tech.molecules.leet.table.NexusTableModel;
+import tech.molecules.leet.chem.ChemUtils;
+import tech.molecules.leet.clustering.action.CreateClusteringToolAction;
+import tech.molecules.leet.table.*;
 import tech.molecules.leet.table.chart.JFreeChartScatterPlot2;
 import tech.molecules.leet.table.chart.ScatterPlotModel;
 import tech.molecules.leet.table.chart.XYChartCreator;
 
 import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class UMapHelper {
 
@@ -31,8 +41,9 @@ public class UMapHelper {
     }
 
     public static JPanel createChart(NexusTableModel ntm, UMapXYChartConfig conf) {
-        double[][] Sim = XYChartCreator.evaluateSimilarityDS(conf.dataset,conf.xCol,ntm.getAllRows());
-        double[][] umap = computeUMap(ntm.getAllRows().toArray(new String[0]),Sim);
+        double[][] Sim = XYChartCreator.evaluateSimilarityDS(conf.dataset,conf.xCol,ntm.getVisibleRows());//ntm.getAllRows());
+        //double[][] umap = computeUMap(ntm.getAllRows().toArray(new String[0]),Sim);
+        double[][] umap = computeUMap(ntm.getVisibleRows().toArray(new String[0]),Sim);
 
         double umapx[] = new double[umap.length];
         double umapy[] = new double[umap.length];
@@ -54,8 +65,10 @@ public class UMapHelper {
 
 
     public static ScatterPlotModel createChart2(NexusTableModel ntm, UMapXYChartConfig conf) {
-        double[][] Sim = XYChartCreator.evaluateSimilarityDS(conf.dataset,conf.xCol,ntm.getAllRows());
-        double[][] umap = UMapHelper.computeUMap(ntm.getAllRows().toArray(new String[0]),Sim);
+        //double[][] Sim = XYChartCreator.evaluateSimilarityDS(conf.dataset,conf.xCol,ntm.getAllRows());
+        //double[][] umap = UMapHelper.computeUMap(ntm.getAllRows().toArray(new String[0]),Sim);
+        double[][] Sim = XYChartCreator.evaluateSimilarityDS(conf.dataset,conf.xCol,ntm.getVisibleRows());
+        double[][] umap = UMapHelper.computeUMap(ntm.getVisibleRows().toArray(new String[0]),Sim);
 
 
         double umapx[] = new double[umap.length];
@@ -71,8 +84,9 @@ public class UMapHelper {
         DefaultKeyedValuesDataset data_z = new DefaultKeyedValuesDataset();
 
         Random r = new Random();
-        for(int zi=0;zi<ntm.getAllRows().size();zi++) {
-            keys_a.add(ntm.getAllRows().get(zi));
+        for(int zi=0;zi<ntm.getVisibleRows().size();zi++) {
+            //keys_a.add(ntm.getAllRows().get(zi));
+            keys_a.add(ntm.getVisibleRows().get(zi));
             data_x.setValue(keys_a.get(zi),umapx[zi]);
             data_y.setValue(keys_a.get(zi),umapy[zi]);
             //data_z.setValue(keys_a.get(zi), data_x.getValue(keys_a.get(zi)).doubleValue() + data_y.getValue(keys_a.get(zi)).doubleValue() );
@@ -131,6 +145,58 @@ public class UMapHelper {
         umap.setThreads(4);                  // use > 1 to enable parallelism
         final double[][] result = umap.fitTransform(dist);
         return result;
+    }
+
+
+
+    public static void main(String args[]) {
+
+        FlatLightLaf.setup();
+        try {
+            UIManager.setLookAndFeel( new FlatLightLaf() );
+        } catch( Exception ex ) {
+            System.err.println( "Failed to initialize LaF" );
+        }
+
+        String fa = "C:\\datasets\\hitexp_examples\\orexin\\structures_a.txt";
+        List<StereoMolecule> mols = new ArrayList<>();
+
+        try(BufferedReader in = new BufferedReader(new FileReader(fa))) {
+            String line = null;
+            while( (line=in.readLine()) != null ) {
+                mols.add(ChemUtils.parseIDCode(line));
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        NexusTableModel ntm = new NexusTableModel();
+        List<String[]> mols_a = new ArrayList<>();
+        for(int zi=0;zi<mols.size();zi++) { mols_a.add(new String[]{"Mol-"+String.format("%04d",zi),mols.get(zi).getIDCode()}); }
+        DefaultStructureDataProvider sdp = new DefaultStructureDataProvider(mols_a);
+        ntm.addNexusColumn(sdp,new StructureColumn(true));
+
+        NexusTable nt = new NexusTable(ntm);
+        JScrollPane jsp = new JScrollPane(nt);
+        ntm.updateFiltering();
+        ntm.setAllRows(mols_a.stream().map(si -> si[0] ).collect(Collectors.toList()));
+
+        JFrame fi = new JFrame();
+        fi.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+
+        fi.getContentPane().setLayout(new BorderLayout());
+        fi.getContentPane().add(jsp);
+
+        fi.setSize(800,600);
+        fi.setVisible(true);
+
+        nt.setRowHeight(100);
+
+        CreateClusteringToolAction ccta = new CreateClusteringToolAction("Clustering",ntm,sdp,null);
+        ccta.actionPerformed(new ActionEvent(fi,13,"GO!"));
+
     }
 
 

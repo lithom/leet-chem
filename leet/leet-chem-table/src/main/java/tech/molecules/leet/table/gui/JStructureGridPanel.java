@@ -6,6 +6,7 @@ import com.actelion.research.gui.JStructureView;
 import net.mahdilamb.colormap.Colormap;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import tech.molecules.leet.table.NDataProvider;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
@@ -19,16 +20,16 @@ import java.util.stream.Collectors;
 
 public class JStructureGridPanel extends JPanel {
 
-    public JStructureGridPanel(List<String> idcs, int x, int y) {
+    public JStructureGridPanel(List<NDataProvider.StructureWithID> idcs, int x, int y) {
         this.setData(idcs, x, y,null, new ArrayList<>(),new ArrayList<>());
     }
 
-    public List<String> getSelected() {
-        List<String> la = this.panels.stream().filter( pi -> pi.isSelected() ).map( pi -> pi.getStructure() ).collect(Collectors.toList());
+    public List<NDataProvider.StructureWithID> getSelected() {
+        List<NDataProvider.StructureWithID> la = this.panels.stream().filter(pi -> pi.isSelected() ).map(pi -> pi.getStructure() ).collect(Collectors.toList());
         return new ArrayList<>(la);
     }
 
-    public JStructureGridPanel(List<String> idcs, int x, int y, Map<String,List<Color>> color_annotations, List<Pair<String,Map<String,String>>> annotations, List<Triple<String, Map<String,Double>, Colormap>> numerical_data) {
+    public JStructureGridPanel(List<NDataProvider.StructureWithID> idcs, int x, int y, Map<String,List<Color>> color_annotations, List<Pair<String,Map<String,String>>> annotations, List<Triple<String, Map<String,Double>, Colormap>> numerical_data) {
         this.setData(idcs, x, y,color_annotations,annotations,numerical_data);
     }
 
@@ -47,15 +48,15 @@ public class JStructureGridPanel extends JPanel {
 
     public JPanel getThisJPanel() {return this;}
 
-    public void setData(List<String> idcs, int x, int y, Map<String,List<Color>> color_annotations, List<Pair<String,Map<String,String>>> annotations, List<Triple<String, Map<String,Double>, Colormap>> numerical_data) {
+    public void setData(List<NDataProvider.StructureWithID> structures, int x, int y, Map<String,List<Color>> color_annotations, List<Pair<String,Map<String,String>>> annotations, List<Triple<String, Map<String,Double>, Colormap>> numerical_data) {
         this.removeAll();
         IDCodeParser icp = new IDCodeParser();
         this.setLayout(new GridLayout(x, y));
         this.panels.clear();
-        for (int zi = 0; zi < Math.min(idcs.size(), x * y); zi++) {
+        for (int zi = 0; zi < Math.min(structures.size(), x * y); zi++) {
             StereoMolecule mi = new StereoMolecule();
             try {
-                icp.parse(mi, idcs.get(zi));
+                icp.parse(mi, structures.get(zi).structure[0],structures.get(zi).structure[1]);
             } catch (Exception ex) {
                 System.out.println("[ERROR] problem with idcode?..");
             }
@@ -63,10 +64,10 @@ public class JStructureGridPanel extends JPanel {
             //jva.setOpaque(false);
 
             jva.setBackground(new Color(255,255,255,0));
-            JGridPanel gp = new JGridPanel(this,idcs.get(zi),jva);
+            JGridPanel gp = new JGridPanel(this,structures.get(zi),jva);
 
             if(color_annotations!=null) {
-                List<Color> lc2 = color_annotations.get(idcs.get(zi));
+                List<Color> lc2 = color_annotations.get(structures.get(zi));
                 if( lc2!=null && lc2.size()>0) {
                     //Color c2 = lc2.get(0);
                     //Color c2p = c2.brighter().brighter();
@@ -78,7 +79,7 @@ public class JStructureGridPanel extends JPanel {
 
             this.panels.add(gp);
             this.add(gp);
-            String fsi = idcs.get(zi);
+            NDataProvider.StructureWithID fsi = structures.get(zi);
             jva.addMouseListener(new MouseAdapter(){
                 @Override
                 public void mouseClicked(MouseEvent e) {
@@ -117,7 +118,7 @@ public class JStructureGridPanel extends JPanel {
      *
      * @return null if mouse not over component
      */
-    public String getStructureMouseOver() {
+    public NDataProvider.StructureWithID getStructureMouseOver() {
         return this.mouseOverStructure;
 //        for(JGridPanel pa : this.panels) {
 //            if(pa.isMouseOver()) {
@@ -138,27 +139,28 @@ public class JStructureGridPanel extends JPanel {
     }
 
 
-    private String mouseOverStructure;
-    private void setMouseOverStructure(String s) {
+    private NDataProvider.StructureWithID mouseOverStructure;
+    private void setMouseOverStructure(NDataProvider.StructureWithID s) {
         this.mouseOverStructure = s;
     }
 
     public static class JGridPanel extends JPanel {
 
         private JStructureGridPanel parent;
-        private String structure;
+        private NDataProvider.StructureWithID structure;
         private boolean selected = false;
         //private boolean mouseOver = false;
         private JComponent component;
-        public JGridPanel(JStructureGridPanel parent, String structure, JComponent c) {
+        public JGridPanel(JStructureGridPanel parent, NDataProvider.StructureWithID structure, JComponent c) {
             this.parent = parent;
             this.structure = structure;
             this.component = c;
             this.setLayout(new BorderLayout());
             this.add(c,BorderLayout.CENTER);
 
-            // add annotation panels:
+            this.select(false);
 
+            // add annotation panels:
 
             this.addMouseListener( new MouseListener() {
                 @Override
@@ -244,7 +246,7 @@ public class JStructureGridPanel extends JPanel {
                 this.setBorder(new LineBorder(Color.red.darker(),2));
             }
             else{
-                this.setBorder(new LineBorder(Color.black,1));
+                this.setBorder(new LineBorder(Color.white,2));
             }
             this.repaint();
         }
@@ -256,7 +258,7 @@ public class JStructureGridPanel extends JPanel {
         public boolean isSelected() { return this.selected; }
 
         //public boolean isMouseOver() { return this.mouseOver; }
-        public String  getStructure() {return this.structure; }
+        public NDataProvider.StructureWithID  getStructure() {return this.structure; }
 
         private List<Color> backgroundColors;
         public void setBackgroundColors(List<Color> ci) {

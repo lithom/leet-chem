@@ -1,17 +1,24 @@
 package tech.molecules.leet.table.gui;
 
-import com.actelion.research.chem.IDCodeParser;
-import com.actelion.research.chem.StereoMolecule;
+import com.actelion.research.chem.*;
 import com.actelion.research.chem.coords.CoordinateInventor;
+import com.actelion.research.chem.reaction.Reaction;
 import com.actelion.research.chem.reaction.ReactionEncoder;
+import com.actelion.research.gui.generic.GenericDepictor;
+import com.actelion.research.gui.generic.GenericDrawContext;
+import com.actelion.research.gui.generic.GenericRectangle;
+import com.actelion.research.gui.hidpi.HiDPIHelper;
+import com.actelion.research.gui.swing.SwingDrawContext;
 import com.actelion.research.gui.table.ChemistryRenderPanel;
+import tech.molecules.leet.table.NexusTable;
 
 import javax.swing.*;
+import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 
-public class LeetChemistryCellRenderer implements ListCellRenderer, TableCellRenderer {
-    private ChemistryRenderPanel mRenderPanel;
+public class LeetChemistryCellRenderer extends AbstractCellEditor implements TableCellEditor, ListCellRenderer, TableCellRenderer {
+    private MyChemistryRenderPanel  mRenderPanel;
     private boolean					mIsEnabled,mAlternateBackground;
 
     public LeetChemistryCellRenderer() {
@@ -19,7 +26,7 @@ public class LeetChemistryCellRenderer implements ListCellRenderer, TableCellRen
     }
 
     public LeetChemistryCellRenderer(Dimension preferredSize) {
-        mRenderPanel = new ChemistryRenderPanel();
+        mRenderPanel = new MyChemistryRenderPanel();
         if (preferredSize != null)
             mRenderPanel.setPreferredSize(preferredSize);
     }
@@ -28,22 +35,47 @@ public class LeetChemistryCellRenderer implements ListCellRenderer, TableCellRen
         mAlternateBackground = b;
     }
 
+    private Object lastValue = null;
+
+    @Override
+    public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+        this.lastValue = value;
+        return getTableCellRendererComponent(table,value,isSelected,false,row,column);
+    }
+
+    @Override
+    public Object getCellEditorValue() {
+        return lastValue;
+    }
+
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean hasFocus) {
         mIsEnabled = list.isEnabled();
-        return getCellRendererComponent(value, isSelected, hasFocus, index);
+        return getCellRendererComponent(null, value, isSelected, hasFocus, index);
     }
 
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,int row, int col) {
         mIsEnabled = table.isEnabled();
-        return getCellRendererComponent(value, isSelected, hasFocus, row);
+        return getCellRendererComponent(table, value, isSelected, hasFocus, row);
     }
 
-    private Component getCellRendererComponent(Object value, boolean isSelected, boolean hasFocus, int row) {
+    private Component getCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row) {
 //        if (LookAndFeelHelper.isAqua()
 //                || LookAndFeelHelper.isQuaQua())
 //            mRenderPanel.setOpaque(true);
 //        else
 //            mRenderPanel.setOpaque(false);
+        JPanel pi = null;
+        if(table instanceof NexusTable) {
+            NexusTable nt = ((NexusTable) table);
+            //System.out.println("mkay");
+            pi = NexusTable.getDefaultEditorBackgroundPanel(nt,nt.getTableModel().getHighlightingAndSelectionStatus(row));
+        }
+        else {
+            pi = new JPanel();
+        }
+        pi.setLayout(new BorderLayout());
+        pi.add(mRenderPanel,BorderLayout.CENTER);
+
         mRenderPanel.setOpaque(false);
 
         if (value == null) {
@@ -93,13 +125,23 @@ public class LeetChemistryCellRenderer implements ListCellRenderer, TableCellRen
             mRenderPanel.setChemistry(value);
         }
 
-        mRenderPanel.setAlternateBackground(mAlternateBackground && (row & 1) == 1);
-        mRenderPanel.setSelected(isSelected);
-        mRenderPanel.setFocus(hasFocus);
-        if(!mIsEnabled) {
-            mRenderPanel.setOverruleForeground(Color.GRAY);
-        }
+        //mRenderPanel.setAlternateBackground(mAlternateBackground && (row & 1) == 1);
+        //mRenderPanel.setSelected(isSelected);
+        //mRenderPanel.setFocus(hasFocus);
+        //if(!mIsEnabled) {
+        //    mRenderPanel.setOverruleForeground(Color.GRAY);
+        //}
         //mRenderPanel.setOverruleForeground(mIsEnabled ? null : Color.GRAY);
-        return mRenderPanel;
+        //return mRenderPanel;
+        return pi;
     }
+
+
+    private class MyChemistryRenderPanel extends ChemistryRenderPanel {
+        @Override
+        public void setSelected(boolean isSelected) {
+            // dont do anything..
+        }
+    }
+
 }
