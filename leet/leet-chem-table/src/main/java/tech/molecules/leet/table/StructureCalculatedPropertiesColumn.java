@@ -5,6 +5,8 @@ import com.actelion.research.chem.Molecule;
 import com.actelion.research.chem.PropertyCalculator;
 import com.actelion.research.chem.StereoMolecule;
 import com.actelion.research.gui.DefaultCompoundCollectionModel;
+import tech.molecules.leet.chem.mutator.properties.ChemPropertyCounts;
+import tech.molecules.leet.table.gui.DispatchingMouseAdapter;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
@@ -16,26 +18,35 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class StructureCalculatedPropertiesColumn implements NColumn<NStructureDataProvider, StructureCalculatedPropertiesColumn.CalculatedProperties> {
 
-    public static class CalculatedProperties {
-        public final int hac;
-        public final int rbs;
-        public final int acc;
-        public final int don;
+    private NStructureDataProvider dp;
 
-        public CalculatedProperties(int hac, int rbs, int acc, int don) {
-            this.hac = hac;
-            this.rbs = rbs;
-            this.acc = acc;
-            this.don = don;
+    public static class CalculatedProperties {
+        /**
+         * indeces are positions in ChemPropertyCounts.COUNTS_ALL
+         */
+        public Map<Integer,Integer> counts = new HashMap<>();
+
+        public CalculatedProperties(Map<Integer,Integer> counts) {
+            this.counts = new HashMap<>(counts);
         }
     }
 
+    @Override
+    public void setDataProvider(NStructureDataProvider dataprovider) {
+        this.dp = dataprovider;
+    }
 
     @Override
-    public void startAsyncInitialization(NexusTableModel model, NStructureDataProvider dataprovider) {
+    public NStructureDataProvider getDataProvider() {
+        return this.dp;
+    }
+
+    @Override
+    public void startAsyncReinitialization(NexusTableModel model) {
 
     }
 
@@ -49,23 +60,67 @@ public class StructureCalculatedPropertiesColumn implements NColumn<NStructureDa
     }
 
     @Override
-    public CalculatedProperties getData(NStructureDataProvider data, String rowid) {
-        NStructureDataProvider.StructureWithID sid = data.getStructureData(rowid);
+    public CalculatedProperties getData(String rowid) {
+        NStructureDataProvider.StructureWithID sid = dp.getStructureData(rowid);
         StereoMolecule m = new StereoMolecule();
         IDCodeParser icp = new IDCodeParser();
         icp.parse(m,sid.structure[0],sid.structure[1]);
         m.ensureHelperArrays(Molecule.cHelperCIP);
-        PropertyCalculator pc = new PropertyCalculator(m);
-        return new CalculatedProperties(m.getAtoms(),m.getRotatableBondCount(),pc.getAcceptorCount(),pc.getDonorCount());
+
+        Map<Integer,Integer> counts = new HashMap<>();
+        for(int zi=0;zi< ChemPropertyCounts.COUNTS_ALL.length;zi++) {
+            counts.put( zi, ChemPropertyCounts.COUNTS_ALL[zi].evaluator.apply(m) );
+        }
+        return new CalculatedProperties(counts);
+    }
+
+    public StructureCalculatedPropertiesColumn getThisColumn() {
+        return this;
     }
 
     @Override
     public Map<String, NumericalDatasource<NStructureDataProvider>> getNumericalDataSources() {
-        return new HashMap<>();
+        Map<String,NumericalDatasource<NStructureDataProvider>> nds = new HashMap<>();
+        for(int zi=0;zi< ChemPropertyCounts.COUNTS_ALL.length;zi++) {
+            nds.put( ChemPropertyCounts.COUNTS_ALL[zi].name, new ChemPropertyCountDatasource(ChemPropertyCounts.COUNTS_ALL[zi]) );
+        }
+        return nds;
     }
 
-    @Override
-    public double evaluateNumericalDataSource(NStructureDataProvider dp, String datasource, String rowid) {
+    public class ChemPropertyCountDatasource implements NumericalDatasource<NStructureDataProvider> {
+        private ChemPropertyCounts.ChemPropertyCount ci;
+
+        public ChemPropertyCountDatasource(ChemPropertyCounts.ChemPropertyCount ci) {
+            this.ci = ci;
+        }
+
+        @Override
+        public String getName() {
+            return this.ci.name;
+        }
+
+        @Override
+        public NColumn<NStructureDataProvider, ?> getColumn() {
+            return getThisColumn();
+        }
+
+        @Override
+        public boolean hasValue(String row) {
+            return true;
+        }
+
+        @Override
+        public double getValue(String row) {
+            StereoMolecule m = new StereoMolecule();
+            IDCodeParser icp = new IDCodeParser();
+            icp.parse(m,dp.getStructureData(row).structure[0],dp.getStructureData(row).structure[1]);
+            m.ensureHelperArrays(Molecule.cHelperCIP);
+            return this.ci.evaluator.apply(m);
+        }
+    }
+
+
+    public static double evaluateNumericalDataSource(NStructureDataProvider dp, String datasource, String rowid) {
         StereoMolecule mi = new StereoMolecule();
         IDCodeParser icp = new IDCodeParser();
         icp.parse(mi,dp.getStructureData(rowid).structure[0],dp.getStructureData(rowid).structure[1]);
@@ -108,7 +163,7 @@ public class StructureCalculatedPropertiesColumn implements NColumn<NStructureDa
 
 
 
-    public static class CalcPropertiesRenderer extends JPanel implements TableCellEditor , TableCellRenderer {
+    public static class CalcPropertiesRenderer extends AbstractCellEditor implements TableCellEditor , TableCellRenderer {
 
 
         public Component getTableCellRendererComponent (JTable table,
@@ -118,46 +173,61 @@ public class StructureCalculatedPropertiesColumn implements NColumn<NStructureDa
                                                         int row,
                                                         int column)
         {
+            //JPanel pi = new JPanel();
+            NexusTable nt = (NexusTable) table;
+            NexusTable.JCellBackgroundPanel pi = NexusTable.getDefaultEditorBackgroundPanel(nt,nt.getTableModel().getHighlightingAndSelectionStatus(row));
+
             // As a safety check, it's always good to verify the type of
             // value.
 
             if(value == null) {
-                this.removeAll();
+                pi.removeAll();
             }
 
-            if (value instanceof CalculatedProperties)
-            {
+            //if(value != null) {
+                //JLabel jl = new JLabel("TEST!!");
+                //pi.setLayout(new FlowLayout()); pi.add(jl);
+            //    return pi;
+            //}
+
+            if (value instanceof CalculatedProperties) {
                 //String s = (String) value;
                 CalculatedProperties a = (CalculatedProperties) value;
 
-                this.removeAll();
-                this.setLayout( new GridLayout(4,1) );
+                pi.removeAll();
+                pi.setLayout(new GridLayout(4, 4));
 
 
-                JColorLabel pa = new JColorLabel( String.format("hac= %d",a.hac),a.hac,0,40);
-                JColorLabel pb = new JColorLabel( String.format("rbs= %d",a.rbs),a.rbs,0,16);
-                JLabel pc = new JColorLabel( String.format("acc %d",a.acc),a.acc,0,10);
-                JLabel pd = new JColorLabel( String.format("don %d",a.don),a.don,0,10);
+                for (int zi = 0; zi < ChemPropertyCounts.COUNTS_ALL.length; zi++) {
+                    JColorLabel pa = new JColorLabel(ChemPropertyCounts.COUNTS_ALL[zi].shortName+"="+String.format("%d", a.counts.get(zi)), a.counts.get(zi), 0, 40);
 
-                this.add(pa);this.add(pb);
-                this.add(pc);this.add(pd);
+                    pi.add(pa);
 
-                MouseAdapter mli = new MouseAdapter() {
-                    @Override
-                    public void mouseEntered(MouseEvent e) {
-                        if( e.getComponent() instanceof JComponent) {
-                            ((JComponent)e.getComponent()).setBorder(new LineBorder(Color.blue,1));
+                    //Supplier<Component> componentSupplier = (pi!=null) ? () -> pi : ()->getParent();
+                    Supplier<Component> componentSupplier = () -> pi.getParent();
+
+                    DispatchingMouseAdapter mli = new DispatchingMouseAdapter(componentSupplier) {
+                        @Override
+                        public void mouseEntered(MouseEvent e) {
+//                            if (e.getComponent() instanceof JComponent) {
+//                                ((JComponent) e.getComponent()).setBorder(new LineBorder(Color.blue, 1));
+//                            }
+                            pa.setBorder(new LineBorder(Color.blue, 1));
+                            super.mouseEntered(e);
                         }
-                    }
-                    @Override
-                    public void mouseExited(MouseEvent e) {
-                        ((JComponent)e.getComponent()).setBorder(null);
-                    }
-                };
-                //pa.addMouseListener(mli);
-                //pb.addMouseListener(mli);
-                //pc.addMouseListener(mli);
-                //pd.addMouseListener(mli);
+
+                        @Override
+                        public void mouseExited(MouseEvent e) {
+                            //((JComponent) e.getComponent()).setBorder(null);
+                            pa.setBorder(null);
+                            super.mouseExited(e);
+                        }
+                    };
+                    pa.addMouseListener(mli);
+                    //pa.addMouseListener(mli);
+                    //pb.addMouseListener(mli);
+                    //pc.addMouseListener(mli);
+                    //pd.addMouseListener(mli);
 
 //            if (s.equals ("yellow"))
 //                setBackground (Color.yellow);
@@ -167,11 +237,12 @@ public class StructureCalculatedPropertiesColumn implements NColumn<NStructureDa
 //            setHorizontalAlignment (CENTER);
 //            // Assign the text to the JLabel component.
 //            setText (s);
+                }
             }
             // Return a reference to the ColorRenderer (JLabel subclass)
             // component. Behind the scenes, that component will be used to
             // paint the pixels.
-            return this;
+            return pi;
         }
 
         private Object lastValue = null;
@@ -186,41 +257,6 @@ public class StructureCalculatedPropertiesColumn implements NColumn<NStructureDa
             return this.lastValue;
         }
 
-        @Override
-        public boolean isCellEditable(EventObject anEvent) {
-            return true;
-        }
-
-        @Override
-        public boolean shouldSelectCell(EventObject anEvent) {
-            return true;
-//            if( anEvent instanceof MouseEvent) {
-//                MouseEvent me = (MouseEvent) anEvent;
-//                return true;
-//            }
-//            return false;
-        }
-
-        @Override
-        public boolean stopCellEditing() {
-            return false;
-        }
-
-        @Override
-        public void cancelCellEditing() {
-
-        }
-
-        @Override
-        public void addCellEditorListener(CellEditorListener l) {
-
-        }
-
-        @Override
-        public void removeCellEditorListener(CellEditorListener l) {
-
-        }
-
         public static class JColorLabel extends JLabel {
             public JColorLabel(String text, double val, double va, double vb) {
                 super(text);
@@ -233,6 +269,7 @@ public class StructureCalculatedPropertiesColumn implements NColumn<NStructureDa
                 Color ca = new Color( Color.HSBtoRGB(hue, 0.6f, 0.85f ) );
                 Color c = new Color( ca.getRed() , ca.getGreen() , ca.getBlue() , 40 );
                 this.setOpaque(true);
+                //this.setOpaque(false);
                 this.setBackground(c);
             }
         }

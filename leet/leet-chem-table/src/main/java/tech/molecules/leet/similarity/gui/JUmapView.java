@@ -1,10 +1,13 @@
 package tech.molecules.leet.similarity.gui;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.jfree.chart.renderer.PaintScale;
 import tech.molecules.leet.clustering.ClusterAppModel;
+import tech.molecules.leet.table.NClassification;
 import tech.molecules.leet.table.NexusTableModel;
 import tech.molecules.leet.table.chart.JFreeChartScatterPlot;
 import tech.molecules.leet.table.chart.JFreeChartScatterPlot2;
+import tech.molecules.leet.table.chart.JScatterPlotConfigurationMenuBar;
 import tech.molecules.leet.table.chart.ScatterPlotModel;
 
 import javax.swing.*;
@@ -22,11 +25,13 @@ public class JUmapView extends JPanel { //implements JLinkGlassPane.LinkProvider
     // View configuration:
     private boolean showClusteringAnnotations = true;
 
+    private JPanel jp_top;
+    private JPanel jp_plots;
+    private JMenuBar jmb_main;
 
     public JUmapView(UmapViewModel model) {
         this.model = model;
         this.reinit();
-
         //this.initContextMenu();
     }
 
@@ -38,14 +43,26 @@ public class JUmapView extends JPanel { //implements JLinkGlassPane.LinkProvider
 
         List<ScatterPlotModel> plots_n = this.model.createPlots();
 
-        this.plots.clear();
+        this.jp_top = new JPanel();
+        this.jp_plots = new JPanel();
+        this.setLayout(new BorderLayout());
 
-        this.setLayout(new GridLayout(2, 2));
+        this.jmb_main = new JMenuBar();
+
+        this.add(jp_plots,BorderLayout.CENTER);
+        this.add(jp_top,BorderLayout.NORTH);
+
+        this.jp_top.setLayout(new BorderLayout());
+        this.jp_top.add(this.jmb_main,BorderLayout.CENTER);
+
+
+        jp_plots.setLayout(new GridLayout(2, 2));
         for(int zi=0;zi<4;zi++) {
-            JFreeChartScatterPlot2 jfcsp = new JFreeChartScatterPlot2(plots_n.get(zi));
+            JFreeChartScatterPlot2 jfcsp = new JFreeChartScatterPlot2(plots_n.get(zi),false);
             this.plots.add(jfcsp);
-            this.add(this.plots.get(zi));
+            this.jp_plots.add(this.plots.get(zi));
         }
+        JScatterPlotConfigurationMenuBar.initMenuBar(this.jmb_main,model.getNexusTableModel(),plots.stream().map(pi -> pi.getModel()).collect(Collectors.toList()));
 
         JFreeChartScatterPlot.ScatterPlotListener listener = new JFreeChartScatterPlot.ScatterPlotListener() {
             @Override
@@ -73,12 +90,15 @@ public class JUmapView extends JPanel { //implements JLinkGlassPane.LinkProvider
             public void selectionChanged(NexusTableModel.NexusSelectionChangedEvent e) {
                 for(JFreeChartScatterPlot2 pi : plots) {
                     pi.getModel().setSelection(e.getRows());
+                    pi.getModel().setHighlightNNearestNeighbors(-1);
                 }
             }
 
             @Override
             public void highlightingChanged(NexusTableModel.NexusHighlightingChangedEvent e) {
-
+                for(JFreeChartScatterPlot2 pi : plots) {
+                    pi.getModel().setHighlight(new HashSet<>(e.getRows()),false);
+                }
             }
 
             @Override
@@ -100,9 +120,79 @@ public class JUmapView extends JPanel { //implements JLinkGlassPane.LinkProvider
 
         for(JFreeChartScatterPlot2 pi : this.plots) {
             pi.getModel().addScatterPlotListener(listener);
+            pi.getModel().setHighlightNNearestNeighbors(5);
+            pi.getModel().setWithoutAxisAndLegend();
         }
+
+        initContextMenu();
     }
 
+    public void initContextMenu() {
+        Action colorAnnotationsByClustering = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                List<Pair<Color, List<String>>> coloring = model.getClusterAppModel().getClusters().stream().map(si -> Pair.of(si.getColor(), (List<String>) (new ArrayList<>(si.getMembers())))).collect(Collectors.toList());
+                for (JFreeChartScatterPlot2 csp : plots) {
+                    csp.getModel().new SetClusteringAnnotationsAction("", coloring).actionPerformed(e);
+                }
+            }
+        };
+        colorAnnotationsByClustering.putValue(Action.NAME, "Set annotations by clustering");
+
+        Action colorByClustering = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //Map<String,Color> colors = new HashMap<>();
+                Map<ClusterAppModel.Cluster,Integer> clusterintmap = new HashMap<>();
+                Map<ClusterAppModel.Cluster,Color>  clustercolmap = new HashMap<>();
+                Map<String,Integer> clustervalues = new HashMap<>();
+                for(int zi=0;zi<model.getClusterAppModel().getClusters().size();zi++) {
+                    clusterintmap.put(model.getClusterAppModel().getClusters().get(zi),zi);
+                    clustercolmap.put(model.getClusterAppModel().getClusters().get(zi),model.getClusterAppModel().getClusters().get(zi).getColor());
+                }
+                for(String si : model.getNexusTableModel().getAllRows()) {
+                    List<NClassification.NClass> ci = model.getClusterAppModel().getClassification().getClassesForRow(si);
+                    if(ci.size()>0) {
+                        clustervalues.put( si , clusterintmap.get( ci.get(0) ) );
+                    }
+                    else {
+                        clustervalues.put( si , -1);
+                    }
+                }
+                PaintScale psc = new PaintScale() {
+                    @Override
+                    public double getLowerBound() {
+                        return -1.5;
+                    }
+                    @Override
+                    public double getUpperBound() {
+                        return model.getClusterAppModel().getClusters().size()+1;
+                    }
+                    @Override
+                    public Paint getPaint(double v) {
+                        if(v>=0) {return model.getClusterAppModel().getClusters().get( (int)v ).getColor(); }
+                        return Color.gray;
+                    }
+                };
+                for (JFreeChartScatterPlot2 csp : plots) {
+                    csp.getModel().setColorExpclicit( psc , clustervalues );
+                }
+            }
+        };
+        colorByClustering.putValue(Action.NAME, "Set color by clustering");
+
+        JPopupMenu jpop = new JPopupMenu();
+        //jpop.add(new JMenuItem("Select"));
+
+        jpop.add(new SelectionAction());
+        jpop.add(new UnselectAllAction());
+        jpop.add(new ActivateNeighborhoodHighlightingAction());
+        jpop.add(colorByClustering);
+
+        for(JFreeChartScatterPlot2 csp : plots) {
+            csp.getChartPanel().setPopupMenu(jpop);
+        }
+    }
 
     /*
      public void initContextMenu() {
@@ -248,5 +338,16 @@ public class JUmapView extends JPanel { //implements JLinkGlassPane.LinkProvider
             model.getClusterAppModel().setSelection( new ArrayList<>() );
         }
     }
+
+    private class ActivateNeighborhoodHighlightingAction extends AbstractAction {
+        public ActivateNeighborhoodHighlightingAction() {
+            super("Activate highlighting");
+        }
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            plots.forEach( pi -> pi.getModel().setHighlightNNearestNeighbors(5) );
+        }
+    }
+
 
 }

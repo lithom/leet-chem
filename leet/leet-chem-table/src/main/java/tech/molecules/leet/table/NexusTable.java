@@ -2,13 +2,19 @@ package tech.molecules.leet.table;
 
 import org.apache.commons.lang3.tuple.Pair;
 import tech.molecules.leet.table.gui.JFilterPanel;
+import tech.molecules.leet.table.gui.JNumericalDataSourceSelector;
+import tech.molecules.leet.util.ColorMapHelper;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class NexusTable extends JTable {
 
@@ -16,17 +22,38 @@ public class NexusTable extends JTable {
 
     private int mouseOverRow = -1;
     private int mouseOverCol = -1;
+    private String mouseOverKey = null;
 
+    private Set<String> currentSelection = new HashSet<>();
 
+    private NexusTableModel.SelectionType selectionTypeSelected;
+    private NexusTableModel.SelectionType selectionTypeMouseOver;
 
     public NexusTable(NexusTableModel model) {
         super(model);
         //this.model = model;
         //this.updateColumns();
+
+        this.selectionTypeSelected  = model.getSelectionType(NexusTableModel.SELECTION_TYPE_SELECTED);
+        this.selectionTypeMouseOver = model.getSelectionType(NexusTableModel.SELECTION_TYPE_MOUSE_OVER);
+
         this.setModel(model);
+        this.topPanel = new TopPanel();
         this.topPanel.setSliderManually(60);
 
-
+        this.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                Set<String> newCurrentSelection = new HashSet<>();
+                model.removeSelectionTypeFromRows(model.getSelectionType(NexusTableModel.SELECTION_TYPE_SELECTED), currentSelection);
+                for(int ri : getSelectedRows()) {
+                    String kri = model.getKeyAtVisiblePosition(ri);
+                    newCurrentSelection.add(kri);
+                }
+                model.addSelectionTypeToRows(selectionTypeSelected, Arrays.stream(getSelectedRows()).mapToObj( ri -> model.getKeyAtVisiblePosition(ri) ).collect(Collectors.toList()) );
+                currentSelection = newCurrentSelection;
+            }
+        });
 
         this.addMouseListener(new MouseAdapter() {
             @Override
@@ -46,16 +73,35 @@ public class NexusTable extends JTable {
             public void mouseMoved(MouseEvent e) {
                 int ci = getThisTable().columnAtPoint(e.getPoint());
                 int ri = getThisTable().rowAtPoint(e.getPoint());
+                System.out.println("mm: "+ri+"/"+ci);
+
+                // row changed? (row highlight)
+                if(ci>=0&&ri>=0) {
+                    String ki = model.getKeyAtVisiblePosition(ri);
+                    if(ki!=null && !ki.equals(mouseOverKey)) {
+                        // row changed, set new highlight
+                        //if(mouseOverRow>=0) {
+                        if(mouseOverKey!=null) {
+                            model.removeSelectionTypeFromRows(selectionTypeMouseOver,Collections.singletonList(mouseOverKey));
+                        }
+                        model.addSelectionTypeToRows(selectionTypeMouseOver,Collections.singletonList(ki));
+                        mouseOverKey = ki;
+                    }
+                }
+
                 if(ci>=0&&ri>=0) {
                     if(mouseOverCol!=ci || mouseOverRow!=ri) {
                         mouseOverCol = ci;
                         mouseOverRow = ri;
+                        System.out.println("set edit cell: "+ri+"/"+ci);
                         editCellAt(ri,ci);
                         repaint();
                     }
                 }
                 else {
                     if(mouseOverCol!=ci || mouseOverRow!=ri) {
+                        //model.removeSelectionColorFromRow(model.getKeyAtVisiblePosition(mouseOverRow),colorMouseOverRow);
+                        model.removeSelectionTypeFromRows(selectionTypeMouseOver,Collections.singletonList(model.getKeyAtVisiblePosition(mouseOverRow)));
                         mouseOverCol = -1;
                         mouseOverRow = -1;
                         editCellAt(ri,ci);
@@ -157,18 +203,44 @@ public class NexusTable extends JTable {
     }
 
     public class TopPanel extends JPanel {
+        private JMenuBar jmb = new JMenuBar();
         private JSlider slider = new JSlider(16,320);
         public TopPanel() {
             this.setLayout(new FlowLayout());
+            this.add(new JLabel("RowHeight "));
             this.add(slider);
+            this.add(jmb);
             slider.addChangeListener(e -> setRowHeight(slider.getValue()));
+            reinitMenu();
+            model.addNexusListener(new NexusTableModel.NexusTableModelListener() {
+                @Override
+                public void nexusTableStructureChanged() {
+                    reinitMenu();
+                }
+            });
         }
         public void setSliderManually(int size) {
             slider.setValue(size);
         }
+        private void reinitMenu() {
+            jmb.removeAll();
+            JMenu jm_color = new JMenu("Coloring");
+            if(getTableModel()!=null) {
+                JNumericalDataSourceSelector jndss = new JNumericalDataSourceSelector(new JNumericalDataSourceSelector.NumericalDataSourceSelectorModel(getTableModel()), JNumericalDataSourceSelector.SELECTOR_MODE.Menu);
+                jm_color.add(jndss.getMenu());
+                jndss.addSelectionListener(new JNumericalDataSourceSelector.SelectionListener() {
+                    @Override
+                    public void selectionChanged() {
+                        // set coloring according to values of nds
+                        model.setHighlightColors(ColorMapHelper.evaluateColorValues(null, getTableModel(), jndss.getModel().getSelectedDatasource()));
+                    }
+                });
+            }
+            jmb.add(jm_color);
+        }
     }
 
-    private TopPanel topPanel = new TopPanel();
+    private TopPanel topPanel;
 
     public TopPanel getTopPanel() {
         return topPanel;
@@ -203,6 +275,28 @@ public class NexusTable extends JTable {
         }
     }
 
+
+    private Color colorMouseOverRow = Color.cyan.darker();
+    private Color colorListSelection = Color.orange.darker().darker();
+
+    public void setMouseOverHighlightingEventColor(boolean useMouseOverHighlighting, Color col) {
+        if(useMouseOverHighlighting) {
+            colorMouseOverRow = col;
+        }
+        else {
+            colorMouseOverRow = null;
+        }
+    }
+    public void setListSelectionColor(Color col) {
+        this.colorListSelection = col;
+    }
+
+
+
+
+
+
+
     public static class DefaultEditorFromRenderer extends AbstractCellEditor implements TableCellEditor {
         TableCellRenderer ra;
         public DefaultEditorFromRenderer(TableCellRenderer ra) {
@@ -218,6 +312,78 @@ public class NexusTable extends JTable {
         @Override
         public Object getCellEditorValue() {
             return lastValue;
+        }
+    }
+
+    public static JCellBackgroundPanel getDefaultEditorBackgroundPanel(NexusTable nt, NexusTableModel.NexusHighlightingAndSelectionStatus status) {
+        return new JCellBackgroundPanel(nt,status);
+    }
+
+    public static class JCellBackgroundPanel extends JPanel {
+        private int SELECTION_LINE_SIZE   = 6;
+        private int SELECTION_LINE_LENGTH = 20;
+        private NexusTable nt;
+        private NexusTableModel.NexusHighlightingAndSelectionStatus status;
+        public JCellBackgroundPanel(NexusTable nt, NexusTableModel.NexusHighlightingAndSelectionStatus status) {
+            this.nt = nt;
+            this.status = status;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g;
+            if(this.status.highlightingColor!=null) {
+                Color cia = new Color(status.highlightingColor.getRed(), status.highlightingColor.getGreen(), status.highlightingColor.getBlue(), 80);
+                Color cib = new Color(status.highlightingColor.getRed(), status.highlightingColor.getGreen(), status.highlightingColor.getBlue(), 60);
+                GradientPaint gpa = new GradientPaint(0, 0, cia, 0, getHeight(), cib);
+                g2.setPaint(gpa);
+                g2.fillRect(0, 0, getWidth(), getHeight());
+            }
+            if(this.status.selectionColor!=null && this.status.selectionColor.size()>0) {
+                g2.setStroke(new BasicStroke(SELECTION_LINE_SIZE));
+                if(true) {
+                    if(status.selectionColor.size()==1) {
+                        Color cia = new Color(status.selectionColor.get(0).getColor().getRed(), status.selectionColor.get(0).getColor().getGreen(), status.selectionColor.get(0).getColor().getBlue(), 140);
+                        g2.setColor(cia);
+                        g2.drawLine(0,0,this.getWidth(),0);
+                        g2.drawLine(0,this.getHeight(),this.getWidth(),this.getHeight());
+                        g2.drawLine(0,0,0,this.getHeight());
+                        g2.drawLine(this.getWidth(),0,this.getWidth(),this.getHeight());
+                    }
+                    else {
+                        for (int zi = 0; (zi) * SELECTION_LINE_LENGTH < this.getWidth(); zi++) {
+                            int xa = SELECTION_LINE_LENGTH * zi;
+                            int xb = Math.min(this.getWidth(), xa + SELECTION_LINE_LENGTH);
+                            int cxi = zi % this.status.selectionColor.size();
+                            Color cia = new Color(status.selectionColor.get(cxi).getColor().getRed(), status.selectionColor.get(cxi).getColor().getGreen(), status.selectionColor.get(cxi).getColor().getBlue(), 140);
+                            g2.setColor(cia);
+                            // draw top and bottom line
+                            g2.drawLine(xa, 0, xb, 0);
+                            g2.drawLine(xa, this.getHeight(), xb, this.getHeight());
+                        }
+                        for (int zi = 0; (zi) * SELECTION_LINE_LENGTH < this.getHeight(); zi++) {
+                            int ya = SELECTION_LINE_LENGTH * zi;
+                            int yb = Math.min(this.getHeight(), ya + SELECTION_LINE_LENGTH);
+                            int cxi = zi % this.status.selectionColor.size();
+                            Color cia = new Color(status.selectionColor.get(cxi).getColor().getRed(), status.selectionColor.get(cxi).getColor().getGreen(), status.selectionColor.get(cxi).getColor().getBlue(), 140);
+                            g2.setColor(cia);
+                            // draw top and bottom line
+                            g2.drawLine(0, ya, 0, yb);
+                            g2.drawLine(this.getWidth(), ya, this.getWidth(), yb);
+                        }
+                    }
+                }
+                if(false) {
+                    for (int zi = 0; zi < this.status.selectionColor.size(); zi++) {
+                        Color cia = new Color(status.selectionColor.get(zi).getColor().getRed(), status.selectionColor.get(zi).getColor().getGreen(), status.selectionColor.get(zi).getColor().getBlue(), 180);
+                        g2.setColor(cia);
+                        // draw top and bottom line
+                        int cy = (int) ((zi) * (SELECTION_LINE_SIZE * 1.0));
+                        g2.drawLine(0, cy, this.getWidth(), cy);
+                        g2.drawLine(0, this.getHeight() - cy, this.getWidth(), this.getHeight() - cy);
+                    }
+                }
+            }
         }
     }
 

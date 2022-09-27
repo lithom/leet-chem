@@ -1,7 +1,9 @@
 package tech.molecules.leet.clustering;
 
 import org.apache.commons.lang3.tuple.Pair;
+import tech.molecules.leet.clustering.gui.JStructureSelectionPanel;
 import tech.molecules.leet.table.*;
+import tech.molecules.leet.util.ColorMapHelper;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -12,13 +14,18 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class ClusterAppModel implements NDataProvider.StructureDataProvider, NClassification {
+public class ClusterAppModel implements NDataProvider.StructureDataProvider, NClassification , NDataProvider.NClassificationProvider {
 
     private NStructureDataProvider dsp;
 
     @Override
     public NDataProvider.StructureWithID getStructureData(String rowid) {
         return dsp.getStructureData(rowid);
+    }
+
+    @Override
+    public NClassification getClassification() {
+        return this;
     }
 
     //@Override
@@ -55,13 +62,13 @@ public class ClusterAppModel implements NDataProvider.StructureDataProvider, NCl
 
     @Override
     public List<NClassification.NClass> getClassesForRow(String id) {
-        List<NClassification.NClass> clusters = new ArrayList<>();
-        for(NClassification.NClass ic : clusters) {
+        List<NClassification.NClass> i_clusters = new ArrayList<>();
+        for(Cluster ic : this.clusters) {
             if(ic.getMembers().contains(id)) {
-                clusters.add(ic);
+                i_clusters.add(ic);
             }
         }
-        return clusters;
+        return i_clusters;
     }
 
     private NexusTableModel ntm;
@@ -71,6 +78,8 @@ public class ClusterAppModel implements NDataProvider.StructureDataProvider, NCl
     private List<String> selection = new ArrayList<>();
     private List<Cluster> clusters = new ArrayList<>();
 
+
+    private NexusTableModel.SelectionType selectionTypMouseOver;
     public ClusterAppModel(NexusTableModel ntm, NStructureDataProvider dsp) {
         this.init(ntm);
         this.dsp = dsp;
@@ -79,6 +88,16 @@ public class ClusterAppModel implements NDataProvider.StructureDataProvider, NCl
     public void init(NexusTableModel ntm) {
         this.ntm = ntm;
         //this.ntm2 = ntm2;
+
+        // register mouse over type
+        boolean successRegisterType = false;
+        String typeName = "ClusterAppMouseOver";
+        int zi=0;
+        do {
+            String typeName_a = typeName+"_"+(++zi);
+            this.selectionTypMouseOver = new NexusTableModel.SelectionType(typeName_a,Color.orange);
+            successRegisterType = ntm.registerSelectionType(this.selectionTypMouseOver);
+        } while(!successRegisterType);
     }
 
     public void setSelection(List<String> s) {
@@ -103,8 +122,11 @@ public class ClusterAppModel implements NDataProvider.StructureDataProvider, NCl
 
     public ClassificationColumn getClassificationColumn() {
         ClassificationColumn cc = new ClassificationColumn(this);
-        cc.startAsyncInitialization(ntm,dsp);
-        cc.addCellPopupAction(new CreateClusterFromCellAction("Create cluster",cc,""));
+        cc.setDataProvider(this);
+        cc.startAsyncReinitialization(ntm);
+        //cc.startAsyncInitialization(ntm,dsp);
+        cc.addCellPopupAction(new CreateClusterFromCellAction("Create cluster from this row",cc,()->new ArrayList<>(ntm.getSelectionTypeRows(NexusTableModel.SELECTION_TYPE_MOUSE_OVER))));
+        cc.addCellPopupAction(new CreateClusterFromCellAction("Create cluster from selected rows",cc,()->new ArrayList<>(ntm.getSelectionTypeRows(NexusTableModel.SELECTION_TYPE_SELECTED))));
         return cc;
     }
 
@@ -130,6 +152,14 @@ public class ClusterAppModel implements NDataProvider.StructureDataProvider, NCl
 
     public List<String> getSelection() {
         return Collections.unmodifiableList(this.selection);
+    }
+
+    public Map<String, List<Color>> getClusterColoring() {
+        Map<String,List<Color>> ccm = new HashMap<>();
+        for(String ri : this.getNtm().getAllRows()) {
+            ccm.put( ri , this.getClassesForRow(ri).stream().map(nci -> nci.getColor()).collect(Collectors.toList()) );
+        }
+        return ccm;
     }
 
     public class Cluster implements NClassification.NClass {
@@ -349,7 +379,6 @@ public class ClusterAppModel implements NDataProvider.StructureDataProvider, NCl
     public ClusterListModel getClusterListModel() {
         return clusterListModel;
     }
-
     public ClusterTableModel getClusterTableModel() {
         return clusterTableModel;
     }
@@ -363,16 +392,35 @@ public class ClusterAppModel implements NDataProvider.StructureDataProvider, NCl
     }
 
     public class CreateClusterFromCellAction extends NColumn.CellSpecificAction {
-        public CreateClusterFromCellAction(String name, NColumn column, String rowid) {
+        public CreateClusterFromCellAction(String name, NColumn column, Supplier<List<String>> rowid) {
             super(name, column, rowid);
         }
         @Override
         public void actionPerformed(ActionEvent e) {
             try {
-                createCluster("C"+String.format("%.3d",Math.random()),Color.blue,Collections.singletonList(getRowId()));
+                createCluster("C"+String.format("%.3f",Math.random()), ColorMapHelper.createRandomColor(),getEvaluatedRowIds());
             } catch (ClusterHandlingException clusterHandlingException) {
                 clusterHandlingException.printStackTrace();
             }
+        }
+
+        @Override
+        public NColumn.CellSpecificAction createArmedVersion(String name, Supplier<List<String>> rowids) {
+            return new CreateClusterFromCellAction(name,this.getColumn(),rowids);
+        }
+    }
+
+    public class CreateClusterFromSelectedCellsAction extends AbstractAction {
+        public CreateClusterFromSelectedCellsAction(String name) {
+            super(name);
+        }
+        @Override
+        public void actionPerformed(ActionEvent e) {
+//            try {
+//                //createCluster("C"+String.format("%.3f",Math.random()),Color.blue,ntm.getHighlightingAndSelectionStatus());
+//            } catch (ClusterHandlingException clusterHandlingException) {
+//                clusterHandlingException.printStackTrace();
+//            }
         }
     }
 

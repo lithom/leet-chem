@@ -3,11 +3,18 @@ package tech.molecules.leet.chem;
 import com.actelion.research.chem.*;
 import com.actelion.research.chem.coords.CoordinateInventor;
 import com.actelion.research.gui.JStructureView;
+import com.actelion.research.gui.generic.GenericRectangle;
 import tech.molecules.leet.chem.shredder.SynthonShredder;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.List;
 
@@ -44,6 +51,19 @@ public class ChemUtils {
         mi.ensureHelperArrays(Molecule.cHelperCIP);
         return mi;
     }
+
+    public static StereoMolecule parseSmiles(String idc) {
+        SmilesParser sp = new SmilesParser();
+        StereoMolecule mi = new StereoMolecule();
+        try {
+            sp.parse(mi,idc);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        mi.ensureHelperArrays(Molecule.cHelperCIP);
+        return mi;
+    }
+
 
     public static List<StereoMolecule> parseIDCodes(List<String> idcodes) {
         List<StereoMolecule> parsed = new ArrayList<>();
@@ -285,6 +305,22 @@ public class ChemUtils {
         return bsi;
     }
 
+    public static boolean[] toBooleanArray(BitSet bs) {
+        boolean[] ba = new boolean[bs.size()];
+        for(int zi : bs.stream().toArray()) { ba[zi] = true; }
+        return ba;
+    }
+
+    public static boolean[] toBooleanArray(BitSet bs, int length) {
+        boolean[] ba = new boolean[length];
+        for(int zi : bs.stream().toArray()) {
+            if(zi < length) {
+                ba[zi] = true;
+            }
+        }
+        return ba;
+    }
+
     public static int[] toIntArray(BitSet bs) {
         return bs.stream().toArray();
     }
@@ -338,6 +374,62 @@ public class ChemUtils {
 
         m.ensureHelperArrays(Molecule.cHelperCIP);
         return m;
+    }
+
+    public static void createPNGFromStructure(StereoMolecule mi, String path, int width, int height) throws IOException, InvocationTargetException, InterruptedException {
+        BufferedImage bi = new BufferedImage(width,height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g_1 = bi.createGraphics();
+
+        g_1.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        //g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+        g_1.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+        g_1.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+
+        Depictor2D pic = new Depictor2D(mi);
+        GenericRectangle rect = new GenericRectangle(0,0,width,height);//new Rectangle2D.Double(0,0,width,height);
+        //pic.setTransformation(new DepictorTransformation(4,0,0));
+        pic.validateView(g_1,rect,Depictor2D.cModeInflateToMaxAVBL | Depictor2D.cDModeSuppressChiralText);
+
+        //pic.setDisplayMode(Depictor2D.cDModeNoTabus);
+        pic.paint(g_1);
+
+
+
+        GenericRectangle bounds = new GenericRectangle( pic.getBoundingRect().x , pic.getBoundingRect().y , pic.getBoundingRect().width,pic.getBoundingRect().height); ;
+        g_1.setColor(Color.blue);
+        g_1.drawRect((int)bounds.x,(int)bounds.y,(int)bounds.width,(int)bounds.height);
+
+        Depictor2D pic2 = new Depictor2D(mi);
+        //pic.setTransformation(new DepictorTransformation(4,0,0));
+
+        GenericRectangle bounds_extended = new GenericRectangle(0,0,bounds.width+1,bounds.height+1);
+
+        BufferedImage bi_2 = new BufferedImage((int)Math.ceil(bounds.width)+1,(int)Math.ceil(bounds.height)+1, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D    g_2  = bi_2.createGraphics();
+        g_2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g_2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+        g_2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+
+        pic2.validateView(g_2,bounds_extended,Depictor2D.cModeInflateToMaxAVBL | Depictor2D.cDModeSuppressChiralText);
+        //pic.setDisplayMode(Depictor2D.cDModeNoTabus);
+        pic2.paint(g_2);
+
+        // BufferedImage bi_2 = new BufferedImage((int)Math.ceil(bounds.width),(int)Math.ceil(bounds.height), BufferedImage.TYPE_INT_ARGB);
+        // Graphics2D    g_2  = bi_2.createGraphics();
+        // pic.validateView(g_2,bounds,Depictor2D.cModeInflateToMaxAVBL);
+        // pic.paint(g_2);
+
+        g_1.dispose();
+        g_2.dispose();
+        try {
+            if(true) {
+                ImageIO.write(bi, "png", new File(path.replace(".png","_a.png")));
+                ImageIO.write(bi_2, "png", new File(path));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     public static class DebugOutput {

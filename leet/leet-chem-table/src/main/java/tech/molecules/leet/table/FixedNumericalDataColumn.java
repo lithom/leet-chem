@@ -27,12 +27,22 @@ public class FixedNumericalDataColumn implements NColumn<NDataProvider.Structure
     }
 
     @Override
-    public void startAsyncInitialization(NexusTableModel model, NDataProvider.StructureDataProvider dataprovider) {
+    public void setDataProvider(NDataProvider.StructureDataProvider dataprovider) {
 
     }
 
     @Override
-    public Double getData(NDataProvider.StructureDataProvider data, String rowid) {
+    public NDataProvider.StructureDataProvider getDataProvider() {
+        return null;
+    }
+
+    @Override
+    public void startAsyncReinitialization(NexusTableModel model) {
+
+    }
+
+    @Override
+    public Double getData(String rowid) {
         return this.data.get(rowid);
     }
 
@@ -66,21 +76,14 @@ public class FixedNumericalDataColumn implements NColumn<NDataProvider.Structure
         }
 
         @Override
-        public boolean hasValue(NDataProvider.StructureDataProvider dp, String row) {
+        public boolean hasValue(String row) {
             return getThisColumn().data.containsKey(row);
         }
 
         @Override
-        public double getValue(NDataProvider.StructureDataProvider dp, String row) {
+        public double getValue(String row) {
             return getThisColumn().data.get(row);
         }
-    }
-
-    @Override
-    public double evaluateNumericalDataSource(NDataProvider.StructureDataProvider dp, String datasource, String rowid) {
-        Double di = this.data.get(rowid);
-        if(di==null) {return Double.NaN;}
-        return di;
     }
 
     @Override

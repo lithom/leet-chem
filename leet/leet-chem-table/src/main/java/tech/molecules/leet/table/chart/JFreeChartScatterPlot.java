@@ -66,10 +66,10 @@ public class JFreeChartScatterPlot extends JPanel {
         //this.initContextMenu(new ArrayList<>(),new ArrayList<>());
     }
 
-    public JFreeChartScatterPlot(NexusTableModel ntm,  NDataProvider dp_x , NDataProvider dp_y, NumericalDatasource nd_x, NumericalDatasource nd_y) {
+    public JFreeChartScatterPlot(NexusTableModel ntm,  NumericalDatasource nd_x, NumericalDatasource nd_y) {
         this.ntm = ntm;
-        this.dataX = new NumericalDatasourceKeyedDataset(ntm,nd_x,dp_x);
-        this.dataY = new NumericalDatasourceKeyedDataset(ntm,nd_y,dp_y);
+        this.dataX = new NumericalDatasourceKeyedDataset(ntm,nd_x);
+        this.dataY = new NumericalDatasourceKeyedDataset(ntm,nd_y);
         this.updatePlot();
     }
 
@@ -241,8 +241,9 @@ public class JFreeChartScatterPlot extends JPanel {
 
     public void setColoringByNexusColumn(NColumn nc) {
         Map<String,Double> col_values = new HashMap<>();
+        Map<String,NumericalDatasource> numds = nc.getNumericalDataSources();
         for(String si : this.ntm.getAllRows()) {
-            col_values.put( si , nc.evaluateNumericalDataSource(ntm.getDatasetForColumn(nc), "", si) );
+            col_values.put( si , numds.get("").getValue(si) );//nc.evaluateNumericalDataSource(ntm.getDatasetForColumn(nc), "", si) );
         }
         setColorValues(col_values);
     }
@@ -697,12 +698,12 @@ public class JFreeChartScatterPlot extends JPanel {
     public static class NumericalDatasourceKeyedDataset<U> implements KeyedValuesDataset {
         private NexusTableModel ntm;
         private NumericalDatasource<U>  nds;
-        private U dp;
+        //private U dp;
 
-        public NumericalDatasourceKeyedDataset(NexusTableModel ntm, NumericalDatasource<U> nds, U dp) {
+        public NumericalDatasourceKeyedDataset(NexusTableModel ntm, NumericalDatasource<U> nds) {
             this.ntm = ntm;
             this.nds = nds;
-            this.dp = dp;
+            //this.dp = dp;
             reinit();
         }
 
@@ -727,8 +728,8 @@ public class JFreeChartScatterPlot extends JPanel {
 
         @Override
         public Number getValue(Comparable comparable) {
-            if( nds.hasValue(dp,(String)comparable) ) {
-                return nds.getValue(dp,(String) comparable);
+            if( nds.hasValue((String)comparable) ) {
+                return nds.getValue((String) comparable);
             }
             return null;
         }
@@ -741,8 +742,8 @@ public class JFreeChartScatterPlot extends JPanel {
         @Override
         public Number getValue(int i) {
             String ri = ntm.getVisibleRows().get(i);
-            if( nds.hasValue(dp,ri) ) {
-                return nds.getValue(dp,ri);
+            if( nds.hasValue(ri) ) {
+                return nds.getValue(ri);
             }
             return null;
         }

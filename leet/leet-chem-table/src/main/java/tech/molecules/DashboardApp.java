@@ -94,7 +94,9 @@ public class DashboardApp
 
         NColumn.NexusRowFilter<NStructureDataProvider> filter_s1 = new NexusChemPropertiesFilter( (NColumn) col_s );
         NColumn.NexusRowFilter<NStructureDataProvider> filter_s2 = col_s.new SubstructureRowFilter();
-        col_s.startAsyncInitialization(ntable.getTableModel(),dataprovider);
+        //col_s.startAsyncInitialization(ntable.getTableModel(),dataprovider);
+        col_s.setDataProvider(dataprovider);
+        col_s.startAsyncReinitialization(ntable.getTableModel());
         model.addRowFilter(col_s,(NColumn.NexusRowFilter) filter_s1);
         model.addRowFilter(col_s,(NColumn.NexusRowFilter) filter_s2);
 

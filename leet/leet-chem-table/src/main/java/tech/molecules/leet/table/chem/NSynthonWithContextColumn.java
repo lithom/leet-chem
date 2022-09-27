@@ -15,6 +15,8 @@ public class NSynthonWithContextColumn implements NColumn<NSynthonWithContextDat
 
     private SYNTHON_COLUMN_MODE mode = SYNTHON_COLUMN_MODE.SHOW;
 
+    private NSynthonWithContextDataProvider dp;
+
     @Override
     public String getName() {
         return "Synthon";
@@ -22,10 +24,23 @@ public class NSynthonWithContextColumn implements NColumn<NSynthonWithContextDat
 
     //public void setMode(SYNTHON_COLUMN_MODE mode, StereoMolecule )
 
+
     @Override
-    public String getData(NSynthonWithContextDataProvider data, String rowid) {
-        return null;
+    public void setDataProvider(NSynthonWithContextDataProvider dataprovider) {
+        this.dp = dp;
     }
+
+    @Override
+    public NSynthonWithContextDataProvider getDataProvider() {
+        return this.dp;
+    }
+
+    @Override
+    public String getData(String rowid) {
+        return dp.getStructureData(rowid).toString();
+    }
+
+
 
     @Override
     public TableCellEditor getCellEditor() {
@@ -37,13 +52,9 @@ public class NSynthonWithContextColumn implements NColumn<NSynthonWithContextDat
         return new HashMap<>();
     }
 
-    @Override
-    public double evaluateNumericalDataSource(NSynthonWithContextDataProvider dp, String datasource, String rowid) {
-        return 0;
-    }
 
     @Override
-    public void startAsyncInitialization(NexusTableModel model, NSynthonWithContextDataProvider dataprovider) {
+    public void startAsyncReinitialization(NexusTableModel model) {
 
     }
 

@@ -35,7 +35,7 @@ public class JSimpleClusterView extends JPanel implements NexusTableModel.NexusT
 
     private void showCluster(NClassification.NClass c) {
         int lines = c.getMembers().size()/3+1;
-        List<String> structures = c.getMembers().stream().sorted().map(si -> this.dataProvider.getStructureData(si).structure[0] ).collect(Collectors.toList());
+        List<NDataProvider.StructureWithID> structures = c.getMembers().stream().sorted().map(si -> this.dataProvider.getStructureData(si) ).collect(Collectors.toList());
         this.jp_Structures.setData(structures,3,lines,null,null,null);
         this.jp_Structures.repaint();
     }

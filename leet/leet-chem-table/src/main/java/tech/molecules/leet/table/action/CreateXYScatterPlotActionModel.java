@@ -48,7 +48,7 @@ public class CreateXYScatterPlotActionModel {
         this.conf.getPlotPanel().setLayout(new BorderLayout());
         //this.conf.getPlotPanel().add(jla);
         //JFreeChartScatterPlot jfcsp = new JFreeChartScatterPlot(this.ntm,this.conf.getDp_x(),this.conf.getDp_y(), this.conf.getNd_x(),this.conf.getNd_y());
-        ScatterPlotModel spm = new ScatterPlotModel(this.ntm,this.conf.getDp_x(),this.conf.getDp_y(), this.conf.getNd_x(),this.conf.getNd_y());
+        ScatterPlotModel spm = new ScatterPlotModel(this.ntm, this.conf.getNd_x(),this.conf.getNd_y());
         spm.setHighlightNNearestNeighbors(1);
         JFreeChartScatterPlot2 jfcsp = new JFreeChartScatterPlot2(spm);
         this.conf.getPlotPanel().add(jfcsp,BorderLayout.CENTER);

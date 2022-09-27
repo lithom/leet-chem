@@ -7,12 +7,24 @@ import java.util.List;
 import java.util.Map;
 
 public class StringColumn implements NColumn<NDataProvider.NStringDataProvider,String> {
-
     private String name;
 
+    private NDataProvider.NStringDataProvider dp;
     public StringColumn(String name){
         this.name = name;
     }
+
+    @Override
+    public void setDataProvider(NDataProvider.NStringDataProvider dataprovider) {
+        this.dp = dataprovider;
+    }
+
+    @Override
+    public NDataProvider.NStringDataProvider getDataProvider() {
+        return this.dp;
+    }
+
+
 
     @Override
     public String getName() {
@@ -20,8 +32,8 @@ public class StringColumn implements NColumn<NDataProvider.NStringDataProvider,S
     }
 
     @Override
-    public String getData(NDataProvider.NStringDataProvider data, String rowid) {
-        return data.getStringData(rowid);
+    public String getData(String rowid) {
+        return dp.getStringData(rowid);
     }
 
     @Override
@@ -35,12 +47,7 @@ public class StringColumn implements NColumn<NDataProvider.NStringDataProvider,S
     }
 
     @Override
-    public double evaluateNumericalDataSource(NDataProvider.NStringDataProvider dp, String datasource, String rowid) {
-        return 0;
-    }
-
-    @Override
-    public void startAsyncInitialization(NexusTableModel model, NDataProvider.NStringDataProvider dataprovider) {
+    public void startAsyncReinitialization(NexusTableModel model) {
 
     }
 

@@ -20,20 +20,31 @@ import java.util.concurrent.*;
 
 public class StructureColumn implements NColumn<NStructureDataProvider, NStructureDataProvider.StructureWithID> {
 
+    private NStructureDataProvider dp;
     private boolean loadFFPs = false;
     private boolean loadFFPsComplete = false;
     private Map<String,long[]> fps_FFP = new HashMap<>();
 
 
+
     public StructureColumn(boolean loadFFPs) {
         this.loadFFPs = loadFFPs;
-
     }
 
-    public void startAsyncInitialization(NexusTableModel ntm, NStructureDataProvider dataprovider) {
+    @Override
+    public void setDataProvider(NStructureDataProvider dataprovider) {
+        this.dp = dataprovider;
+    }
+
+    @Override
+    public NStructureDataProvider getDataProvider() {
+        return this.dp;
+    }
+
+    public void startAsyncReinitialization(NexusTableModel ntm) {
         if(loadFFPs) {
             this.loadFFPsComplete = false;
-            this.loadFFPsAync(dataprovider, ntm);
+            this.loadFFPsAync(dp, ntm);
         }
     }
 
@@ -81,18 +92,13 @@ public class StructureColumn implements NColumn<NStructureDataProvider, NStructu
     }
 
     @Override
-    public NStructureDataProvider.StructureWithID getData(NStructureDataProvider data, String rowid) {
-        return data.getStructureData(rowid);
+    public NStructureDataProvider.StructureWithID getData(String rowid) {
+        return dp.getStructureData(rowid);
     }
 
     @Override
     public Map<String, NumericalDatasource<NStructureDataProvider>> getNumericalDataSources() {
         return new HashMap<>();
-    }
-
-    @Override
-    public double evaluateNumericalDataSource(NStructureDataProvider dp, String datasource, String rowid) {
-        return Double.NaN;
     }
 
     //@Override
@@ -102,7 +108,8 @@ public class StructureColumn implements NColumn<NStructureDataProvider, NStructu
 
     @Override
     public TableCellEditor getCellEditor() {
-        return new NexusTable.DefaultEditorFromRenderer(this.getCellRenderer());
+        return new StructureCellRenderer();
+        //return new NexusTable.DefaultEditorFromRenderer(this.getCellRenderer());
     }
 
     private List<ColumnDataListener> listeners = new ArrayList<>();
@@ -138,12 +145,36 @@ public class StructureColumn implements NColumn<NStructureDataProvider, NStructu
     }
 
     public static class StructureCellRenderer extends LeetChemistryCellRenderer { //extends ChemistryCellRenderer {
+
+
         @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
-            String idc[] = ((NStructureDataProvider.StructureWithID)value).structure;
-            //return new JLabel(idc[0]);
-            return super.getTableCellRendererComponent(table, idc[0]+" "+idc[1], isSelected, hasFocus, row, col);
+        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int col) {
+            if(value instanceof String) {
+                return super.getTableCellEditorComponent(table, (String) value, isSelected, row, col);
+            }
+            if(value instanceof NStructureDataProvider.StructureWithID) {
+                String idc[] = ((NStructureDataProvider.StructureWithID) value).structure;
+                //return new JLabel(idc[0]);
+                //return super.getTableCellRendererComponent(table, idc[0]+" "+idc[1], isSelected, hasFocus, row, col);
+                return super.getTableCellEditorComponent(table, idc[0] + " " + idc[1], isSelected, row, col);
+            }
+            //return new JLabel("<NoData>");
+            return super.getTableCellEditorComponent(table, value, isSelected, row, col);
         }
+
+//        @Override
+//        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+//            if(value instanceof String) {
+//                return super.getTableCellEditorComponent(table, (String) value, isSelected, row, col);
+//            }
+//            if(value instanceof NStructureDataProvider.StructureWithID) {
+//                String idc[] = ((NStructureDataProvider.StructureWithID) value).structure;
+//                //return new JLabel(idc[0]);
+//                //return super.getTableCellRendererComponent(table, idc[0]+" "+idc[1], isSelected, hasFocus, row, col);
+//                return super.getTableCellEditorComponent(table, idc[0] + " " + idc[1], isSelected, row, col);
+//            }
+//            return new JLabel("<NoData>");
+//        }
     }
 
     public class SubstructureRowFilter implements NexusRowFilter<NStructureDataProvider> {
@@ -191,7 +222,7 @@ public class StructureColumn implements NColumn<NStructureDataProvider, NStructu
             this.ntm = model;
             if(!loadFFPs) {
                 loadFFPs = true;
-                startAsyncInitialization(model,dp);
+                startAsyncReinitialization(model);
             }
         }
 

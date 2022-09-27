@@ -14,10 +14,7 @@ import org.knowm.xchart.SwingWrapper;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.XYSeries;
-import tech.molecules.leet.table.NColumn;
-import tech.molecules.leet.table.NDataProvider;
-import tech.molecules.leet.table.NSimilarityColumn;
-import tech.molecules.leet.table.NexusTableModel;
+import tech.molecules.leet.table.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -333,8 +330,9 @@ public class XYChartCreator {
 
     public static double[] evaluateNumericalDS(NDataProvider nd, NColumn c, String ds, List<String> rids) {
         double results[] = new double[rids.size()];
+        Map<String, NumericalDatasource> numds = c.getNumericalDataSources();
         for(int zi=0;zi<rids.size();zi++) {
-            results[zi] = c.evaluateNumericalDataSource(nd,ds,rids.get(zi));
+            results[zi] = numds.get(ds).getValue(rids.get(zi)); //c.evaluateNumericalDataSource(nd,ds,rids.get(zi));
         }
         return results;
     }
