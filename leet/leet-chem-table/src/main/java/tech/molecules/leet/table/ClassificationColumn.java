@@ -15,6 +15,8 @@ import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.List;
 
+
+// TODO: maybe we have to add mousePressed event dispatching to Nexus infrastructure..
 public class ClassificationColumn implements NColumn<NDataProvider.ClassificationProvider, List<NClassification.NClass>> {
 
     private NDataProvider.ClassificationProvider dp;
@@ -120,7 +122,10 @@ public class ClassificationColumn implements NColumn<NDataProvider.Classificatio
             if(table instanceof NexusTable) {
                 NexusTable nt = ((NexusTable) table);
                 //System.out.println("mkay");
-                jp_editor = NexusTable.getDefaultEditorBackgroundPanel(nt,nt.getTableModel().getHighlightingAndSelectionStatus(row));
+                //jp_editor = NexusTable.getDefaultEditorBackgroundPanel(nt,nt.getTableModel().getHighlightingAndSelectionStatus(row));
+                NexusTable.NexusInteractiveEditorInfrastructure editorInfra = nt.createInteractiveEditorInfrastructure(row);
+                jp_editor = editorInfra.panel;
+                //jp_editor = NexusTable.getDefaultEditorBackgroundPanel(nt,nt.getTableModel().getHighlightingAndSelectionStatus(row));
             }
             else {
                 jp_editor = new JPanel();

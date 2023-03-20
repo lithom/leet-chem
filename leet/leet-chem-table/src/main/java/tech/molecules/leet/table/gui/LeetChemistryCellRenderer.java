@@ -68,7 +68,9 @@ public class LeetChemistryCellRenderer extends AbstractCellEditor implements Tab
         if(table instanceof NexusTable) {
             NexusTable nt = ((NexusTable) table);
             //System.out.println("mkay");
-            pi = NexusTable.getDefaultEditorBackgroundPanel(nt,nt.getTableModel().getHighlightingAndSelectionStatus(row));
+            //pi = NexusTable.getDefaultEditorBackgroundPanel(nt,nt.getTableModel().getHighlightingAndSelectionStatus(row));
+            NexusTable.NexusInteractiveEditorInfrastructure editorInfra = nt.createInteractiveEditorInfrastructure(row);
+            pi = editorInfra.panel;
         }
         else {
             pi = new JPanel();
@@ -79,46 +81,56 @@ public class LeetChemistryCellRenderer extends AbstractCellEditor implements Tab
         mRenderPanel.setOpaque(false);
 
         if (value == null) {
-            mRenderPanel.setChemistry(null);
+            //mRenderPanel.setChemistry(null);
+            return new JLabel("NoStructure");
         }
         else if (value instanceof String) {
-            String s = (String)value;
-            if (s.length() == 0) {
-                mRenderPanel.setChemistry(null);
-            }
-            else {
-                // If we have a PRODUCT_IDENTIFIER we have a reaction,
-                // unless we have an idcode+SPACE+coords with coords starting with PRODUCT_IDENTIFIER.
-                int productIndex = s.indexOf(ReactionEncoder.PRODUCT_IDENTIFIER);
-                if (productIndex > 0 && s.charAt(productIndex-1) == ' ')
-                    productIndex = -1;
 
-                if (productIndex != -1) {
-                    mRenderPanel.setChemistry(ReactionEncoder.decode((String)value, true));
-                }
-                else {
-                    int index = s.indexOf('\n');
-                    if (index == -1) {
-                        index = s.indexOf(' ');
-                        if (index == -1)
-                            mRenderPanel.setChemistry(new IDCodeParser(true).getCompactMolecule(s));
-                        else
-                            mRenderPanel.setChemistry(new IDCodeParser(true).getCompactMolecule(
-                                    s.substring(0, index),
-                                    s.substring(index+1)));
+            try {
+
+                String s = (String) value;
+                if (s.length() == 0) {
+                    //mRenderPanel.setChemistry(null);
+                    return new JLabel("NoStructure");
+                } else {
+                    // If we have a PRODUCT_IDENTIFIER we have a reaction,
+                    // unless we have an idcode+SPACE+coords with coords starting with PRODUCT_IDENTIFIER.
+                    int productIndex = s.indexOf(ReactionEncoder.PRODUCT_IDENTIFIER);
+                    if (productIndex > 0 && s.charAt(productIndex - 1) == ' ')
+                        productIndex = -1;
+
+                    if (productIndex != -1) {
+                        mRenderPanel.setChemistry(ReactionEncoder.decode((String) value, true));
+                    } else {
+                        int index = s.indexOf('\n');
+                        if (index == -1) {
+                            index = s.indexOf(' ');
+                            if (index == -1)
+                                mRenderPanel.setChemistry(new IDCodeParser(true).getCompactMolecule(s));
+                            else
+                                mRenderPanel.setChemistry(new IDCodeParser(true).getCompactMolecule(
+                                        s.substring(0, index),
+                                        s.substring(index + 1)));
+                        } else {
+                            StereoMolecule mol = new StereoMolecule();
+                            new IDCodeParser(true).parse(mol, s.substring(0, index));
+                            do {
+                                s = s.substring(index + 1);
+                                index = s.indexOf('\n');
+                                mol.addMolecule(new IDCodeParser(true).getCompactMolecule(index == -1 ? s : s.substring(0, index)));
+                            } while (index != -1);
+                            new CoordinateInventor().invent(mol);
+                            mRenderPanel.setChemistry(mol);
+                        }
                     }
-                    else {
-                        StereoMolecule mol = new StereoMolecule();
-                        new IDCodeParser(true).parse(mol, s.substring(0, index));
-                        do {
-                            s = s.substring(index+1);
-                            index = s.indexOf('\n');
-                            mol.addMolecule(new IDCodeParser(true).getCompactMolecule(index == -1 ? s : s.substring(0, index)));
-                        } while (index != -1);
-                        new CoordinateInventor().invent(mol);
-                        mRenderPanel.setChemistry(mol);
-                    }
                 }
+            } catch (Exception e) {
+                if (value instanceof String && ((String)value).trim().isEmpty()) {
+                    return new JLabel("<NoData>");
+                }
+                System.out.println("exception: input string: "+value);
+                //throw new RuntimeException(e);
+                return new JLabel("<ERROR>");
             }
         }
         else {

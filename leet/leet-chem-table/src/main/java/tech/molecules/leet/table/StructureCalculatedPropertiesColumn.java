@@ -11,6 +11,7 @@ import tech.molecules.leet.table.gui.DispatchingMouseAdapter;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import javax.swing.event.CellEditorListener;
+import javax.swing.plaf.basic.BasicGraphicsUtils;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
@@ -166,6 +167,10 @@ public class StructureCalculatedPropertiesColumn implements NColumn<NStructureDa
     public static class CalcPropertiesRenderer extends AbstractCellEditor implements TableCellEditor , TableCellRenderer {
 
 
+        private static MouseEvent lastPressedMouseEvent   = null;
+        private static MouseEvent lastClickedMouseEvent   = null;
+        private static MouseEvent lastReleasedMouseEvent  = null;
+
         public Component getTableCellRendererComponent (JTable table,
                                                         Object value,
                                                         boolean isSelected,
@@ -173,10 +178,14 @@ public class StructureCalculatedPropertiesColumn implements NColumn<NStructureDa
                                                         int row,
                                                         int column)
         {
+            System.out.println("Create Table Cell Render Component..");
             //JPanel pi = new JPanel();
             NexusTable nt = (NexusTable) table;
-            NexusTable.JCellBackgroundPanel pi = NexusTable.getDefaultEditorBackgroundPanel(nt,nt.getTableModel().getHighlightingAndSelectionStatus(row));
+            //NexusTable.JCellBackgroundPanel pi = NexusTable.getDefaultEditorBackgroundPanel(nt,nt.getTableModel().getHighlightingAndSelectionStatus(row));
+            NexusTable.NexusInteractiveEditorInfrastructure editorInfra = nt.createInteractiveEditorInfrastructure(row);
+            NexusTable.JCellBackgroundPanel pi = editorInfra.panel;
 
+            pi.setOpaque(false);
             // As a safety check, it's always good to verify the type of
             // value.
 
@@ -200,27 +209,47 @@ public class StructureCalculatedPropertiesColumn implements NColumn<NStructureDa
 
                 for (int zi = 0; zi < ChemPropertyCounts.COUNTS_ALL.length; zi++) {
                     JColorLabel pa = new JColorLabel(ChemPropertyCounts.COUNTS_ALL[zi].shortName+"="+String.format("%d", a.counts.get(zi)), a.counts.get(zi), 0, 40);
-
+                    pa.setBorder(new LineBorder(Color.blue, 1));
                     pi.add(pa);
 
                     //Supplier<Component> componentSupplier = (pi!=null) ? () -> pi : ()->getParent();
                     Supplier<Component> componentSupplier = () -> pi.getParent();
+                    //Supplier<Component> componentSupplier = () -> pa.getParent();
 
-                    DispatchingMouseAdapter mli = new DispatchingMouseAdapter(componentSupplier) {
+                    //DispatchingMouseAdapter mli = new DispatchingMouseAdapter(componentSupplier) {
+                    DispatchingMouseAdapter mli = new DispatchingMouseAdapter( ()->table ) {
+                    //MouseAdapter mli = new MouseAdapter() {
                         @Override
                         public void mouseEntered(MouseEvent e) {
 //                            if (e.getComponent() instanceof JComponent) {
 //                                ((JComponent) e.getComponent()).setBorder(new LineBorder(Color.blue, 1));
 //                            }
-                            pa.setBorder(new LineBorder(Color.blue, 1));
-                            super.mouseEntered(e);
+                            pa.setBorder(new LineBorder(Color.red, 1));
+                            pi.repaint();
+                            //super.mouseEntered(e);
                         }
 
                         @Override
                         public void mouseExited(MouseEvent e) {
                             //((JComponent) e.getComponent()).setBorder(null);
-                            pa.setBorder(null);
-                            super.mouseExited(e);
+                            pa.setBorder(new LineBorder(Color.blue, 1));
+                            pi.repaint();
+                            //super.mouseExited(e);
+                        }
+
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+                            System.out.println("mouse clicked! "+e.toString());
+                            //super.mouseClicked(e);
+                        }
+
+                        //private MouseEvent lastPressedMouseEvent = null;
+
+                        @Override
+                        public void mousePressed(MouseEvent e) {
+                            System.out.println("Mouse Pressed!");
+                            // send to nexus editorInfrastructure:
+                            editorInfra.dispatchMousePressedEvent(e);
                         }
                     };
                     pa.addMouseListener(mli);
@@ -268,10 +297,18 @@ public class StructureCalculatedPropertiesColumn implements NColumn<NStructureDa
                 float hue = value*maxHue + (1-value)*minHue;
                 Color ca = new Color( Color.HSBtoRGB(hue, 0.6f, 0.85f ) );
                 Color c = new Color( ca.getRed() , ca.getGreen() , ca.getBlue() , 40 );
-                this.setOpaque(true);
+                this.setOpaque(false);
                 //this.setOpaque(false);
                 this.setBackground(c);
             }
+
+            public void paintComponent(Graphics g) {
+                Color ci = getBackground();
+                g.setColor(ci);
+                g.fillRect(0,0,this.getWidth(),this.getHeight());
+                super.paintComponent(g);
+            }
+
         }
 
     }

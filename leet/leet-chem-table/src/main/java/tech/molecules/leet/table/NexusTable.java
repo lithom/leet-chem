@@ -16,6 +16,28 @@ import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
+/**
+ * Some notes on the implementation of columns with fully interactive editors.
+ * It is strongly recommended to create the editor on a JCellBackgroundPanel
+ * object, it will handle coloring and selection.
+ *
+ * MOUSE HANDLING: In case that you develop mouse handlers to intercept mouse
+ * events on your interactive panel, it is strongly recommended to use the
+ * DispatchingMouseAdapter and dispatch captured mousePressed events to the
+ * JCellBackgroundPanel object of the cell (NOT TO THE JTABLE, THIS CAN CAUSE
+ * StackOverflows because the JTable may redispatch events to the editor). The
+ * JCellBackgroundPanel will interpret the mousePressed events and adjust
+ * selection accordingly!
+ *
+ * For an example see the editor used in StructureCalculatedPropertiesColumn!!
+ *
+ * REPAINTING: It seems, that setting components inside custom editors to:
+ * setOpaque(false) helps with correct rendering and manual painting of
+ * backgrounds (in paintComponent). Also calling repaint manually
+ * inside the custom editors can help with updating.
+ *
+ */
 public class NexusTable extends JTable {
 
     private NexusTableModel model;
@@ -315,8 +337,55 @@ public class NexusTable extends JTable {
         }
     }
 
-    public static JCellBackgroundPanel getDefaultEditorBackgroundPanel(NexusTable nt, NexusTableModel.NexusHighlightingAndSelectionStatus status) {
-        return new JCellBackgroundPanel(nt,status);
+
+    /**
+     * For creating interactive editors it is necessary to dispatch MousePressed events
+     * also to the supplied function dispatchMousePressedEvent(..)!!
+     *
+     * @return
+     */
+    public NexusInteractiveEditorInfrastructure createInteractiveEditorInfrastructure(int row) {
+        return new NexusInteractiveEditorInfrastructure(row);
+    }
+
+    public class NexusInteractiveEditorInfrastructure {
+        public final JCellBackgroundPanel panel;
+
+        public NexusInteractiveEditorInfrastructure(int row) {
+            this.panel = new JCellBackgroundPanel(getThisTable(),getThisTable().getTableModel().getHighlightingAndSelectionStatus(row));
+        }
+
+        public void dispatchMousePressedEvent(MouseEvent e) {
+            // handle selection:
+            if(e.getButton() == MouseEvent.BUTTON1 ) {
+                JTable ti = getThisTable();
+                Point tablepoint = SwingUtilities.convertPoint(e.getComponent(), e.getX(), e.getY(), ti);
+                ti.changeSelection(ti.rowAtPoint(tablepoint), ti.columnAtPoint(tablepoint),
+                        e.isControlDown(),//BasicGraphicsUtils.isMenuShortcutKeyDown(e),
+                        e.isShiftDown());
+            }
+        }
+    }
+
+    public static class JNexusPanel extends JPanel {
+        private NexusInteractiveEditorInfrastructure infra;
+        private JCellBackgroundPanel bgp;
+        public JNexusPanel(NexusInteractiveEditorInfrastructure infra) {
+            this.infra = infra;
+            this.setOpaque(false);
+            this.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    infra.dispatchMousePressedEvent(e);
+                }
+            });
+        }
+        public void paintComponent(Graphics g) {
+            Color ci = getBackground();
+            g.setColor(ci);
+            g.fillRect(0,0,this.getWidth(),this.getHeight());
+            super.paintComponent(g);
+        }
     }
 
     public static class JCellBackgroundPanel extends JPanel {
@@ -327,6 +396,16 @@ public class NexusTable extends JTable {
         public JCellBackgroundPanel(NexusTable nt, NexusTableModel.NexusHighlightingAndSelectionStatus status) {
             this.nt = nt;
             this.status = status;
+            this.setOpaque(false);
+
+            // mousePressed events are redispatched to this component, therefore here we have to handle the
+            // table selection events!!
+            this.addMouseListener(new MouseAdapter(){
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    super.mousePressed(e);
+                }
+            });
         }
 
         @Override
