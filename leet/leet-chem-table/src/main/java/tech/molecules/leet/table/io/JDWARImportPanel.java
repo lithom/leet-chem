@@ -4,7 +4,6 @@ import com.actelion.research.chem.io.DWARFileParser;
 import com.actelion.research.gui.VerticalFlowLayout;
 import com.formdev.flatlaf.FlatLightLaf;
 import org.apache.commons.lang3.tuple.Pair;
-import org.hibernate.jdbc.Work;
 import tech.molecules.leet.table.NColumn;
 import tech.molecules.leet.table.NDataProvider;
 import tech.molecules.leet.table.NexusTable;

@@ -6,8 +6,6 @@ import com.actelion.research.chem.StereoMolecule;
 import com.actelion.research.chem.coords.CoordinateInventor;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
 import tech.molecules.leet.chem.ChemUtils;
 import tech.molecules.leet.chem.CombinatoricsUtils;
 import tech.molecules.leet.chem.mutator.SimpleSynthonWithContext;
@@ -23,8 +21,6 @@ import java.util.stream.Collectors;
  * fragment in teh split result
  *
  */
-@Entity
-@Table(name = "FragmentDecomposition")
 public class FragmentDecomposition implements Serializable {
 
     @JsonPropertyDescription("molecule id")
