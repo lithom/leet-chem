@@ -12,38 +12,55 @@ public class DispatchingMouseAdapter implements MouseListener, MouseMotionListen
 
     private Supplier<Component> dispatchToComponent;
 
+    private boolean dispatchMouseReleased = false;
+    private boolean dispatchMousePressed  = true;
+    private boolean dispatchMouseClicked  = false;
+    private boolean dispatchMouseEntered  = false;
+    private boolean dispatchMouseExited   = false;
+
+
     public DispatchingMouseAdapter(Supplier<Component> dispatchToComponent) {
         this.dispatchToComponent = dispatchToComponent;
     }
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        Component dtc = this.dispatchToComponent.get();
-        dtc.dispatchEvent(SwingUtilities.convertMouseEvent((Component) e.getSource(),e,dtc));
+        if (dispatchMouseClicked) {
+            Component dtc = this.dispatchToComponent.get();
+            dtc.dispatchEvent(SwingUtilities.convertMouseEvent((Component) e.getSource(), e, dtc));
+        }
     }
 
     @Override
     public void mousePressed(MouseEvent e) {
-        Component dtc = this.dispatchToComponent.get();
-        dtc.dispatchEvent(SwingUtilities.convertMouseEvent((Component) e.getSource(),e,dtc));
+        if (dispatchMousePressed) {
+            Component dtc = this.dispatchToComponent.get();
+            dtc.dispatchEvent(SwingUtilities.convertMouseEvent((Component) e.getSource(), e, dtc));
+        }
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        Component dtc = this.dispatchToComponent.get();
-        dtc.dispatchEvent(SwingUtilities.convertMouseEvent((Component) e.getSource(),e,dtc));
+        if(this.dispatchMouseReleased) {
+            Component dtc = this.dispatchToComponent.get();
+            dtc.dispatchEvent(SwingUtilities.convertMouseEvent((Component) e.getSource(), e, dtc));
+        }
     }
 
     @Override
     public void mouseEntered(MouseEvent e) {
-        Component dtc = this.dispatchToComponent.get();
-        dtc.dispatchEvent(SwingUtilities.convertMouseEvent((Component) e.getSource(),e,dtc));
+        if (dispatchMouseEntered) {
+            Component dtc = this.dispatchToComponent.get();
+            dtc.dispatchEvent(SwingUtilities.convertMouseEvent((Component) e.getSource(), e, dtc));
+        }
     }
 
     @Override
     public void mouseExited(MouseEvent e) {
-        Component dtc = this.dispatchToComponent.get();
-        dtc.dispatchEvent(SwingUtilities.convertMouseEvent((Component) e.getSource(),e,dtc));
+        if (dispatchMouseExited) {
+            Component dtc = this.dispatchToComponent.get();
+            dtc.dispatchEvent(SwingUtilities.convertMouseEvent((Component) e.getSource(), e, dtc));
+        }
     }
 
     @Override
