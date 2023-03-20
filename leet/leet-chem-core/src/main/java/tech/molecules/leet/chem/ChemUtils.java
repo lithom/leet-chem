@@ -4,16 +4,13 @@ import com.actelion.research.chem.*;
 import com.actelion.research.chem.coords.CoordinateInventor;
 import com.actelion.research.gui.JStructureView;
 import com.actelion.research.gui.generic.GenericRectangle;
-import tech.molecules.leet.chem.shredder.SynthonShredder;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.List;
@@ -292,6 +289,13 @@ public class ChemUtils {
     }
 
 
+    public static boolean checkNeighborAtoms(StereoMolecule m, int a, int b) {
+        for(int zi=0;zi<m.getConnAtoms(a);zi++) {
+            if(m.getConnAtom(a,zi)==b) {return true;}
+        }
+        return false;
+    }
+
 
     public static BitSet toBitSet(int arr[]) {
         BitSet bs = new BitSet();
@@ -343,6 +347,21 @@ public class ChemUtils {
         for(int zi=0;zi<map.length;zi++) { inv.put( map[zi] , zi ); }
         return inv;
     }
+
+    public static int[] inverseMap2(int[] map, int length_a, int length_b) {
+        //int max_b = Arrays.stream(map).max().getAsInt();
+        //if(max_b<0) {return new int[0];}
+        int[] inv = new int[length_b];
+        Arrays.fill(inv,-1);
+        for(int zi=0;zi<length_a;zi++) {
+            int mzi = map[zi];
+            if(mzi>=0) {
+                inv[mzi] = zi;
+            }
+        }
+        return inv;
+    }
+
 
     /**
      * Tries idcode, then smiles. Todo: add more
@@ -431,6 +450,44 @@ public class ChemUtils {
         }
 
     }
+
+    public static List<StereoMolecule> loadTestMolecules_36FromDrugCentral() {
+        InputStream in1 = Thread.currentThread().getContextClassLoader().getResourceAsStream("idcodes_36drugsFromDrugCentral.txt");
+        InputStreamReader in2 = new InputStreamReader(in1);
+        BufferedReader in     = new BufferedReader(in2);
+        List<StereoMolecule> mols = new ArrayList<>();
+        String line = null;
+        try {
+            while ((line = in.readLine()) != null) {
+                mols.add(ChemUtils.parseIDCode(line));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return mols;
+    }
+
+    /**
+     * NOTE: The molecules are sorted by druglikeness, starting with the most drug-like molecules.
+     * @return
+     */
+    public static List<StereoMolecule> loadTestMolecules_1795FromDrugCentral() {
+        InputStream in1 = Thread.currentThread().getContextClassLoader().getResourceAsStream("idcodes_1795drugsFromDrugCentral.txt");
+        InputStreamReader in2 = new InputStreamReader(in1);
+        BufferedReader in     = new BufferedReader(in2);
+        List<StereoMolecule> mols = new ArrayList<>();
+        String line = null;
+        try {
+            while ((line = in.readLine()) != null) {
+                mols.add(ChemUtils.parseIDCode(line));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return mols;
+    }
+
+
 
     public static class DebugOutput {
 

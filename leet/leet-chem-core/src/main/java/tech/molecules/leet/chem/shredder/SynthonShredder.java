@@ -402,6 +402,7 @@ public class SynthonShredder {
      * the connector atom, otherwise -1.
      *
      */
+
     public final static class SplitResult implements Serializable {
 
         @JsonPropertyDescription("fragments sorted by largest first")
