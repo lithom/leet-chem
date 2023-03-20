@@ -2,11 +2,15 @@ package tech.molecules.leet.table.io;
 
 import com.actelion.research.chem.io.DWARFileParser;
 import com.actelion.research.gui.VerticalFlowLayout;
+import com.formdev.flatlaf.FlatLightLaf;
 import org.apache.commons.lang3.tuple.Pair;
+import org.hibernate.jdbc.Work;
 import tech.molecules.leet.table.NColumn;
 import tech.molecules.leet.table.NDataProvider;
 import tech.molecules.leet.table.NexusTable;
 import tech.molecules.leet.table.NexusTableModel;
+import tech.molecules.leet.workbench.JWorkbench;
+import tech.molecules.leet.workbench.WorkbenchModel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,6 +18,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class JDWARImportPanel extends JPanel {
@@ -32,6 +38,8 @@ public class JDWARImportPanel extends JPanel {
     }
 
     private String filepath;
+
+    private NexusTableModel importedModel = null;
 
     private List<ColumnImportPanel> importPanels = new ArrayList<>();
     //private ImportOption<NDataProvider,NColumn> NoImport = new ImportOption("No Import",null);
@@ -63,8 +71,20 @@ public class JDWARImportPanel extends JPanel {
             ain.close();
         }
     }
-    public JDWARImportPanel(String filepath) {
+
+
+    private void setImportedModel(NexusTableModel ntm) {
+        this.importedModel = ntm;
+        if(callback!=null) {
+            callback.accept(this.importedModel);
+        }
+    }
+
+    private Consumer<NexusTableModel> callback = null;
+
+    public JDWARImportPanel(String filepath, Consumer<NexusTableModel> callback) {
         this.filepath = filepath;
+        this.callback = callback;
 
         DWARFileParser in = new DWARFileParser(filepath);
         String[]     fields = in.getFieldNames();
@@ -90,6 +110,9 @@ public class JDWARImportPanel extends JPanel {
 
         JButton jbLoad = new JButton("Import");
         this.add(jbLoad,BorderLayout.SOUTH);
+
+        this.autoconfigure_A();
+
         jbLoad.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -99,21 +122,23 @@ public class JDWARImportPanel extends JPanel {
                 DWARSimpleWrapper wrapper = new DWARSimpleWrapper(filepath,importers);
                 wrapper.loadFile();
                 NexusTableModel ntm = wrapper.getNexusTableModel();
-                NexusTable nt = new NexusTable(ntm);
-                JFrame fi = new JFrame();
-                JScrollPane jspi = new JScrollPane(nt);
-                jspi.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-                jspi.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-                nt.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+                setImportedModel(ntm);
 
-                fi.getContentPane().setLayout(new BorderLayout());
-                fi.getContentPane().add(jspi,BorderLayout.CENTER);
-                fi.setSize(600,600);
-                fi.setVisible(true);
+                if(false) {
+                    NexusTable nt = new NexusTable(ntm);
+                    JFrame fi = new JFrame();
+                    JScrollPane jspi = new JScrollPane(nt);
+                    jspi.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+                    jspi.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+                    nt.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+
+                    fi.getContentPane().setLayout(new BorderLayout());
+                    fi.getContentPane().add(jspi, BorderLayout.CENTER);
+                    fi.setSize(600, 600);
+                    fi.setVisible(true);
+                }
             }
         });
-
-        this.autoconfigure_A();
     }
 
     class ColumnImportPanel extends JPanel {
@@ -146,16 +171,57 @@ public class JDWARImportPanel extends JPanel {
     public static void showImportDialog() {
     }
 
+
+    public static class DWARImportAction extends AbstractAction {
+        private Frame owner;
+        private NexusTableModel ntm;
+        private String filepath;
+        public DWARImportAction(Frame owner, String filepath) {
+            this.owner = owner;
+            this.filepath = filepath;
+        }
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            JDialog jd = new JDialog(owner,true);
+            JDWARImportPanel importPanel = new JDWARImportPanel(this.filepath,(x) -> {this.ntm = x; jd.dispose(); } );
+
+            jd.getContentPane().setLayout(new BorderLayout());
+            jd.getContentPane().add( importPanel , BorderLayout.CENTER);
+            jd.setSize(600,600);
+            jd.setVisible(true);
+        }
+        public NexusTableModel getTableModel() {
+            return this.ntm;
+        }
+    }
+
     public static void main(String args[]) {
+        FlatLightLaf.setup();
+        try {
+            UIManager.setLookAndFeel( new FlatLightLaf() );
+        } catch( Exception ex ) {
+            System.err.println( "Failed to initialize LaF" );
+        }
+
+
         JFrame fi = new JFrame();
+
         fi.getContentPane();
         fi.getContentPane().setLayout(new BorderLayout());
-        //JDWARImportPanel ipp = new JDWARImportPanel("C:\\datasets\\test_set_mcs_indole.dwar");//screening_libs_raw.dwar");
-        //JDWARImportPanel ipp = new JDWARImportPanel("C:\\datasets\\CM_Available_Compounds_a.dwar");//screening_libs_raw.dwar");
-        JDWARImportPanel ipp = new JDWARImportPanel("C:\\datasets\\dwar\\cfbproject_a.dwar");//screening_libs_raw.dwar");
-        fi.getContentPane().add(ipp,BorderLayout.CENTER);
         fi.setSize(600,600);
         fi.setVisible(true);
+
+        //JDWARImportPanel ipp = new JDWARImportPanel("C:\\datasets\\test_set_mcs_indole.dwar");//screening_libs_raw.dwar");
+        //JDWARImportPanel ipp = new JDWARImportPanel("C:\\datasets\\CM_Available_Compounds_a.dwar");//screening_libs_raw.dwar");
+        //JDWARImportPanel ipp = new JDWARImportPanel("C:\\datasets\\hit_expansion_similarities.dwar");//screening_libs_raw.dwar");
+        DWARImportAction action = new DWARImportAction(fi,"C:\\datasets\\hit_expansion_similarities.dwar");
+        action.actionPerformed(new ActionEvent(fi,1234,"importDWAR"));
+        //fi.getContentPane().add(ipp,BorderLayout.CENTER);
+
+        WorkbenchModel model = new WorkbenchModel(action.getTableModel());
+        JWorkbench jwb = new JWorkbench(model);
+        fi.getContentPane().add(jwb);
+        fi.revalidate();
     }
 
 

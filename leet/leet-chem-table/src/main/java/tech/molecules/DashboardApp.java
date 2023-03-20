@@ -47,10 +47,15 @@ public class DashboardApp
         }
 
         if(true) {
-            DWARFileParser dwin = new DWARFileParser("C:\\datasets\\dwar\\cfbproject_a.dwar");
-            for(int zi=0;zi<200;zi++) {
-                dwin.next();
-                Pair<String,String> pi = Pair.of(dwin.getMoleculeName(),dwin.getMolecule().getIDCode());
+            //DWARFileParser dwin = new DWARFileParser("C:\\datasets\\dwar\\cfbproject_a.dwar");
+            //DWARFileParser dwin = new DWARFileParser("C:\\datasets\\hit_expansion_similarities.dwar");// new DWARFileParser("C:\\datasets\\dwar\\cfbproject_a.dwar");
+            DWARFileParser dwin = new DWARFileParser("C:\\datasets\\CM_Available_Compounds_a.dwar");
+            for(int zi=0;zi<2000;zi++) {
+                if( !dwin.next() ) {
+                    break;
+                }
+                //Pair<String,String> pi = Pair.of(dwin.getMoleculeName(),dwin.getMolecule().getIDCode());
+                Pair<String,String> pi = Pair.of("Mol-"+zi,dwin.getMolecule().getIDCode());
                 molecules.add(pi);
             }
         }

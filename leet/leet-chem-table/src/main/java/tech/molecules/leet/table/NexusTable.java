@@ -2,6 +2,7 @@ package tech.molecules.leet.table;
 
 import org.apache.commons.lang3.tuple.Pair;
 import tech.molecules.leet.table.gui.JFilterPanel;
+import tech.molecules.leet.table.gui.JNexusTopPanel;
 import tech.molecules.leet.table.gui.JNumericalDataSourceSelector;
 import tech.molecules.leet.util.ColorMapHelper;
 
@@ -38,7 +39,7 @@ public class NexusTable extends JTable {
         this.selectionTypeMouseOver = model.getSelectionType(NexusTableModel.SELECTION_TYPE_MOUSE_OVER);
 
         this.setModel(model);
-        this.topPanel = new TopPanel();
+        this.topPanel = new JNexusTopPanel(this);
         this.topPanel.setSliderManually(60);
 
         this.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -166,23 +167,25 @@ public class NexusTable extends JTable {
                     // add filtering menu:
                     JMenu filtering = new JMenu("Add Filter");
                     //for(Object filtertype : model.getNexusColumns().get(column).getLeft().getRowFilterTypes()) {
-                    for(Object filtertype : ncolumns.get(column).getLeft().getRowFilterTypes()) {
-                        JMenuItem ji = new JMenuItem( (String) filtertype );
-                        filtering.add(ji);
-                        ji.addActionListener(new ActionListener() {
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-                                //NColumn.NexusRowFilter filter = model.getNexusColumns().get(column).getLeft().createRowFilter( model , (String) filtertype );
-                                NColumn.NexusRowFilter filter = ncolumns.get(column).getLeft().createRowFilter( model , (String) filtertype );
-                                filter.setupFilter(model,ncolumns.get(column).getRight());
-                                model.addRowFilter(col,filter);
-                                filterPanel.addFilter(filter);
-                                //filterPanel.add(filter.getFilterGUI());
-                                filterPanel.invalidate();
-                                invalidate();
-                                filterPanel.repaint();
-                            }
-                        });
+                    if(ncolumns.get(column).getLeft().getRowFilterTypes()!=null) {
+                        for (Object filtertype : ncolumns.get(column).getLeft().getRowFilterTypes()) {
+                            JMenuItem ji = new JMenuItem((String) filtertype);
+                            filtering.add(ji);
+                            ji.addActionListener(new ActionListener() {
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    //NColumn.NexusRowFilter filter = model.getNexusColumns().get(column).getLeft().createRowFilter( model , (String) filtertype );
+                                    NColumn.NexusRowFilter filter = ncolumns.get(column).getLeft().createRowFilter(model, (String) filtertype);
+                                    filter.setupFilter(model, ncolumns.get(column).getRight());
+                                    model.addRowFilter(col, filter);
+                                    filterPanel.addFilter(filter);
+                                    //filterPanel.add(filter.getFilterGUI());
+                                    filterPanel.invalidate();
+                                    invalidate();
+                                    filterPanel.repaint();
+                                }
+                            });
+                        }
                     }
                     popup.add(filtering);
                     popup.show(e.getComponent(),e.getX(),e.getY());
@@ -202,6 +205,7 @@ public class NexusTable extends JTable {
         this.getTableHeader().addMouseListener(this.headerMouseListener);
     }
 
+    /**
     public class TopPanel extends JPanel {
         private JMenuBar jmb = new JMenuBar();
         private JSlider slider = new JSlider(16,320);
@@ -239,10 +243,12 @@ public class NexusTable extends JTable {
             jmb.add(jm_color);
         }
     }
+     **/
 
-    private TopPanel topPanel;
+    //private TopPanel topPanel;
+    private JNexusTopPanel topPanel;
 
-    public TopPanel getTopPanel() {
+    public JNexusTopPanel getTopPanel() {
         return topPanel;
     }
 

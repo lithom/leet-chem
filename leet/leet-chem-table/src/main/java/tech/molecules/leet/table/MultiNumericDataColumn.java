@@ -42,7 +42,10 @@ public class MultiNumericDataColumn implements NColumn<NDataProvider.NMultiNumer
 
     @Override
     public Map<String, NumericalDatasource<NDataProvider.NMultiNumericDataProvider>> getNumericalDataSources() {
-        return new HashMap<>();
+        HashMap<String,NumericalDatasource<NDataProvider.NMultiNumericDataProvider>> nds = new HashMap<>();
+        DefaultNumericRangeFilter<NDataProvider.NMultiNumericDataProvider,double[]> rf = new DefaultNumericRangeFilter<>(this,this.getName());
+        //nds.put(rf.getFilterName(),rf);
+        return nds;
     }
 
     @Override
