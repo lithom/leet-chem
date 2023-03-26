@@ -219,21 +219,25 @@ public class FragmentDecomposition implements Serializable {
         }
         for(int zc=0;zc<num_connectors;zc++) {
             int cfpos = splitResult.connector_positions.get(centralFrag)[zc];
-            // now search the counterpart:
-            for(int zo : CombinatoricsUtils.intSeq(splitResult.fragments.length, Collections.singletonList(centralFrag))) {
-                if(splitResult.connector_positions.get(zo)[zc]>=0) {
-                    // ok we found it, assemble :)
-                    int cfposnew = amaps.get(centralFrag)[cfpos];
-                    int oposnew  = amaps.get(zo)[splitResult.connector_positions.get(zo)[zc]];
+            if(cfpos>=0) {
+                // now search the counterpart:
+                for (int zo : CombinatoricsUtils.intSeq(splitResult.fragments.length, Collections.singletonList(centralFrag))) {
+                    if (splitResult.connector_positions.get(zo)[zc] >= 0) {
+                        // ok we found it, assemble :)
+                        int cfposnew = amaps.get(centralFrag)[cfpos];
+                        int oposnew = amaps.get(zo)[splitResult.connector_positions.get(zo)[zc]];
 
-                    //System.out.println("[INFO] connect: "+cfposnew+" <-> "+oposnew);
-                    if(cp_pair_positions!=null && cp_pair_positions.length>zc) { cp_pair_positions[zc] = new int[]{ cfposnew,oposnew }; }
+                        //System.out.println("[INFO] connect: "+cfposnew+" <-> "+oposnew);
+                        if (cp_pair_positions != null && cp_pair_positions.length > zc) {
+                            cp_pair_positions[zc] = new int[]{cfposnew, oposnew};
+                        }
 
-                    // i.e. connect them..
-                    if(addConnectorConnectorBonds) {
-                        ma.addBond(cfposnew, oposnew, Molecule.cBondTypeSingle);
+                        // i.e. connect them..
+                        if (addConnectorConnectorBonds) {
+                            ma.addBond(cfposnew, oposnew, Molecule.cBondTypeSingle);
+                        }
+                        ma.setAtomicNo(oposnew, 93);
                     }
-                    ma.setAtomicNo(oposnew, 93);
                 }
             }
         }

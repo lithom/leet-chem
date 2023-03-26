@@ -31,6 +31,8 @@ public class FragmentDecompositionSynthon implements SynthonWithContext {
     private int[][] mapSynthonConnectorsToContextConnectors;
 
 
+    public FragmentDecompositionSynthon() {}
+
     public FragmentDecompositionSynthon(FragmentDecomposition decomp) {
         //this.synthon = new StereoMolecule( decomp.getCentralFrag() );
         int cpos[][] = new int[decomp.getNumberOfConnectors()][2];
