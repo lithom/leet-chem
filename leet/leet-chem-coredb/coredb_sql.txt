@@ -1,0 +1,71 @@
+Create DB:
+
+
+CREATE TABLE project (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255)
+);
+
+CREATE TABLE compound (
+    id VARCHAR(255) PRIMARY KEY,
+    molecule TEXT
+);
+
+CREATE TABLE batch (
+    id VARCHAR(255) PRIMARY KEY,
+    compound_id VARCHAR(255),
+    FOREIGN KEY (compound_id) REFERENCES compound(id)
+);
+
+CREATE TABLE tube (
+    id VARCHAR(255) PRIMARY KEY,
+    batch_id VARCHAR(255),
+    FOREIGN KEY (batch_id) REFERENCES batch(id)
+);
+
+CREATE TABLE data_type (
+    name VARCHAR(255) PRIMARY KEY
+);
+
+CREATE TABLE assay (
+    id INT PRIMARY KEY,
+    name VARCHAR(255)
+);
+
+CREATE TABLE assay_parameter (
+    id INT PRIMARY KEY,
+    assay_id INT,
+    data_type VARCHAR(255),
+    name VARCHAR(255),
+    FOREIGN KEY (assay_id) REFERENCES assay(id),
+    FOREIGN KEY (data_type) REFERENCES data_type(name)
+);
+
+CREATE TABLE assay_result (
+    id BIGINT PRIMARY KEY,
+    assay_id INT,
+    date DATE,
+    tube_id VARCHAR(255),
+    FOREIGN KEY (assay_id) REFERENCES assay(id),
+    FOREIGN KEY (tube_id) REFERENCES tube(id)
+);
+
+CREATE TABLE assay_result_data (
+  id SERIAL PRIMARY KEY,
+  assay_result_id INTEGER NOT NULL,
+  assay_parameter_id INTEGER NOT NULL,
+  double_value DOUBLE PRECISION,
+  text_value TEXT,
+  FOREIGN KEY (assay_result_id) REFERENCES assay_result (id),
+  FOREIGN KEY (assay_parameter_id) REFERENCES assay_parameter (id)
+);
+
+CREATE TABLE data_value (
+    assay_result_id BIGINT,
+    assay_parameter_name VARCHAR(255),
+    double_value DOUBLE,
+    text_value TEXT,
+    PRIMARY KEY (assay_result_id, assay_parameter_name),
+    FOREIGN KEY (assay_result_id) REFERENCES assay_result(id),
+    FOREIGN KEY (assay_parameter_name) REFERENCES assay_parameter(name)
+);
