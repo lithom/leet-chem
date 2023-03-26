@@ -5,9 +5,11 @@ import java.util.Date;
 public interface AssayResult {
 
     public long  getId();
+    public Assay getAssay();
     public Date getDate();
     public Tube getTube();
 
-
-
+    public DataValue getData(AssayParameter ap);
 }
+
+
