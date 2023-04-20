@@ -5,9 +5,8 @@ import tech.molecules.chem.coredb.*;
 import tech.molecules.leet.chem.ChemUtils;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.sql.Date;
+import java.util.*;
 
 public class DBManager {
 
@@ -234,6 +233,46 @@ public class DBManager {
         return result;
     }
 
+    public List<Assay> searchAssays(AssayQuery query) throws SQLException {
+        Set<Integer> assayIds = new HashSet<>();
+
+        StringBuilder sqlBuilder = new StringBuilder("SELECT id FROM assay");
+
+        if (query.getProjectId() != null) {
+            sqlBuilder.append(" WHERE project_id = ?");
+        }
+
+        try (PreparedStatement statement = connection.prepareStatement(sqlBuilder.toString())) {
+            if (query.getProjectId() != null) {
+                statement.setString(1, query.getProjectId());
+            }
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    int id = resultSet.getInt("id");
+                    assayIds.add(id);
+                }
+            }
+        }
+
+        return DBAssay.fetchAssays(connection, assayIds);
+    }
+
+
+
+    public int getNumberOfMeasurements(Assay assay) throws SQLException {
+        PreparedStatement statement = connection.prepareStatement(
+                "SELECT COUNT(*) FROM assay_result WHERE assay_id = ?"
+        );
+        statement.setInt(1, assay.getId());
+        ResultSet resultSet = statement.executeQuery();
+
+        if (resultSet.next()) {
+            return resultSet.getInt(1);
+        } else {
+            return 0;
+        }
+    }
 
 }
 
