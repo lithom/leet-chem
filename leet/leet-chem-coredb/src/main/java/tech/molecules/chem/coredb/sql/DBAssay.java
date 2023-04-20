@@ -44,13 +44,23 @@ public class DBAssay {
         ResultSet resultSet = statement.executeQuery();
         Map<Integer, AssayImpl> assayMap = new LinkedHashMap<>();
         Map<Integer, String> assayToProjectMap = new HashMap<>();
+        // fetch projects..
+        Map<String,Project> projects = new HashMap<>();
+        //List<Project> projects_list = DBProject.fetchProjects(connection, new HashSet<>(assayToProjectMap.values()) );
+        //projects_list.stream().forEach(pi -> projects.put(pi.getId(),pi));
+
+
         while (resultSet.next()) {
             int assayId = resultSet.getInt("assay_id");
             AssayImpl assay = assayMap.get(assayId);
             if (assay == null) {
                 String assayName = resultSet.getString("assay_name");
                 String assayProject = resultSet.getString("assay_project_id");
-                assay = new AssayImpl(assayId, assayName,null, new ArrayList<>());
+                if(!projects.containsKey(assayProject)) {
+                    Project pi = DBProject.fetchProjects(connection,Collections.singletonMap(assayProject,"").keySet()).get(0);
+                    projects.put(pi.getId(),pi);
+                }
+                assay = new AssayImpl(assayId, assayName,projects.get(assayProject), new ArrayList<>());
                 assayMap.put(assayId, assay);
                 assayToProjectMap.put(assayId,assayProject);
             }
