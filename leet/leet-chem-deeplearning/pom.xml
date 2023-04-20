@@ -10,8 +10,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>leet-chem-deeplearning</artifactId>
-
+    <version>${revision}</version>
     <name>leet-chem-deeplearning</name>
+
     <!-- FIXME change it to the project's website -->
     <url>http://www.example.com</url>
 
