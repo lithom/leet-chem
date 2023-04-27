@@ -1,12 +1,11 @@
 package tech.molecules.leet.datatable;
 
-import javax.swing.*;
 import java.util.BitSet;
 import java.util.List;
 
 public interface DataFilter<T> {
 
-    public String getFilterName();
+    public abstract String getFilterName();
 
     /**
      *
@@ -17,9 +16,9 @@ public interface DataFilter<T> {
      *                 for the given position in the result bitset a zero must be returned.
      * @return
      */
-    public BitSet filterNexusRows(DataProvider<T> data, List<String> ids, BitSet filtered);
+    public BitSet filterRows(DataProvider<T> data, List<String> ids, BitSet filtered);
     public double getApproximateFilterSpeed();
-    public void setupFilter(DataTable table, DataProvider<T> dp);
+    public void setupFilter(DataProvider<T> dp, List<String> ids);
 
     /**
      * For certain filters it may be possible that the column first has
@@ -30,6 +29,16 @@ public interface DataFilter<T> {
      *
      * @return
      */
-    public boolean isReady();
+    public FilterState getFilterState();
+
+    public static enum FilterState {READY,UPDATING};
+
+    public void addFilterListener(FilterListener li);
+
+    public boolean removeFilterListener(FilterListener li);
+
+    public static interface FilterListener {
+        public void filterStateChanged(FilterState si);
+    }
 
 }

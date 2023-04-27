@@ -13,5 +13,4 @@ public interface DataProvider<T> {
 
     public void addDataProviderListener(DataProviderListener li);
     public boolean removeDataProviderListener(DataProviderListener li);
-
 }

@@ -8,6 +8,25 @@ public class SwingTableModelAdapter extends AbstractTableModel {
 
     public SwingTableModelAdapter(DataTable dataTable) {
         this.dataTable = dataTable;
+
+        initReloading();
+        dataTable.addDataTableListener(new DataTable.DataTableListener() {
+            @Override
+            public void tableStructureChanged() {
+                fireTableStructureChanged();
+            }
+
+            @Override
+            public void tableDataChanged() {
+                fireTableDataChanged();
+            }
+        });
+    }
+
+    private void initReloading() {
+        //dataTable.getDataColumns()
+        fireTableStructureChanged();
+        fireTableDataChanged();
     }
 
     @Override
