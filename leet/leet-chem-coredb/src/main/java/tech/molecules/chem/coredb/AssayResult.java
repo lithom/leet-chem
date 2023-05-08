@@ -10,6 +10,7 @@ public interface AssayResult {
     public Tube getTube();
 
     public DataValue getData(AssayParameter ap);
+    public DataValue getData(String parameter_name);
 }
 
 

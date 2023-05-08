@@ -10,6 +10,7 @@ import tech.molecules.leet.table.gui.JExtendedEditorPanel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.function.Consumer;
 
 public class JInjectorMainPanel extends JPanel {
 
@@ -59,7 +60,7 @@ public class JInjectorMainPanel extends JPanel {
 
     private void initEditorMenuBar() {
         JMenu jm_injector = new JMenu("Injector");
-        JMenuItem jmi_proposeStructures = new JMenuItem(new ProposeStructuresFromSelectionAction( () -> this.editor.getSwingEditorPanel().getDrawArea().getMolecule() ));//new JMenuItem("Propose structures for selection");
+        JMenuItem jmi_proposeStructures = new JMenuItem(new ProposeStructuresFromSelectionAction( () -> this.editor.getSwingEditorPanel().getDrawArea().getMolecule() , (x) -> {} ));//new JMenuItem("Propose structures for selection");
         jm_injector.add(jmi_proposeStructures);
         this.editor.getMenuBar().add(jm_injector);
     }

@@ -3,7 +3,9 @@ package tech.molecules.chem.coredb.sql;
 import tech.molecules.chem.coredb.*;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class AssayResultImpl implements AssayResult {
     private long id;
@@ -31,5 +33,18 @@ public class AssayResultImpl implements AssayResult {
 
     public DataValue getData(AssayParameter ap) {
         return dataValueMap.get(ap);
+    }
+
+    @Override
+    public DataValue getData(String parameter_name) {
+        List<AssayParameter> pi = this.getAssay().getParameter().stream().filter(ai -> ai.getName().equalsIgnoreCase(parameter_name)).collect(Collectors.toList());
+        if(pi.size()==0) {
+            System.out.println("[WARN] Parameter "+parameter_name+" not found..");
+            return null;
+        }
+        if(pi.size()>1) {
+            System.out.println("[WARN] Multiple assay parameters found for "+parameter_name+" ..");
+        }
+        return getData(pi.get(0));
     }
 }

@@ -103,10 +103,11 @@ public class FragmentDBCreator {
 
 
     public static void main(String args[]) {
-        List<Integer> fields = new ArrayList<>(); fields.add(0); fields.add(1);
+        List<Integer> fields = new ArrayList<>(); fields.add(0); //fields.add(1);
         CSVIterator iter = null;
         try {
-            iter = new CSVIterator("C:\\Temp\\leet\\chembl_structures_short.csv",true, fields);
+            //iter = new CSVIterator("C:\\Temp\\leet\\chembl_structures_short.csv",true, fields);
+            iter = new CSVIterator("C:\\datasets\\idcodes\\rand_20k_from_cm_avail.txt",true, fields);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -115,7 +116,8 @@ public class FragmentDBCreator {
         List<Pair<String,String>> molecules = new ArrayList<>();
         while( iter.hasNext() ) { //&& cnt < 15000) {
             List<String> di = iter.next();
-            molecules.add(Pair.of(di.get(0),di.get(1)));
+            //molecules.add(Pair.of(di.get(0),di.get(1)));
+            molecules.add(Pair.of("M-"+String.format("%06d",cnt),di.get(0)));
             cnt++;
         }
 

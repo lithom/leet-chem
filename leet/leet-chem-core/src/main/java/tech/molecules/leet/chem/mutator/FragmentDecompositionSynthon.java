@@ -9,9 +9,7 @@ import tech.molecules.leet.chem.shredder.FragmentDecomposition;
 import tech.molecules.leet.chem.shredder.SynthonUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class FragmentDecompositionSynthon implements SynthonWithContext {
 
@@ -22,6 +20,14 @@ public class FragmentDecompositionSynthon implements SynthonWithContext {
     @JsonPropertyDescription("synthon")
     @JsonProperty("synthon")
     private StereoMolecule synthon;
+
+    @JsonPropertyDescription("synthon_idcode")
+    @JsonProperty("synthonIDCode")
+    private String synthonIDCode;
+
+    @JsonPropertyDescription("remainder_idcode")
+    @JsonProperty("remainderIDCode")
+    private String remainderIDCode;
 
     @JsonPropertyDescription("context")
     @JsonProperty("context")
@@ -64,6 +70,8 @@ public class FragmentDecompositionSynthon implements SynthonWithContext {
             this.mapSynthonConnectorsToContextConnectors[ci][1] = pos_b;
         }
         this.decomp = decomp;
+        this.setSynthonIDcode(this.synthon.getIDCode());
+        this.setRemainderIDCode(this.context.getIDCode());
     }
 
     @Override
@@ -108,4 +116,19 @@ public class FragmentDecompositionSynthon implements SynthonWithContext {
         return SynthonWithContext.computeAssemblies_MatchingBondAndFirstAtom(this,other);
     }
 
+    public String getSynthonIDCode() {
+        return synthonIDCode;
+    }
+
+    public void setSynthonIDcode(String synthonIDcode) {
+        this.synthonIDCode = synthonIDcode;
+    }
+
+    public String getRemainderIDCode() {
+        return remainderIDCode;
+    }
+
+    public void setRemainderIDCode(String remainderIDCode) {
+        this.remainderIDCode = remainderIDCode;
+    }
 }
