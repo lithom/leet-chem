@@ -4,36 +4,15 @@ import tech.molecules.leet.chem.StructureWithID;
 import tech.molecules.leet.datatable.DataProvider;
 import tech.molecules.leet.datatable.DataTableColumn;
 import tech.molecules.leet.datatable.NumericDatasource;
+import tech.molecules.leet.datatable.column.AbstractDataTableColumn;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class StructureWithIDColumn implements DataTableColumn<StructureWithID, StructureWithID> {
-
-    private DataProvider<StructureWithID> dp;
+public class StructureWithIDColumn extends AbstractDataTableColumn<StructureWithID,StructureWithID> {
 
     @Override
-    public void setDataProvider(DataProvider<StructureWithID> dp) {
-        this.dp = dp;
-    }
-
-    @Override
-    public StructureWithID getValue(String key) {
-        return this.dp.getData(key);
-    }
-
-    @Override
-    public List<NumericDatasource> getNumericDatasources() {
-        return new ArrayList<>();
-    }
-
-    @Override
-    public void addColumnListener(DataTableColumnListener li) {
-
-    }
-
-    @Override
-    public boolean removeColumnListener(DataTableColumnListener li) {
-        return false;
+    public StructureWithID processData(StructureWithID data) {
+        return data;
     }
 }

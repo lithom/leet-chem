@@ -31,7 +31,7 @@ public class SwingDataTableRendererRegistry {
         renderers.get(original).add(renderer);
     }
 
-    public synchronized List<TableCellRenderer> findRenderer(Class original) {
+    public synchronized List<TableCellRenderer> findRenderers(Class original) {
         return renderers.get(original);
     }
 

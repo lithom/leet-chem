@@ -1,10 +1,8 @@
 package tech.molecules.leet.datatable;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -46,7 +44,11 @@ public class DataTable {
 
 
 
-    private List<DataTableColumn> columns;
+    public DataTable() {
+        this.initDataTableUpdateThread();
+    }
+
+    private List<DataTableColumn> columns = new ArrayList<>();
 
 
     public List<DataTableColumn> getDataColumns() {
@@ -59,6 +61,29 @@ public class DataTable {
         synchronized (this.columns) {
             this.columns.add(dtc);
             this.filters.put(dtc,new ArrayList<>());
+
+            // add necessary listeners
+            dtc.addColumnListener(new DataTableColumn.DataTableColumnListener() {
+                @Override
+                public void filteringChanged(DataTableColumn col) {
+                    fireTableDataChanged();
+                }
+
+                @Override
+                public void sortingChanged(DataTableColumn col) {
+                    fireTableDataChanged();
+                }
+
+                @Override
+                public void dataProviderChanged(DataTableColumn col, DataProvider newDP) {
+                    fireTableDataChanged();
+                }
+
+                @Override
+                public void visualizationChanged(DataTableColumn col) {
+                    fireTableDataChanged();
+                }
+            });
         }
     }
 
@@ -69,11 +94,19 @@ public class DataTable {
     }
 
 
-    private List<String> visibleKeys;
+    private List<String> allKeys = new ArrayList<>();
+    private List<String> visibleKeys = new ArrayList<>();
 
     public List<String> getVisibleKeys() {
         synchronized (visibleKeys) {
             return new ArrayList<>(visibleKeys);
+        }
+    }
+
+    public void setAllKeys(List<String> keys) {
+        synchronized (visibleKeys) {
+            this.allKeys = new ArrayList<>(keys);
+            this.taskQueue.add(new UpdateRowFilteringTask());
         }
     }
 
@@ -82,7 +115,7 @@ public class DataTable {
     }
 
 
-    private Map<DataTableColumn,List<AbstractDataFilter>> filters;
+    private Map<DataTableColumn,List<AbstractDataFilter>> filters = new HashMap<>();
 
     public boolean removeFilter(DataTableColumn dtc, AbstractDataFilter fi) {
         boolean removed = false;
@@ -105,7 +138,10 @@ public class DataTable {
     private class UpdateRowFilteringTask implements DataTableTask {
         @Override
         public void process() {
-
+            synchronized(visibleKeys) {
+                // TODO: implement filtering
+                visibleKeys = new ArrayList<>(allKeys);
+            }
         }
     }
 
@@ -130,7 +166,8 @@ public class DataTable {
     }
 
     public DataTable.CellState getCellState(int row, int col) {
-        return new CellState(null, Arrays.asList(new Color[]{Color.red,Color.blue}));
+        DataTableColumn.CellValue cv = getDataColumns().get(col).getValue(getVisibleKeys().get(row));
+        return new CellState(cv.colBG, Arrays.asList(new Color[]{Color.red,Color.blue}));
     }
 
 

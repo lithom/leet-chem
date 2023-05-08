@@ -3,16 +3,18 @@ package tech.molecules.leet.datatable;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 public interface DataTableColumn<T,U> {
 
     public void setDataProvider(DataProvider<T> dp);
 
-    public U getValue(String key);
+    public CellValue getValue(String key);
 
     default public List<NumericDatasource> getNumericDatasources() {
         return new ArrayList<>();
@@ -42,9 +44,22 @@ public interface DataTableColumn<T,U> {
         return new HashMap<>(); // TODO implement..
     }
 
+    public static class CellValue<U> {
+        final U val;
+        final Color colBG;
+        public CellValue(U val, Color colBG) {
+            this.val = val;
+            this.colBG = colBG;
+        }
+    }
+
+    public void setBackgroundColor(NumericDatasource nd, Function<Double, Color> colormap);
 
     public interface DataTableColumnListener {
-        public void filteringChanged();
+        public void filteringChanged(DataTableColumn col);
+        public void sortingChanged(DataTableColumn col);
+        public void dataProviderChanged(DataTableColumn col, DataProvider newDP);
+        public void visualizationChanged(DataTableColumn col);
     }
 
     public void addColumnListener(DataTableColumnListener li);

@@ -3,6 +3,7 @@ package tech.molecules.leet.datatable.swing;
 import tech.molecules.leet.datatable.DataTable;
 
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableModel;
 import java.util.List;
 
 public class DefaultSwingTableModel {
@@ -33,12 +34,25 @@ public class DefaultSwingTableModel {
         });
     }
 
+    public TableModel getSwingTableModel() {
+        return this.swingModel;
+    }
+
+    public DataTable getDataTable() {
+        return this.table;
+    }
+
     public DataTable.CellState getCellState(int row, int col) {
         return this.table.getCellState(row,col);
     }
 
 
     public class SwingTableModel extends AbstractTableModel {
+        @Override
+        public String getColumnName(int column) {
+            return ""+column;
+        }
+
         @Override
         public int getRowCount() {
             return table.getVisibleKeys().size();
