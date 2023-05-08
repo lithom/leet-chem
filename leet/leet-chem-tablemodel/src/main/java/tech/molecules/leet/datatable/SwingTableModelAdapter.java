@@ -1,6 +1,7 @@
 package tech.molecules.leet.datatable;
 
 import javax.swing.table.AbstractTableModel;
+import java.util.List;
 
 public class SwingTableModelAdapter extends AbstractTableModel {
 
@@ -19,6 +20,11 @@ public class SwingTableModelAdapter extends AbstractTableModel {
             @Override
             public void tableDataChanged() {
                 fireTableDataChanged();
+            }
+
+            @Override
+            public void tableCellsChanged(List<int[]> cells) {
+
             }
         });
     }
