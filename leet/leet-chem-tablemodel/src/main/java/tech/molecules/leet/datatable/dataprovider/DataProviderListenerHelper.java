@@ -2,11 +2,12 @@ package tech.molecules.leet.datatable.dataprovider;
 
 import tech.molecules.leet.datatable.DataProvider;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class DataProviderListenerHelper {
 
-    private List<DataProvider.DataProviderListener> listeners;
+    private List<DataProvider.DataProviderListener> listeners = new ArrayList<>();
 
     public void addDataProviderListener(DataProvider.DataProviderListener li) {
         this.listeners.add(li);

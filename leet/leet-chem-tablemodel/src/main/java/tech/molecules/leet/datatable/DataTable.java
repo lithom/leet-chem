@@ -5,8 +5,12 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Collectors;
 
 /**
+ *
+ * Selection Model: ..
+ *
  *
  * Event Handling: Data columns have their own data provider that always
  * "immediately" provides them with data. However, data columns should not
@@ -14,6 +18,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * can be registered in the DataTable, and then in case that a data provider
  * sends a data changed event, it notifies repaint events to all columns that
  * use the given data provider.
+ *
+ *
  *
  *
  */
@@ -42,14 +48,42 @@ public class DataTable {
         processingThread.start();
     }
 
+    public void initSelectionModel() {
+        this.selectionModel = new DataTableSelectionModel();
+        this.selectionModel.addSelectionListener(new DataTableSelectionModel.SelectionListener() {
+            @Override
+            public void selectionStatusChanged(Collection<String> rows) {
+                fireTableCellChanged( rows.parallelStream().map( ri -> new int[]{ visibleKeyPositions.get(ri),0}).collect(Collectors.toList()));
+            }
+        });
+    }
 
 
     public DataTable() {
         this.initDataTableUpdateThread();
+        this.initSelectionModel();
     }
 
     private List<DataTableColumn> columns = new ArrayList<>();
 
+    private DataTableSelectionModel selectionModel;
+
+    public DataTableSelectionModel getSelectionModel() {
+        return this.selectionModel;
+    }
+
+
+
+    public List<String> getVisibleKeysAt(int rows[]) {
+        List<String> rows_a = new ArrayList<>();
+        synchronized(this.visibleKeys) {
+            for (int zi = 0; zi < rows.length; zi++) {
+                String rowid = this.getVisibleKeys().get( rows[zi] );
+                rows_a.add(rowid);
+            }
+        }
+        return rows_a;
+    }
 
     public List<DataTableColumn> getDataColumns() {
         synchronized (this.columns) {
@@ -97,6 +131,8 @@ public class DataTable {
     private List<String> allKeys = new ArrayList<>();
     private List<String> visibleKeys = new ArrayList<>();
 
+    private Map<String,Integer> visibleKeyPositions = new HashMap<>();
+
     public List<String> getVisibleKeys() {
         synchronized (visibleKeys) {
             return new ArrayList<>(visibleKeys);
@@ -110,10 +146,19 @@ public class DataTable {
         }
     }
 
-    private void setVisibleKeys(List<String> vk) {
-        synchronized(visibleKeys) { this.visibleKeys = vk; }
+    private void reinitVisibleKeyPositions() {
+        this.visibleKeyPositions.clear();
+        for(int zi=0;zi<this.visibleKeys.size();zi++) {
+            this.visibleKeyPositions.put(this.visibleKeys.get(zi),zi);
+        }
     }
 
+    private void setVisibleKeys(List<String> vk) {
+        synchronized(visibleKeys) {
+            this.visibleKeys = vk;
+            this.reinitVisibleKeyPositions();
+        }
+    }
 
     private Map<DataTableColumn,List<AbstractDataFilter>> filters = new HashMap<>();
 
@@ -140,7 +185,8 @@ public class DataTable {
         public void process() {
             synchronized(visibleKeys) {
                 // TODO: implement filtering
-                visibleKeys = new ArrayList<>(allKeys);
+                //visibleKeys = new ArrayList<>(allKeys);
+                setVisibleKeys(allKeys);
             }
         }
     }
@@ -167,7 +213,11 @@ public class DataTable {
 
     public DataTable.CellState getCellState(int row, int col) {
         DataTableColumn.CellValue cv = getDataColumns().get(col).getValue(getVisibleKeys().get(row));
-        return new CellState(cv.colBG, Arrays.asList(new Color[]{Color.red,Color.blue}));
+        //return new CellState(cv.colBG, Arrays.asList(new Color[]{Color.red,Color.blue}));
+
+        List<DataTableSelectionModel.SelectionType> sti = getSelectionModel().getSelectionTypesForRow(this.visibleKeys.get(row));
+        List<Color> selectionColors = sti.stream().map(xi -> xi.getColor()).collect(Collectors.toList());
+        return new CellState(cv.colBG,selectionColors);
     }
 
 

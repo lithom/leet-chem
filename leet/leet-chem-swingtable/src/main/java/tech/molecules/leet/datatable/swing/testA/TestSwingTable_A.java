@@ -8,6 +8,7 @@ import tech.molecules.leet.datatable.swing.DefaultSwingTableModel;
 import tech.molecules.leet.datatable.swing2.InteractiveTableModel;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
@@ -65,6 +66,19 @@ public class TestSwingTable_A {
         DefaultSwingTableController table = new DefaultSwingTableController(swingmodel);
 
         dtable.setAllKeys(dp_a.getAllEntries());
+
+        NumericDatasource nd = (NumericDatasource) dtable.getDataColumns().get(0).getNumericDatasources().get(0);
+        dtable.getDataColumns().get(0).setBackgroundColor( nd , (x) -> new Color(255-3*(int)x,255,255) );
+        table.setTableCellRenderer(0,new DefaultTableCellRenderer(){
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                if(value instanceof DataTableColumn.CellValue) {
+                    DataTableColumn.CellValue cv = (DataTableColumn.CellValue) value;
+                    this.setText(cv.val.toString());
+                }
+                return this;
+            }
+        });
 
         fi.getContentPane().add(table);
         fi.setSize(600,600);

@@ -2,6 +2,8 @@ package tech.molecules.leet.datatable.swing;
 
 import javax.swing.border.AbstractBorder;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -19,6 +21,11 @@ public class MultiColorBorder extends AbstractBorder {
         Graphics2D g2d = (Graphics2D) g.create();
         g2d.setStroke(new BasicStroke(1));
 
+        List<Color> colors_a = this.colors;
+        if(colors_a==null || colors_a.size()==0) {
+           colors_a = Collections.singletonList(Color.black);
+        }
+
         int[] xPoints = {x, x + width, x + width, x, x};
         int[] yPoints = {y, y, y + height, y + height, y};
 
@@ -33,7 +40,7 @@ public class MultiColorBorder extends AbstractBorder {
             int distance = (int) Math.sqrt(dx * dx + dy * dy);
 
             for (int j = 0; j < distance; j += stretchLength) {
-                Color color = colors.get((j / stretchLength) % colors.size());
+                Color color = colors_a.get((j / stretchLength) % colors_a.size());
                 g2d.setColor(color);
                 g2d.drawLine(
                         startX + (j * dx) / distance,

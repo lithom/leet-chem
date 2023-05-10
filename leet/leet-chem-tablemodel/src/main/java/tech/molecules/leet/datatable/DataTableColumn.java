@@ -45,8 +45,8 @@ public interface DataTableColumn<T,U> {
     }
 
     public static class CellValue<U> {
-        final U val;
-        final Color colBG;
+        public final U val;
+        public final Color colBG;
         public CellValue(U val, Color colBG) {
             this.val = val;
             this.colBG = colBG;

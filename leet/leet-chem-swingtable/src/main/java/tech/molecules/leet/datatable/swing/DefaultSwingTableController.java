@@ -1,8 +1,11 @@
 package tech.molecules.leet.datatable.swing;
 
 import tech.molecules.leet.datatable.DataTable;
+import tech.molecules.leet.datatable.DataTableSelectionModel;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
@@ -40,6 +43,17 @@ public class DefaultSwingTableController extends JPanel {
     private void reinitController() {
         this.table.setModel(this.model.getSwingTableModel());
 
+        // TODO: init Selection Model listener
+        this.table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                DataTableSelectionModel.SelectionType st_selected = model.getDataTable().getSelectionModel().getSelectionType(DataTableSelectionModel.SELECTION_TYPE_SELECTED);
+                model.getDataTable().getSelectionModel().resetSelectionForSelectionType( st_selected );
+                model.getDataTable().getSelectionModel().addSelectionTypeToRows( st_selected ,  model.getDataTable().getVisibleKeysAt(table.getSelectedRows()));
+            }
+        });
+
+
         // TODO: install all column specific mouse listeners
         // i.e. this includes setting the renderer,
         // + filtering / sorting options
@@ -70,16 +84,22 @@ public class DefaultSwingTableController extends JPanel {
             DataTable.CellState cellState = this.dtm.getCellState(row, column); // Implement this method to get the CellState from your data model
 
             // Create a JPanel with the specified background color
-            JPanel panel = new JPanel();
-            panel.setBackground(cellState.backgroundColor);
+            //JPanel panel = new JPanel();
+            //panel.setBackground(cellState.backgroundColor);
+            if(cellState.backgroundColor!=null) {
+                component.setBackground(cellState.backgroundColor);
+            }
 
             // Create a custom border with the selection colors
-            panel.setBorder(new MultiColorBorder(cellState.selectionColors, 40));
+            //panel.setBorder(new MultiColorBorder(cellState.selectionColors, 40));
+            if(component instanceof JComponent) {
+                ((JComponent)component).setBorder(new MultiColorBorder(cellState.selectionColors, 200));
+            }
 
+            return component;
             // Add the original component (from the specific renderer) to the panel
-            panel.add((JComponent) component);
-
-            return panel;
+            //panel.add((JComponent) component);
+            //return panel;
         }
     }
 }
