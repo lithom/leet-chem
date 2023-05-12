@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StructureWithIDColumn extends AbstractDataTableColumn<StructureWithID,StructureWithID> {
-
     @Override
     public StructureWithID processData(StructureWithID data) {
         return data;

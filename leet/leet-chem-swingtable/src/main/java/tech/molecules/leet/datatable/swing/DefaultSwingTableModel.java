@@ -55,7 +55,7 @@ public class DefaultSwingTableModel {
 
         @Override
         public int getRowCount() {
-            return table.getVisibleKeys().size();
+            return table.getVisibleKeysSorted().size();
         }
 
         @Override
@@ -65,7 +65,8 @@ public class DefaultSwingTableModel {
 
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
-            return table.getDataColumns().get(columnIndex).getValue(table.getVisibleKeys().get(rowIndex));
+            //return table.getDataColumns().get(columnIndex).getValue(table.getVisibleKeys().get(rowIndex));
+            return table.getValue(rowIndex,columnIndex);
         }
     }
 

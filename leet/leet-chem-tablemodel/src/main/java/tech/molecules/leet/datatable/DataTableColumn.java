@@ -14,7 +14,7 @@ public interface DataTableColumn<T,U> {
 
     public void setDataProvider(DataProvider<T> dp);
 
-    public CellValue getValue(String key);
+    public CellValue<U> getValue(String key);
 
     default public List<NumericDatasource> getNumericDatasources() {
         return new ArrayList<>();

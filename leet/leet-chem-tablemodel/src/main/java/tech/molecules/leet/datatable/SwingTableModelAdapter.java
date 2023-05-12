@@ -40,7 +40,7 @@ public class SwingTableModelAdapter extends AbstractTableModel {
 
     @Override
     public int getRowCount() {
-        return dataTable.getVisibleKeys().size();
+        return dataTable.getVisibleKeysSorted().size();
     }
 
     @Override
@@ -50,6 +50,7 @@ public class SwingTableModelAdapter extends AbstractTableModel {
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
-        return dataTable.getDataColumns().get(columnIndex).getValue( dataTable.getVisibleKeys().get(rowIndex) );
+        return dataTable.getValue(rowIndex,columnIndex);
+        //return dataTable.getDataColumns().get(columnIndex).getValue( dataTable.getVisibleKeysSorted().get(rowIndex) );
     }
 }

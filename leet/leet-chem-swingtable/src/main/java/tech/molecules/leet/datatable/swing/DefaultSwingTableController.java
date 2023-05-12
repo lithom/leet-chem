@@ -49,7 +49,7 @@ public class DefaultSwingTableController extends JPanel {
             public void valueChanged(ListSelectionEvent e) {
                 DataTableSelectionModel.SelectionType st_selected = model.getDataTable().getSelectionModel().getSelectionType(DataTableSelectionModel.SELECTION_TYPE_SELECTED);
                 model.getDataTable().getSelectionModel().resetSelectionForSelectionType( st_selected );
-                model.getDataTable().getSelectionModel().addSelectionTypeToRows( st_selected ,  model.getDataTable().getVisibleKeysAt(table.getSelectedRows()));
+                model.getDataTable().getSelectionModel().addSelectionTypeToRows( st_selected ,  model.getDataTable().getVisibleKeysSortedAt(table.getSelectedRows()));
             }
         });
 
@@ -102,4 +102,13 @@ public class DefaultSwingTableController extends JPanel {
             //return panel;
         }
     }
+
+    public void setRowHeight(int rh) {
+        this.table.setRowHeight(rh);
+    }
+
+    public DefaultSwingTableModel getModel() {
+        return this.model;
+    }
+
 }

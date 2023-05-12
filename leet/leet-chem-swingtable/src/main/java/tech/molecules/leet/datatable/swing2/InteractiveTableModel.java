@@ -90,7 +90,8 @@ public class InteractiveTableModel {
 
     public static class RandomStringGenerator {
 
-        private static final String ALPHABET = "abcdefghijklm+*ç%&/()=?nopqrstuvöä¨$¨üwx§y<>zABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        private static final String ALPHABET   = "abcdefg";
+        private static final String ALPHABET_B = "abcdefghijklm+*ç%&/()=?nopqrstuvöä¨$¨üwx§y<>zABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
         private static final String ALPHABET_A = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
         //private static final int LENGTH = 10;
 

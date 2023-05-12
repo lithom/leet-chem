@@ -1,6 +1,7 @@
 package tech.molecules.leet.datatable.chem;
 
 import com.actelion.research.chem.StereoMolecule;
+import org.apache.commons.lang3.tuple.Pair;
 import tech.molecules.leet.chem.StructureWithID;
 import tech.molecules.leet.datatable.DataProvider;
 import tech.molecules.leet.datatable.dataprovider.HashMapBasedDataProvider;
@@ -30,6 +31,22 @@ public class DefaultStructureProvider extends HashMapBasedDataProvider<Structure
             }
             newData.put(sid.structure[0],sid);
             changed_keys.add(sid.structure[0]);
+        }
+        this.addData(newData);
+    }
+
+    public void loadStructures(Collection<Pair<String,String[]>> structures, boolean setIdInSID) {
+        Map<String,StructureWithID> newData = new HashMap<>();
+        List<String> changed_keys = new ArrayList<>();
+        for(Pair<String,String[]> sid : structures) {
+            if(setIdInSID) {
+                newData.put(sid.getLeft(),new StructureWithID(sid.getLeft(),"",sid.getRight()) );
+                changed_keys.add(sid.getLeft());
+            }
+            else {
+                newData.put(sid.getLeft(),new StructureWithID("","",sid.getRight()) );
+                changed_keys.add(sid.getLeft());
+            }
         }
         this.addData(newData);
     }

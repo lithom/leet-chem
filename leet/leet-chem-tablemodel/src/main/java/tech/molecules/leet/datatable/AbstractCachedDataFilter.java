@@ -1,10 +1,9 @@
 package tech.molecules.leet.datatable;
 
-import javax.swing.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class AbstractDataFilter<T> implements DataFilter<T> {
+public abstract class AbstractCachedDataFilter<T> implements DataFilter<T> {
 
     /**
      *
@@ -12,16 +11,16 @@ public abstract class AbstractDataFilter<T> implements DataFilter<T> {
      * @param ids
      * @param filtered bits that are one indicate rows that are not yet filtered. For these
      *                 the function has to check if it should be filtered, and in that case
-     *                 for the given position in the result bitset a zero must be returned.
+     *                 for the given position in the result bitset a one must be returned.
      * @return
      */
-    public BitSet filterRows(DataProvider<T> data, List<String> ids, BitSet filtered) {
+    public BitSet filterRows(DataTableColumn<?,T> data, List<String> ids, BitSet filtered) {
         BitSet bsi = (BitSet) filtered.clone();
         for(int zi=0;zi<ids.size();zi++) {
-            if(filtered.get(zi)) {
+            if(!filtered.get(zi)) {
                 //if(filterRow(data.getData(ids.get(zi)))) {
                 if(cached.get(ids.get(zi))) {
-                    bsi.set(zi,false);
+                    bsi.set(zi,true);
                 }
             }
         }
@@ -36,6 +35,8 @@ public abstract class AbstractDataFilter<T> implements DataFilter<T> {
      */
     public abstract boolean filterRow(T vi);
 
+
+
     private FilterState state = FilterState.UPDATING;
 
     /**
@@ -43,38 +44,37 @@ public abstract class AbstractDataFilter<T> implements DataFilter<T> {
      */
     private Map<String,Boolean> cached ;
 
+    /**
+     * To ensure that we run only one reinitFilter at the time,
+     * by convention this function must be called synchronized,
+     * i.e. we also ensure this while calling the function.
+     *
+     * @param data
+     * @param all_ids
+     */
     @Override
-    public synchronized void setupFilter(DataProvider<T> dp, List<String> ids) {
-        state = FilterState.UPDATING;
-        fireFilterStateChanged();
+    public synchronized void reinitFilter(DataTableColumn<?,T> data, List<String> all_ids, List<String> changed) {
+        this.state = FilterState.UPDATING;
         cached = new ConcurrentHashMap<>();
         Runnable ri = new Runnable() {
             @Override
             public void run() {
-                ids.parallelStream().forEach( si -> {
-                    boolean bi = filterRow(dp.getData(si));
+                changed.parallelStream().forEach( si -> {
+                    boolean bi = filterRow(data.getValue(si).val);
                     cached.put(si,bi);
                 } );
-                state = FilterState.READY;
-                fireFilterStateChanged();
+
             }
         };
         Thread ti = new Thread(ri);
         ti.start();
-    }
-
-    private List<FilterListener> listeners = new ArrayList<>();
-
-    private void fireFilterStateChanged() {
-        for(FilterListener li : listeners) {
-            li.filterStateChanged(this.state);
+        // NOTE: by convention this function is blocking, so we wait..
+        try {
+            ti.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
-    }
-    public void addFilterListener(FilterListener li) {
-        this.listeners.add(li);
-    }
-    public boolean removeFilterListener(FilterListener li) {
-        return this.listeners.remove(li);
+        state = FilterState.READY;
     }
 
 }

@@ -467,6 +467,22 @@ public class ChemUtils {
         return mols;
     }
 
+    public static List<StereoMolecule> loadTestMolecules_35FromDrugCentral() {
+        InputStream in1 = Thread.currentThread().getContextClassLoader().getResourceAsStream("idcodes_35drugs.txt");
+        InputStreamReader in2 = new InputStreamReader(in1);
+        BufferedReader in     = new BufferedReader(in2);
+        List<StereoMolecule> mols = new ArrayList<>();
+        String line = null;
+        try {
+            while ((line = in.readLine()) != null) {
+                mols.add(ChemUtils.parseIDCode(line));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return mols;
+    }
+
     /**
      * NOTE: The molecules are sorted by druglikeness, starting with the most drug-like molecules.
      * @return
