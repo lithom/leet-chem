@@ -49,6 +49,7 @@
         <module>leet-chem-tablemodel</module>
         <module>leet-chem-swingtable</module>
         <module>leet-chem-coredb-analytics</module>
+        <module>leet-chem-gui-tools</module>
     </modules>
 
     <dependencyManagement>

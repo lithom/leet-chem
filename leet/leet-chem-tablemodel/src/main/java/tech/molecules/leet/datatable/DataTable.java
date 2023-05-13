@@ -159,6 +159,12 @@ public class DataTable {
         }
     }
 
+    public List<String> getAllKeys() {
+        synchronized (allKeys) {
+            return new ArrayList<>(allKeys);
+        }
+    }
+
     public void setAllKeys(List<String> keys) {
         synchronized (visibleKeysUnsorted) {
             this.allKeys = new ArrayList<>(keys);

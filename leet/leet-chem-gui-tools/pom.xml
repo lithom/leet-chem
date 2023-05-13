@@ -9,11 +9,11 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>leet-chem-swingtable</artifactId>
+    <artifactId>leet-chem-gui-tools</artifactId>
     <version>${revision}</version>
     <packaging>jar</packaging>
-
-    <name>leet-chem-swingtable</name>
+    s
+    <name>leet-chem-gui-tools</name>
 
     <description>Cheminformatics and computational chemistry algorithms and workflows.</description>
     <url>https://github.com/lithom/leet-chem</url>
@@ -41,11 +41,6 @@
         <dependency>
             <groupId>tech.molecules</groupId>
             <artifactId>leet-chem-core</artifactId>
-            <version>${revision}</version>
-        </dependency>
-        <dependency>
-            <groupId>tech.molecules</groupId>
-            <artifactId>leet-chem-gui-tools</artifactId>
             <version>${revision}</version>
         </dependency>
         <dependency>

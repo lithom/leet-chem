@@ -10,6 +10,5 @@ public abstract class AbstractSwingSortController<T> {
     private DataFilter<T> filter;
 
     public abstract JPanel getConfigurationPanel();
-    public abstract List<Action> getSortActions();
 
 }

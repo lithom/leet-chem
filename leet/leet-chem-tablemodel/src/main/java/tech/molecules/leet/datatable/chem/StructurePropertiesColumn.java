@@ -12,6 +12,10 @@ import java.util.List;
 
 public class StructurePropertiesColumn extends AbstractDataTableColumn<StructurePropertiesProvider.CalculatedBasicStructureProperties,StructurePropertiesProvider.CalculatedBasicStructureProperties> {
 
+    public StructurePropertiesColumn() {
+        super(StructurePropertiesProvider.CalculatedBasicStructureProperties.class);
+    }
+
     @Override
     public StructurePropertiesProvider.CalculatedBasicStructureProperties processData(StructurePropertiesProvider.CalculatedBasicStructureProperties data) {
         return data;

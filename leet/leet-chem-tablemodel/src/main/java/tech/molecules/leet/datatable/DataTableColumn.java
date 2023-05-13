@@ -16,6 +16,8 @@ public interface DataTableColumn<T,U> {
 
     public CellValue<U> getValue(String key);
 
+    public U getRawValue(String key);
+
     default public List<NumericDatasource> getNumericDatasources() {
         return new ArrayList<>();
     }
@@ -31,6 +33,8 @@ public interface DataTableColumn<T,U> {
     default public List<Pair<List<String>,AbstractColumnRowSpecificAction<U>>> getColumnRowSpecificActions() {
         return new ArrayList<>();
     }
+
+    public Class<U> getRepresentationClass();
 
     default public List<DataFilter<U>> getFilters() {
         return new ArrayList<>();

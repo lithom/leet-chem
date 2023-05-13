@@ -55,6 +55,10 @@ public class TestSwingTable_A {
     }
 
     public static class StringColumn extends AbstractDataTableColumn<String,String> {
+        public StringColumn() {
+            super(String.class);
+        }
+
         @Override
         public String processData(String data) {
             return data;
@@ -193,7 +197,6 @@ public class TestSwingTable_A {
 
         table.setRowHeight(120);
 
-
         fi.getContentPane().add(table);
         fi.setSize(600,600);
         fi.setVisible(true);
@@ -242,6 +245,12 @@ public class TestSwingTable_A {
         sorts.add(Pair.of(dtable.getDataColumns().get(0), sort2));
 
         dtable.setDataSort(sorts);
+
+
+
+
+
+
 
     }
 

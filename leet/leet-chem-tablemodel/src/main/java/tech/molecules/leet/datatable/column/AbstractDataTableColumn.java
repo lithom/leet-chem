@@ -10,14 +10,23 @@ import java.util.function.Function;
 public abstract class AbstractDataTableColumn<T,V> implements DataTableColumn<T,V> {
 
     private DataProvider<T> dp = null;
+    private Class<V> representationClass;
 
-    public AbstractDataTableColumn() {
-
+    public AbstractDataTableColumn(Class<V> representationClass) {
+        this.representationClass = representationClass;
     }
 
-    public AbstractDataTableColumn(DataProvider<T> dp) {
+    public AbstractDataTableColumn(Class<V> representationClass, DataProvider<T> dp) {
+        this.representationClass = representationClass;
         this.setDataProvider(dp);
     }
+
+    @Override
+    public Class<V> getRepresentationClass() {
+        return this.representationClass;
+    }
+
+
 
     public AbstractDataTableColumn<T,V> getThisColumn() {return this;}
 
@@ -39,6 +48,10 @@ public abstract class AbstractDataTableColumn<T,V> implements DataTableColumn<T,
         return new CellValue<V>(val,vcol);
     }
 
+    @Override
+    public V getRawValue(String key) {
+        return processData( dp.getData(key) );
+    }
 
     private Function<Double,Color> backgroundColormap = null;
     private NumericDatasource<V>   backgroundNumericDatasource = null;

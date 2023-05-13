@@ -1,7 +1,10 @@
 package tech.molecules.leet.datatable.swing;
 
+import org.apache.commons.lang3.tuple.Pair;
 import tech.molecules.leet.datatable.DataTable;
+import tech.molecules.leet.datatable.DataTableColumn;
 import tech.molecules.leet.datatable.DataTableSelectionModel;
+import tech.molecules.leet.gui.UtilSwing;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -53,12 +56,37 @@ public class DefaultSwingTableController extends JPanel {
             }
         });
 
+        // listen to DataTable when table structure changes:
+        this.model.getDataTable().addDataTableListener(new DataTable.DataTableListener() {
+            @Override
+            public void tableDataChanged() {
+
+            }
+
+            @Override
+            public void tableStructureChanged() {
+                reinitController();
+            }
+
+            @Override
+            public void tableCellsChanged(List<int[]> cells) {
+
+            }
+        });
+
 
         // TODO: install all column specific mouse listeners
         // i.e. this includes setting the renderer,
         // + filtering / sorting options
         // + alternative representations options
         // + numeric datasource options
+
+        JPopupMenu pop = new JPopupMenu();
+        for(DataTableColumn ci : this.getModel().getDataTable().getDataColumns()) {
+            List<Pair<String[],Action>> fa = NumericDatasourceHelper.createFilterActions(this.getModel().getDataTable(),ci, new UtilSwing.PanelAsFrameProvider(this,100,100) );
+            fa.stream().forEach( xi -> pop.add(xi.getRight()) );
+        }
+        this.setComponentPopupMenu(pop);
     }
 
     public void setTableCellRenderer(int col, TableCellRenderer renderer) {

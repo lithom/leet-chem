@@ -1,11 +1,13 @@
 package tech.molecules.leet.datatable.dataprovider;
 
 import com.actelion.research.chem.IDCodeParser;
+import com.actelion.research.chem.SmilesParser;
 import com.actelion.research.chem.StereoMolecule;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.cache.spi.access.CollectionDataAccess;
 import tech.molecules.leet.chem.StructureWithID;
 import tech.molecules.leet.datatable.DataProvider;
+import tech.molecules.leet.datatable.DataTable;
 import tech.molecules.leet.datatable.DataTableColumn;
 import tech.molecules.leet.datatable.chem.DefaultStructureProvider;
 import tech.molecules.leet.datatable.chem.StructurePropertiesProvider;
@@ -14,16 +16,13 @@ import tech.molecules.leet.datatable.column.NumericColumn;
 import tech.molecules.leet.datatable.column.StringColumn;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class CSVImporter {
 
     private File file;
 
-    public enum ColType {String,Numeric,Idcode}
+    public enum ColType {String,Numeric,Idcode,Smiles}
 
     /**
      * Header format:
@@ -48,11 +47,14 @@ public class CSVImporter {
             String header = in.readLine();
             String[] splits = header.split(",");
             for(int zi=0;zi<splits.length;zi++) {
-                if( splits[zi].trim().endsWith("[numeric]")) {
+                if( splits[zi].trim().toLowerCase().endsWith("[numeric]")) {
                     columns.add(ColType.Numeric);
                 }
-                else if ( splits[zi].trim().endsWith("[idcode]")) {
+                else if ( splits[zi].trim().toLowerCase().endsWith("[idcode]")) {
                     columns.add(ColType.Numeric);
+                }
+                else if ( splits[zi].trim().toLowerCase().endsWith("[smiles]")) {
+                    columns.add(ColType.Smiles);
                 }
                 else {
                     columns.add(ColType.String);
@@ -75,6 +77,27 @@ public class CSVImporter {
             this.tableData = tableData;
             this.keys = keys;
         }
+
+        public List<ColType> getColumns() {
+            return columns;
+        }
+
+        public List<Pair<DataProvider, DataTableColumn>> getTableData() {
+            return tableData;
+        }
+
+        public List<String> getKeys() {
+            return keys;
+        }
+    }
+
+    public static DataTable createDataTable(ImportedCSV data) {
+        DataTable dt = new DataTable();
+        for(Pair<DataProvider,DataTableColumn> ci : data.tableData) {
+            ci.getRight().setDataProvider(ci.getLeft());
+            dt.addDataColumn(ci.getRight());
+        }
+        return dt;
     }
 
     /**
@@ -87,7 +110,9 @@ public class CSVImporter {
 
         for (int zi = 0; zi < columns.size(); zi++) {
             switch (columns.get(zi)) {
-                case Idcode: {
+                case Idcode:
+                case Smiles:
+                {
                     data.add(Pair.of(new DefaultStructureProvider(), new StructureWithIDColumn()));
                     break;
                 }
@@ -121,11 +146,27 @@ public class CSVImporter {
 
                 int cc = 0;
                 for (ColType ci : columns) {
+                    if(splits.length<=cc) {
+                        continue;
+                    }
+
                     switch (ci) {
                         case Idcode:
                             try {
                                 icp.parse(mi, splits[cc]);
                             } catch (Exception ex) {
+                                mi.clear();
+                                System.out.println("[WARN] parsing error..");
+                            }
+                            ((DefaultStructureProvider) data.get(cc).getLeft()).
+                                    //loadStructures(Collections.singletonList(new StructureWithID(id_a,"", new String[] {mi.getIDCode(),mi.getIDCoordinates()})));
+                                            loadStructures(Collections.singletonList(Pair.of(id_a, new String[]{mi.getIDCode(), mi.getIDCoordinates()})),false);
+                            break;
+                        case Smiles:
+                            try {
+                                new SmilesParser().parse(mi, splits[cc]);
+                            } catch (Exception ex) {
+                                mi.clear();
                                 System.out.println("[WARN] parsing error..");
                             }
                             ((DefaultStructureProvider) data.get(cc).getLeft()).
