@@ -46,6 +46,7 @@ public class NumericDatasourceHelper {
         Supplier<JPanel> targetPanel;
 
         public AddNumericFilterAction(DataTable dt, DataTableColumn<?, Double> col, NumericDatasource nd, Supplier<JPanel> targetPanel) {
+            super(nd.getName());
             this.dtable = dt;
             this.col = col;
             this.nd = nd;
@@ -54,12 +55,13 @@ public class NumericDatasourceHelper {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            NumericRangeFilter nrf = new NumericRangeFilter();
+            NumericRangeFilter nrf = new NumericRangeFilter(nd);
             NumericRangeFilterController fc = new NumericRangeFilterController(dtable,col,nd,nrf);
             JPanel pi = targetPanel.get();
             pi.removeAll();
             pi.setLayout(new BorderLayout());
-            pi.add(pi,BorderLayout.CENTER);
+            pi.add(fc.getConfigurationPanel(),BorderLayout.CENTER);
+            dtable.addFilter(this.col,nrf);
         }
     }
 

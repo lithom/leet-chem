@@ -12,6 +12,10 @@ import java.util.List;
 
 public class JSlimRangeSlider extends JPanel {
 
+    public enum EventMode {DRAG_EVENTS,RELEASE_EVENTS}
+
+    private EventMode eventMode = EventMode.RELEASE_EVENTS;
+
     private double a,b;
     private double rangeA, rangeB;
 
@@ -42,7 +46,7 @@ public class JSlimRangeSlider extends JPanel {
         this.setOpaque(false);
         this.setPreferredSize(new Dimension(120,30));
 
-        this.setAB(a,b);
+        this.setDomain(a,b);
         this.setRange(a,b);
 
         SlimRangeSliderMouseAndMouseMotionListener li = new SlimRangeSliderMouseAndMouseMotionListener();
@@ -50,15 +54,18 @@ public class JSlimRangeSlider extends JPanel {
         this.addMouseMotionListener(li);
     }
 
-    public void setAB(double a, double b) {
+    public void setDomain(double a, double b) {
         this.a = a; this.b = b;
         this.setRange(this.rangeA, this.rangeB);
     }
 
     public void setRange(double ra, double rb) {
+        if(Double.isNaN(ra)) {ra = this.a;}
+        if(Double.isNaN(rb)) {rb = this.b;}
         this.rangeA = Math.min( this.b, Math.max( ra , this.a ) );
         this.rangeB = Math.min( this.b, Math.max( rb , this.a ) );
     }
+
 
     public double transformXToRangePos(double x) {
         return this.a + (this.b-this.a) *  ((x-0.5*sizeHandle) / (getWidth()-sizeHandle));
@@ -169,6 +176,17 @@ public class JSlimRangeSlider extends JPanel {
                 draggingHandle = false;
                 draggedHandle  = -1;
             }
+
+            if(eventMode == EventMode.RELEASE_EVENTS) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        //setToolTipText( String.format( "[ %.4f , %.4f ] " , rangeA , rangeB ));
+                        fireChangeEvent();
+                    }
+                });
+            }
+
         }
 
         @Override
@@ -201,13 +219,16 @@ public class JSlimRangeSlider extends JPanel {
                 }
             }
             repaint();
-            SwingUtilities.invokeLater( new Runnable(){
-                @Override
-                public void run() {
-                    //setToolTipText( String.format( "[ %.4f , %.4f ] " , rangeA , rangeB ));
-                    fireChangeEvent();
-                }
-            });
+
+            if(eventMode == EventMode.DRAG_EVENTS) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        //setToolTipText( String.format( "[ %.4f , %.4f ] " , rangeA , rangeB ));
+                        fireChangeEvent();
+                    }
+                });
+            }
         }
 
         @Override

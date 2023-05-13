@@ -21,9 +21,10 @@ public class UtilSwing {
             fi.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
             fi.getContentPane().setLayout(new BorderLayout());
             JPanel pi = new JPanel();
-            fi.getContentPane().add(pi,new BorderLayout());
+            fi.getContentPane().add(pi,BorderLayout.CENTER);
             fi.setSize(w,h);
             fi.setLocationRelativeTo(parent);
+            fi.setVisible(true);
             return pi;
         }
     }

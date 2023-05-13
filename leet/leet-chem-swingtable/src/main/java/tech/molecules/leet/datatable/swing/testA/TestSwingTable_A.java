@@ -31,11 +31,12 @@ public class TestSwingTable_A {
 
     public static class RandomStringDataProvider extends HashMapBasedDataProvider<String> {
         Map<String,String> entries = new HashMap();
-        public RandomStringDataProvider(int n) {
+        public RandomStringDataProvider(int n, int lengthmin, int lengthmax) {
             super(new HashMap<>());
+            Random ri = new Random();
             InteractiveTableModel.RandomStringGenerator rg = new InteractiveTableModel.RandomStringGenerator();
             for(int zi=0;zi<n;zi++) {
-                entries.put("id"+zi,rg.generateRandomString(12));
+                entries.put("id"+zi,rg.generateRandomString(lengthmin+ri.nextInt(lengthmax-lengthmin)));
             }
             this.addData(entries);
         }
@@ -78,7 +79,7 @@ public class TestSwingTable_A {
         }
     }
 
-    DataProvider<String> dp_a = new RandomStringDataProvider(2000);
+    DataProvider<String> dp_a = new RandomStringDataProvider(2000,8,16);
 
     public static void main(String args[]) {
 
@@ -89,11 +90,11 @@ public class TestSwingTable_A {
             System.err.println( "Failed to initialize LaF" );
         }
 
-        int n_rows = 200000;
+        int n_rows = 20000;
         int ms_break = 2500;
         int n_spcColumns = 5;
 
-        DataProvider<String> dp_a = new RandomStringDataProvider(n_rows);
+        DataProvider<String> dp_a = new RandomStringDataProvider(n_rows,8,32);
         DataProvider<StructureWithID> dp_b = new StructureDataProvider(dp_a.getAllEntries());
         DataProvider<StructurePropertiesProvider.CalculatedBasicStructureProperties> dp_c = new StructurePropertiesProvider(dp_b);
 

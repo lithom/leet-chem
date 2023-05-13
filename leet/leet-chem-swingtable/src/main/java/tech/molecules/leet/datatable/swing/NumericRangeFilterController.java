@@ -51,7 +51,7 @@ public class NumericRangeFilterController extends AbstractSwingFilterController<
         this.panel = new NumericRangePanel(domain_ab,range_ab,(xi) -> filter.setRange(xi));
     }
 
-    private NumericRangeFilter filter = new NumericRangeFilter();
+    private NumericRangeFilter filter = null;
     private JPanel panel;
 
     @Override

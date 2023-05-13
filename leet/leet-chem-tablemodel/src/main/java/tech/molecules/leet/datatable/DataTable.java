@@ -132,6 +132,7 @@ public class DataTable {
                 }
             });
         }
+        fireTableStructureChanged();
     }
 
     public boolean removeDataColumn(DataTableColumn dtc) {
@@ -202,10 +203,16 @@ public class DataTable {
         return removed;
     }
 
-    public void addFilter(DataTableColumn dtc, AbstractCachedDataFilter fi) {
+    public void addFilter(DataTableColumn dtc, DataFilter fi) {
         synchronized(this.columns) {
             this.filters.get(dtc).add(fi);
         }
+        fi.addFilterListener(new DataFilter.FilterListener() {
+            @Override
+            public void filterChanged() {
+                taskQueue.add(new FullUpdateTask(Collections.singletonMap(fi,null).keySet(),null));
+            }
+        });
         this.taskQueue.add(new FullUpdateTask(Collections.singletonMap(fi,null).keySet(),null));
     }
 

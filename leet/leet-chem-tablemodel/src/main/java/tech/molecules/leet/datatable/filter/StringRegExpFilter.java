@@ -40,6 +40,7 @@ public class StringRegExpFilter extends AbstractCachedDataFilter<String> {
     public void setRegExp(String regexp) {
         this.regexp = regexp;
         this.pattern = Pattern.compile(this.regexp);
+        fireFilterChanged();
     }
 
     @Override

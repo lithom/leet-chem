@@ -36,6 +36,19 @@ public abstract class AbstractCachedDataFilter<T> implements DataFilter<T> {
     public abstract boolean filterRow(T vi);
 
 
+    private List<FilterListener> listeners = new ArrayList<>();
+
+    public void addFilterListener(FilterListener li) {
+        listeners.add(li);
+    }
+    public boolean removeFilterListener(FilterListener li) {
+        return listeners.remove(li);
+    }
+    protected void fireFilterChanged() {
+        for(FilterListener li : listeners) {
+            li.filterChanged();
+        }
+    }
 
     private FilterState state = FilterState.UPDATING;
 

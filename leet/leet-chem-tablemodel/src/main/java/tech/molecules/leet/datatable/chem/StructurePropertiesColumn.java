@@ -36,10 +36,10 @@ public class StructurePropertiesColumn extends AbstractDataTableColumn<Structure
                 }
 
                 @Override
-                public Object evaluate(Object original) {
+                public Double evaluate(Object original) {
                     if(original instanceof StructurePropertiesProvider.CalculatedBasicStructureProperties) {
                         StructurePropertiesProvider.CalculatedBasicStructureProperties cbsp = ((StructurePropertiesProvider.CalculatedBasicStructureProperties)original);
-                        return cbsp.counts.get(fzi);
+                        return (double) cbsp.counts.get(fzi);
                     }
                     return null;
                 }

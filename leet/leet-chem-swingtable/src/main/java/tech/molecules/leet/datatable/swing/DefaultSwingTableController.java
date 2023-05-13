@@ -86,7 +86,7 @@ public class DefaultSwingTableController extends JPanel {
             List<Pair<String[],Action>> fa = NumericDatasourceHelper.createFilterActions(this.getModel().getDataTable(),ci, new UtilSwing.PanelAsFrameProvider(this,100,100) );
             fa.stream().forEach( xi -> pop.add(xi.getRight()) );
         }
-        this.setComponentPopupMenu(pop);
+        this.table.setComponentPopupMenu(pop);
     }
 
     public void setTableCellRenderer(int col, TableCellRenderer renderer) {

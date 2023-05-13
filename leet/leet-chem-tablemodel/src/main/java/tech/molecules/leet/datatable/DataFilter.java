@@ -2,6 +2,9 @@ package tech.molecules.leet.datatable;
 
 import java.util.BitSet;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Generally works as follows: in case that via the UI the configuration of the filter is changed
@@ -48,6 +51,14 @@ public interface DataFilter<U> {
      * @param changed_ids
      */
     public void reinitFilter(DataTableColumn<?,U> data, List<String> all_ids, List<String> changed_ids);
+
+
+    public void addFilterListener(FilterListener li);
+    public boolean removeFilterListener(FilterListener li);
+
+    public static interface FilterListener {
+        public void filterChanged();
+    }
 
 //    /**
 //     * For certain filters it may be possible that the column first has
