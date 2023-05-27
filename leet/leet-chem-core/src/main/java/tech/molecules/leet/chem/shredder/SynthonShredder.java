@@ -519,7 +519,6 @@ public class SynthonShredder {
     }
 
 
-
     public static void main(String args[]) {
         run_test_01();
     }

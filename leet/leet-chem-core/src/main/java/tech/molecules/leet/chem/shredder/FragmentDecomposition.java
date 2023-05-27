@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
  * all connectors, i.e. is connected to every other
  * fragment in teh split result
  *
+ *
  */
 public class FragmentDecomposition implements Serializable {
 

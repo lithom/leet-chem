@@ -21,5 +21,5 @@ public class CompoundImpl implements Compound {
 
     public String getId() { return id; }
     public String getIdcode() { return idcode; }
-    public StereoMolecule getMolecule() { return ChemUtils.parseIDCode(idcode); }
+    public String getMolecule() { return idcode; }
 }

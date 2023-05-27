@@ -17,10 +17,10 @@ public class MMPTransformationImpl implements MMPTransformation {
         this.hashcode = getTransformationId().hashCode();
     }
 
-    @Override
-    public String getTransformationId() {
-        return fragmentAId+":::::"+fragmentBId;
-    }
+    //@Override
+    //public String getTransformationId() {
+    //    return fragmentAId+":::::"+fragmentBId;
+    //}
 
     @Override
     public String getFragmentAId() {
@@ -30,6 +30,11 @@ public class MMPTransformationImpl implements MMPTransformation {
     @Override
     public String getFragmentBId() {
         return fragmentBId;
+    }
+
+    @Override
+    public MMPTransformation getInverseTransformation() {
+        return new MMPTransformationImpl(fragmentBId,fragmentAId);
     }
 
     @Override

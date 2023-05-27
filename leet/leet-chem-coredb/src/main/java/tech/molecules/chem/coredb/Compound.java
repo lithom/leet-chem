@@ -4,5 +4,5 @@ import com.actelion.research.chem.StereoMolecule;
 
 public interface Compound {
     public String getId();
-    public StereoMolecule getMolecule();
+    public String getMolecule();
 }

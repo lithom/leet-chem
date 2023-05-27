@@ -6,12 +6,31 @@ import java.util.*;
 
 public class MMPHelper {
 
-    public static Map<MMPTransformation,List<MMPInstance>> sortMMPsByTransformation(List<MMPInstance> mmps) {
-        Map<MMPTransformation,List<MMPInstance>> sorted = new HashMap<>();
-        for(MMPInstance mmpi : mmps) {
+    public static <T extends MMPInstance> Map<MMPTransformation,List<T>> sortMMPsByTransformation(List<T> mmps) {
+        Map<MMPTransformation,List<T>> sorted = new HashMap<>();
+        for(T mmpi : mmps) {
             MMPTransformation tfi = mmpi.getTransformation();
             if(!sorted.containsKey(tfi)) {sorted.put(tfi,new ArrayList<>());}
             sorted.get(tfi).add(mmpi);
+        }
+        return sorted;
+    }
+
+
+    /**
+     *
+     * @param mmps
+     * @return
+     * @param <T>
+     */
+    public static <T extends MMPInstance> Map<String,Map<MMPTransformation,List<T>>> sortMMPsByTransformationWithoutDirection(List<T> mmps) {
+        Map<String,Map<MMPTransformation,List<T>>> sorted = new HashMap<>();
+        for(T mmpi : mmps) {
+            MMPTransformation tfi = mmpi.getTransformation();
+            String twd = tfi.getTransformationIdWithoutDirection();
+            if(!sorted.containsKey(twd)) {sorted.put(twd,new HashMap<>());}
+            if(!sorted.get(twd).containsKey(tfi)){sorted.get(twd).put(tfi,new ArrayList<>());}
+            sorted.get(twd).get(tfi).add(mmpi);
         }
         return sorted;
     }

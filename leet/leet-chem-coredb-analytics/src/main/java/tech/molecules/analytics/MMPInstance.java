@@ -6,4 +6,6 @@ public interface MMPInstance {
     public MMPFragmentDecomposition getFragmentDecompositionA();
     public MMPFragmentDecomposition getFragmentDecompositionB();
 
+    public MMPInstance getInverseMMPInstance();
+
 }

@@ -46,6 +46,8 @@ public class MMPInstanceImpl implements MMPInstance {
     }
 
 
-
-
+    @Override
+    public MMPInstance getInverseMMPInstance() {
+        return new MMPInstanceImpl(this.b,this.a);
+    }
 }

@@ -85,7 +85,7 @@ public class MMPComputationTool {
         Map<String,List<AssayResult>> sortedResults = new HashMap<>();
         Map<String,String> idcodeToMolid = new HashMap<>();
         results.stream().forEach(ri -> {
-            String molid_i = ri.getTube().getBatch().getCompound().getMolecule().getIDCode();
+            String molid_i = ri.getTube().getBatch().getCompound().getId();
             if(!sortedResults.containsKey(molid_i)) {sortedResults.put(molid_i,new ArrayList<>());}
             sortedResults.get(molid_i).add(ri);
             idcodeToMolid.put(molid_i,ri.getTube().getBatch().getCompound().getId());
