@@ -1,6 +1,5 @@
 package tech.molecules.analytics.activitycliff;
 
-import tech.molecules.analytics.MMPInstance;
 import tech.molecules.analytics.MMPTransformation;
 import tech.molecules.analytics.NumericalMMPInstance;
 
@@ -12,9 +11,9 @@ public class ActivityCliffTransformationDataImpl implements ActivityCliffTransfo
     private List<NumericalMMPInstance> mmps;
     private ActivityCliffDefinition activityCliffDefinition;
 
-    private ActivityCliffProbabilityCalculator.ACData activityCliffData;
+    private ACData activityCliffData;
 
-    public ActivityCliffTransformationDataImpl(MMPTransformation transformation, List<NumericalMMPInstance> mmps, ActivityCliffDefinition activityCliffDefinition, ActivityCliffProbabilityCalculator.ACData activityCliffData) {
+    public ActivityCliffTransformationDataImpl(MMPTransformation transformation, List<NumericalMMPInstance> mmps, ActivityCliffDefinition activityCliffDefinition, ACData activityCliffData) {
         this.transformation = transformation;
         this.mmps = mmps;
         this.activityCliffDefinition = activityCliffDefinition;
@@ -37,7 +36,7 @@ public class ActivityCliffTransformationDataImpl implements ActivityCliffTransfo
     }
 
     @Override
-    public ActivityCliffProbabilityCalculator.ACData getActivityCliffData() {
+    public ACData getActivityCliffData() {
         return activityCliffData;
     }
 

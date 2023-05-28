@@ -2,7 +2,7 @@ package tech.molecules.analytics;
 
 import com.actelion.research.chem.StereoMolecule;
 import tech.molecules.chem.coredb.AssayResult;
-import tech.molecules.chem.coredb.AssayResultQuery2;
+import tech.molecules.chem.coredb.AssayResultQuery;
 import tech.molecules.chem.coredb.sql.DBAssayResult;
 import tech.molecules.leet.chem.ChemUtils;
 import tech.molecules.leet.chem.mutator.FragmentDecompositionSynthon;
@@ -27,8 +27,8 @@ public class MMPComputationTool {
                                                                                       int min_extension_size,
                                                                                       int max_splits) throws SQLException {
 
-        AssayResultQuery2 arq = new AssayResultQuery2(assay_id,null,null,null);
-        List<AssayResult> results = DBAssayResult.searchAssayResults2(conn,arq);
+        AssayResultQuery arq = new AssayResultQuery(assay_id,null,null,null);
+        List<AssayResult> results = DBAssayResult.searchAssayResults(conn,arq);
 
         return computeMMPFragmentDecompositions(results,
                 max_fragment_size,max_relative_fragment_size,

@@ -1,42 +1,26 @@
 package tech.molecules.analytics.activitycliff;
 
-import sun.util.locale.provider.FallbackLocaleProviderAdapter;
 import tech.molecules.analytics.*;
 import tech.molecules.chem.coredb.Assay;
 import tech.molecules.chem.coredb.AssayResult;
-import tech.molecules.chem.coredb.sql.DBAssayResult;
 import tech.molecules.leet.chem.util.Parallelizer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ActivityCliffProbabilityCalculator {
 
-    public static class ACData {
-        public final double probability;
-        public final int nTransformations;
-        public final int nAHiBLo;
-        public final int nBHiALo;
-
-        public ACData(double probability, int nTransformations, int nAHiBLo, int nBHiALo) {
-            this.probability = probability;
-            this.nTransformations = nTransformations;
-            this.nAHiBLo = nAHiBLo;
-            this.nBHiALo = nBHiALo;
-        }
-    }
     private ActivityCliffDefinition activityCliffDefinition;
 
     public ActivityCliffProbabilityCalculator(ActivityCliffDefinition activityCliffDefinition) {
         this.activityCliffDefinition = activityCliffDefinition;
     }
 
-    public static ACData computeActivityCliffProbability(ActivityCliffDefinition acd, List<NumericalMMPInstance> numericalMMPInstances) {
+    public static ActivityCliffTransformationData.ACData computeActivityCliffProbability(ActivityCliffDefinition acd, List<NumericalMMPInstance> numericalMMPInstances) {
         int totalInstances = numericalMMPInstances.size();
         int activityCliffInstances = 0;
         int aHighBLow = 0;
@@ -54,7 +38,7 @@ public class ActivityCliffProbabilityCalculator {
             }
         }
 
-        return new ACData( (double) activityCliffInstances / totalInstances , numericalMMPInstances.size(),
+        return new ActivityCliffTransformationData.ACData( (double) activityCliffInstances / totalInstances , numericalMMPInstances.size(),
                 aHighBLow,bHighALow);
     }
 
@@ -131,7 +115,7 @@ public class ActivityCliffProbabilityCalculator {
         for(ActivityCliffDefinition acdi : cliffdefs) {
             for (MMPTransformation tfi : mmps_sortedByTransformation.keySet()) {
                 List<NumericalMMPInstance> mmps_i = mmps_sortedByTransformation.get(tfi);
-                ACData acdata = computeActivityCliffProbability(acdi,mmps_i);
+                ActivityCliffTransformationData.ACData acdata = computeActivityCliffProbability(acdi,mmps_i);
                 datapoints.add(new ActivityCliffTransformationDataImpl(tfi,mmps_i,acdi,acdata));
             }
         }
