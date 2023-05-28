@@ -2,10 +2,7 @@ package tech.molecules;
 
 import com.actelion.research.chem.StereoMolecule;
 import tech.molecules.chem.coredb.*;
-import tech.molecules.chem.coredb.sql.DBAssayResult;
-import tech.molecules.chem.coredb.sql.DataValueImpl;
-import tech.molecules.chem.coredb.sql.DBManager;
-import tech.molecules.chem.coredb.sql.SQLHelper;
+import tech.molecules.chem.coredb.sql.*;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -23,12 +20,15 @@ public class DBManagerTest {
 
     public static void main(String[] args) {
         long ts_a = System.currentTimeMillis();
-        test_A("sqlite");
+        //test_A("sqlite");
         long ts_b = System.currentTimeMillis();
-        test_A("h2db_mem");
+        //test_A("h2db_mem");
         long ts_c = System.currentTimeMillis();
+        test_A("postgres");
+        long ts_d = System.currentTimeMillis();
         System.out.println("sqlite:   "+(ts_b-ts_a));
         System.out.println("h2db_mem: "+(ts_c-ts_b));
+        System.out.println("postgres: "+(ts_d-ts_c));
     }
 
     public static void test_A(String db) {
@@ -36,23 +36,40 @@ public class DBManagerTest {
         int rii = Math.abs( ri.nextInt() ) % 10000;
 
         String dbUrl = "";
-        SQLHelper sqlhelper = null;
+        String dbUsername = null;
+        String dbPW       = null;
+        //SQLHelper sqlhelper = null;
+
         if(db.equals("sqlite")) {
             dbUrl = "jdbc:sqlite:chemdb_test_" + rii + ".db";
-            sqlhelper = new SQLHelper.SqliteHelper();
+            //sqlhelper = new SQLHelper.SqliteHelper();
         }
         else if(db.equals("h2db_mem")) {
             dbUrl = "jdbc:h2:mem:";
-            sqlhelper = new SQLHelper.H2Helper();
+            //sqlhelper = new SQLHelper.H2Helper();
         }
-        try (Connection connection = DriverManager.getConnection(dbUrl)) {
-            DBManager dbManager = new DBManager(connection,sqlhelper);
+        else if(db.equals("postgres")) {
+            dbUrl = "jdbc:postgresql://localhost:5432/leet_chem_01";
+            dbUsername = "postgres";
+            dbPW       = "a";
+        }
+        try (Connection connection = DriverManager.getConnection(dbUrl,dbUsername,dbPW)) {
+            DBManager dbManager = null; //new DBManager(connection,sqlhelper);
 
             if(db.equals("sqlite")) {
-                dbManager.createDatabaseSchema_sqlite();
+                DBManager_SQLite dbma = new DBManager_SQLite(connection);
+                dbManager = dbma;
+                dbma.createDatabaseSchema();
             }
             else if(db.contains("h2db")) {
-                dbManager.createDatabaseSchema_h2db();
+                DBManager_H2 dbma = new DBManager_H2(connection);
+                dbManager = dbma;
+                dbManager.createDatabaseSchema();
+            }
+            else if(db.equals("postgres")) {
+                DBManager_PostgreSQL  dbma = new DBManager_PostgreSQL(connection);
+                dbManager = dbma;
+                dbManager.createDatabaseSchema();
             }
 
             Project project = dbManager.createProject(PROJECT_NAME,PROJECT_NAME);
@@ -105,6 +122,8 @@ public class DBManagerTest {
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -124,7 +143,7 @@ public class DBManagerTest {
         }
 
         System.out.println("Searching for assay results with assay ID 1 and compound IDs 'C1', 'C2'");
-        List<AssayResult> assayResults = DBAssayResult.searchAssayResults2(dbManager.getConnection(), new AssayResultQuery2(1,null,null, Arrays.asList("C0", "C1")));
+        List<AssayResult> assayResults = DBAssayResult.searchAssayResults(dbManager.getConnection(), new AssayResultQuery(1,null,null, Arrays.asList("C0", "C1")));
         for (AssayResult result : assayResults) {
             System.out.println("Found assay result: " + result.getId() + " - Assay: " + result.getAssay().getId() + " - Tube: " + result.getTube().getId());
         }

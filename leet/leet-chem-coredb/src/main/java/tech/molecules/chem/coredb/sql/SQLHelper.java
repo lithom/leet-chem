@@ -16,4 +16,12 @@ public interface SQLHelper {
             return "MERGE INTO " + tableName + " (" + columns + ") KEY(" + columns + ") VALUES (" + values + ")";
         }
     }
+
+    public class PostgresHelper implements SQLHelper {
+        @Override
+        public String getInsertOrIgnoreStatement(String tableName, String columns, String values) {
+            return "INSERT INTO " + tableName + " (" + columns + ") VALUES (" + values + ") ON CONFLICT DO NOTHING";
+        }
+    }
+
 }

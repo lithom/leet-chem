@@ -8,7 +8,7 @@ import java.sql.*;
 import java.sql.Date;
 import java.util.*;
 
-public class DBManager {
+public abstract class DBManager implements CoreDB, CoreDBWriter {
 
     private SQLHelper helper;
     private Connection connection;
@@ -18,39 +18,31 @@ public class DBManager {
         this.helper = helper;
     }
 
-    public void createDatabaseSchema_sqlite() throws SQLException {
-
-        try (Statement statement = connection.createStatement()) {
-            statement.execute("CREATE TABLE IF NOT EXISTS data_type (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
-            statement.execute("CREATE TABLE IF NOT EXISTS project (id TEXT PRIMARY KEY, name TEXT)");
-            statement.execute("CREATE TABLE IF NOT EXISTS assay (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, project_id TEXT, FOREIGN KEY(project_id) REFERENCES project(id))");
-            statement.execute("CREATE TABLE IF NOT EXISTS assay_parameter (id INTEGER PRIMARY KEY AUTOINCREMENT, assay_id INTEGER, data_type_id INTEGER, name TEXT, FOREIGN KEY(assay_id) REFERENCES assay(id), FOREIGN KEY(data_type_id) REFERENCES data_type(id))");
-            statement.execute("CREATE TABLE IF NOT EXISTS assay_result (id INTEGER PRIMARY KEY AUTOINCREMENT, assay_id INTEGER, date DATE, tube_id TEXT, FOREIGN KEY(assay_id) REFERENCES assay(id), FOREIGN KEY(tube_id) REFERENCES tube(id))");
-            statement.execute("CREATE TABLE IF NOT EXISTS batch (id TEXT PRIMARY KEY, compound_id TEXT, FOREIGN KEY(compound_id) REFERENCES compound(id))");
-            statement.execute("CREATE TABLE IF NOT EXISTS compound (id TEXT PRIMARY KEY, idcode TEXT)");
-            statement.execute("CREATE TABLE IF NOT EXISTS tube (id TEXT PRIMARY KEY, batch_id TEXT, FOREIGN KEY(batch_id) REFERENCES batch(id))");
-            statement.execute("CREATE TABLE IF NOT EXISTS assay_result_data (assay_result_id INTEGER, assay_parameter_id INTEGER, double_value REAL, text_value TEXT, PRIMARY KEY (assay_result_id, assay_parameter_id), FOREIGN KEY(assay_result_id) REFERENCES assay_result(id), FOREIGN KEY(assay_parameter_id) REFERENCES assay_parameter(id))");
-        }
+    @Override
+    public List<Assay> fetchAssays(Set<Integer> ids) throws Exception {
+        return DBAssay.fetchAssays(connection,ids);
     }
 
-    public void createDatabaseSchema_h2db() throws SQLException {
-        try (Statement statement = connection.createStatement()) {
-            statement.execute("CREATE TABLE IF NOT EXISTS data_type (id INTEGER AUTO_INCREMENT PRIMARY KEY, name TEXT)");
-            statement.execute("CREATE TABLE IF NOT EXISTS project (id TEXT PRIMARY KEY, name TEXT)");
-            statement.execute("CREATE TABLE IF NOT EXISTS assay (id INTEGER AUTO_INCREMENT PRIMARY KEY, name TEXT, project_id TEXT, FOREIGN KEY(project_id) REFERENCES project(id))");
-            statement.execute("CREATE TABLE IF NOT EXISTS assay_parameter (id INTEGER AUTO_INCREMENT PRIMARY KEY, assay_id INTEGER, data_type_id INTEGER, name TEXT, FOREIGN KEY(assay_id) REFERENCES assay(id), FOREIGN KEY(data_type_id) REFERENCES data_type(id))");
-            statement.execute("CREATE TABLE IF NOT EXISTS compound (id TEXT PRIMARY KEY, idcode TEXT)");
-            statement.execute("CREATE TABLE IF NOT EXISTS batch (id TEXT PRIMARY KEY, compound_id TEXT, FOREIGN KEY(compound_id) REFERENCES compound(id))");
-            statement.execute("CREATE TABLE IF NOT EXISTS tube (id TEXT PRIMARY KEY, batch_id TEXT, FOREIGN KEY(batch_id) REFERENCES batch(id))");
-            statement.execute("CREATE TABLE IF NOT EXISTS assay_result (id INTEGER AUTO_INCREMENT PRIMARY KEY, assay_id INTEGER, date DATE, tube_id TEXT, FOREIGN KEY(assay_id) REFERENCES assay(id), FOREIGN KEY(tube_id) REFERENCES tube(id))");
-            statement.execute("CREATE TABLE IF NOT EXISTS assay_result_data (assay_result_id INTEGER, assay_parameter_id INTEGER, double_value REAL, text_value TEXT, PRIMARY KEY (assay_result_id, assay_parameter_id), FOREIGN KEY(assay_result_id) REFERENCES assay_result(id), FOREIGN KEY(assay_parameter_id) REFERENCES assay_parameter(id))");
-        }
+    @Override
+    public List<AssayResult> searchAssayResults(AssayResultQuery query) throws Exception {
+        return DBAssayResult.searchAssayResults(connection,query);
     }
 
+    @Override
+    public List<Project> fetchProjects(Set<String> projectIds) throws SQLException {
+        return DBProject.fetchProjects(connection,projectIds);
+    }
+
+
+
+
+
+    @Override
     public Connection getConnection() {
         return this.connection;
     }
 
+    @Override
     public Project createProject(String id, String name) throws SQLException {
         //PreparedStatement statement = connection.prepareStatement("INSERT or IGNORE INTO project (id, name) VALUES (?, ?)");
         PreparedStatement statement = connection.prepareStatement(helper.getInsertOrIgnoreStatement("project","id, name","?, ?"));
@@ -60,6 +52,7 @@ public class DBManager {
         return new ProjectImpl(id, name);
     }
 
+    @Override
     public DataType createDataType(String name) throws SQLException {
         //String query = "INSERT INTO data_type (name) VALUES (?)";
         String query = helper.getInsertOrIgnoreStatement("data_type","name","?");
@@ -76,6 +69,7 @@ public class DBManager {
         }
     }
 
+    @Override
     public Assay createAssay(String name, Project project) throws SQLException {
         String query = "INSERT INTO assay (name, project_id) VALUES (?, ?)";
         PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
@@ -92,6 +86,7 @@ public class DBManager {
         }
     }
 
+    @Override
     public AssayParameter createAssayParameter(Assay assay, DataType dataType, String name) throws SQLException {
         String query = "INSERT INTO assay_parameter (assay_id, data_type_id, name) VALUES (?, ?, ?)";
         PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
@@ -112,6 +107,7 @@ public class DBManager {
 
     }
 
+    @Override
     public AssayResult createAssayResult(Assay assay, java.util.Date date, Tube tube) throws SQLException {
         String query = "INSERT INTO assay_result (assay_id, date, tube_id) VALUES (?, ?, ?)";
         PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
@@ -129,6 +125,7 @@ public class DBManager {
         }
     }
 
+    @Override
     public Compound createCompound(String id, StereoMolecule molecule) throws SQLException {
         PreparedStatement statement = connection.prepareStatement("INSERT INTO compound (id) VALUES (?)");
         statement.setString(1, id);
@@ -136,6 +133,7 @@ public class DBManager {
         return new CompoundImpl(id, molecule);
     }
 
+    @Override
     public Batch createBatch(String id, Compound compound) throws SQLException {
         PreparedStatement statement = connection.prepareStatement("INSERT INTO batch (id, compound_id) VALUES (?, ?)");
         statement.setString(1, id);
@@ -144,6 +142,7 @@ public class DBManager {
         return new BatchImpl(id, compound);
     }
 
+    @Override
     public Tube createTube(String id, Batch batch) throws SQLException {
         PreparedStatement statement = connection.prepareStatement("INSERT INTO tube (id, batch_id) VALUES (?, ?)");
         statement.setString(1, id);
@@ -152,6 +151,7 @@ public class DBManager {
         return new TubeImpl(id, batch);
     }
 
+    @Override
     public void addDataValue(AssayResult assayResult, AssayParameter assayParameter, DataValue dataValue) throws SQLException {
         String query = "INSERT INTO assay_result_data (assay_result_id, assay_parameter_id, double_value, text_value) VALUES (?, ?, ?, ?)";
         PreparedStatement statement = connection.prepareStatement(query);
@@ -170,6 +170,7 @@ public class DBManager {
 
 
 
+    @Override
     public List<Tube> searchTubes(TubeQuery query) throws SQLException {
         List<Tube> result = new ArrayList<>();
         StringBuilder sb = new StringBuilder("SELECT tube.id as tube_id, tube.batch_id, batch.compound_id, compound.idcode ")
@@ -207,6 +208,7 @@ public class DBManager {
     }
 
 
+    @Override
     public List<Project> searchProjects(ProjectQuery query) throws SQLException {
         List<Project> result = new ArrayList<>();
         StringBuilder sb = new StringBuilder("SELECT * FROM project WHERE 1=1");
@@ -233,6 +235,7 @@ public class DBManager {
         return result;
     }
 
+    @Override
     public List<Assay> searchAssays(AssayQuery query) throws SQLException {
         Set<Integer> assayIds = new HashSet<>();
 
@@ -260,6 +263,7 @@ public class DBManager {
 
 
 
+    @Override
     public int getNumberOfMeasurements(Assay assay) throws SQLException {
         PreparedStatement statement = connection.prepareStatement(
                 "SELECT COUNT(*) FROM assay_result WHERE assay_id = ?"

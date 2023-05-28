@@ -1,6 +1,5 @@
 package tech.molecules.chem.coredb.sql;
 
-import com.actelion.research.chem.StereoMolecule;
 import tech.molecules.chem.coredb.*;
 
 import java.sql.Connection;
@@ -8,11 +7,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class DBAssayResult {
 
-    public static List<AssayResult> searchAssayResults2(Connection connection, AssayResultQuery2 query) throws SQLException {
+    public static List<AssayResult> searchAssayResults(Connection connection, AssayResultQuery query) throws SQLException {
         StringBuilder queryBuilder = new StringBuilder(
                 "SELECT  assay_result.id , assay_result.date , assay_result.assay_id , " +
                         " assay_result.tube_id AS tube_id , tube.batch_id AS batch_id , " +

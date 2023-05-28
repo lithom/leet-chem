@@ -3,6 +3,7 @@ package tech.molecules.chem.coredb.sql.util;
 import com.actelion.research.chem.StereoMolecule;
 import tech.molecules.chem.coredb.*;
 import tech.molecules.chem.coredb.sql.DBManager;
+import tech.molecules.chem.coredb.sql.DBManagerHelper;
 import tech.molecules.chem.coredb.sql.DataValueImpl;
 import tech.molecules.chem.coredb.sql.SQLHelper;
 
@@ -41,26 +42,29 @@ public class ToyDataGenerator {
         Random ri = new Random();
         int rii = Math.abs( ri.nextInt() ) % 10000;
 
-        String dbUrl = "";
-        SQLHelper sqlhelper = null;
-        if(db.equals("sqlite")) {
-            dbUrl = "jdbc:sqlite:chemdb_test_" + rii + ".db";
-            sqlhelper = new SQLHelper.SqliteHelper();
-        }
-        else if(db.equals("h2db_mem")) {
-            dbUrl = "jdbc:h2:mem:";
-            sqlhelper = new SQLHelper.H2Helper();
-        }
-
         DBManager dbManager = null;
-        try {
-            Connection connection = DriverManager.getConnection(dbUrl);
-            dbManager = new DBManager(connection, sqlhelper);
 
-            if (db.equals("sqlite")) {
-                dbManager.createDatabaseSchema_sqlite();
-            } else if (db.contains("h2db")) {
-                dbManager.createDatabaseSchema_h2db();
+        try {
+            String dbUrl = "";
+            try {
+                //Connection connection = null; //DriverManager.getConnection(dbUrl);
+                //dbManager = new DBManager(connection, sqlhelper);
+                if (db.equals("sqlite")) {
+                    dbUrl = "jdbc:sqlite:chemdb_test_" + rii + ".db";
+                    dbManager = DBManagerHelper.getSQLite(dbUrl);
+                } else if (db.contains("h2db")) {
+                    dbUrl = "jdbc:h2:mem:";
+                    dbManager = DBManagerHelper.getH2(dbUrl);
+                } else if (db.equals("postgres")) {
+                    dbUrl = "jdbc:postgresql://localhost:5432/leet_chem_01";
+                    dbManager = DBManagerHelper.getPostgres(dbUrl,"postgres","a");
+                }
+                //connection = dbManager.getConnection();
+                dbManager.createDatabaseSchema();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
             Project project = dbManager.createProject(PROJECT_NAME, PROJECT_NAME);
