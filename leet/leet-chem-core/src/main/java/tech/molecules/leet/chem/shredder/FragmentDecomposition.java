@@ -28,6 +28,8 @@ public class FragmentDecomposition implements Serializable {
     @JsonProperty("id")
     private String molid;
 
+    //@JsonPropertyDescription("compact split result")
+    //@JsonProperty("csr")
     @JsonPropertyDescription("split result")
     @JsonProperty("sr")
     private SynthonShredder.SplitResult splitResult;

@@ -2,9 +2,11 @@ package tech.molecules.leet.chem.shredder;
 
 
 import com.actelion.research.calc.combinatorics.CombinationGenerator;
+import com.actelion.research.chem.Canonizer;
 import com.actelion.research.chem.Molecule;
 import com.actelion.research.chem.SmilesParser;
 import com.actelion.research.chem.StereoMolecule;
+import com.actelion.research.chem.chemicalspaces.synthon.SynthonReactor;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import tech.molecules.leet.chem.ChemUtils;
@@ -14,8 +16,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.actelion.research.chem.Molecule.cESRTypeAnd;
-import static com.actelion.research.chem.Molecule.cESRTypeOr;
+import static com.actelion.research.chem.Molecule.*;
 
 /**
  * leet-chem
@@ -106,6 +107,86 @@ public class SynthonShredder {
         }
 
         return results;
+    }
+
+    public static class CompactUnlabeledSplitResult {
+        @JsonPropertyDescription("full molecule idcode")
+        @JsonProperty("csr_idcode")
+        private String idcode;
+        @JsonPropertyDescription("crs_bond_cutset")
+        @JsonProperty("csr_bond_cutset")
+        private int[] bond_cutset;
+
+        public CompactUnlabeledSplitResult() {}
+        public CompactUnlabeledSplitResult(String idcode, int[] bond_cutset) {
+            this.idcode = idcode;
+            this.bond_cutset = bond_cutset;
+        }
+        public String getIdcode() {
+            return idcode;
+        }
+        public int[] getBond_cutset() {
+            return bond_cutset;
+        }
+
+        public void setIdcode(String idcode) {
+            this.idcode = idcode;
+        }
+
+        public void setBond_cutset(int[] bond_cutset) {
+            this.bond_cutset = bond_cutset;
+        }
+    }
+
+    public static SplitResult convert(CompactUnlabeledSplitResult csr) {
+        return trySplit(ChemUtils.parseIDCode(csr.getIdcode()), csr.bond_cutset, csr.bond_cutset.length+1);
+    }
+
+    /**
+     * Note: has one side effect on the fragments: all selected atoms become unselected and
+     *       labels of atoms are overwritten.
+     *
+     * @param sr
+     * @return
+     */
+    public static CompactUnlabeledSplitResult convertToUnlabeledCompactSplitResult(SplitResult sr) {
+        StereoMolecule[] frags_a = new StereoMolecule[sr.fragments.length];
+        for(int zi=0;zi<frags_a.length;zi++) {
+            StereoMolecule fi = new StereoMolecule(sr.fragments[zi]);
+            fi.ensureHelperArrays(cHelperCIP);
+            for(int zj=0;zj<fi.getAtoms();zj++) {fi.setAtomSelection(zj,false);fi.setAtomCustomLabel(zj,"");}
+            for( int zk = 0;zk<sr.connector_positions.get(zi).length;zk++) {
+                if(sr.connector_positions.get(zi)[zk]>=0) {
+                    int cpa = sr.connector_positions.get(zi)[zk];
+                    // set to labeled connector (relabel potentially..)
+                    fi.setAtomicNo(cpa,92+zk);
+                    // now mark neighbor..
+                    int neighbor_a = fi.getConnAtom(cpa, 0);
+                    fi.setAtomSelection(neighbor_a, true);
+                    byte[] labels_a = fi.getAtomCustomLabelBytes(neighbor_a);
+                    if(labels_a==null) {labels_a = new byte[1];}
+                    labels_a[0] |= 0x1 << zk;
+                    fi.setAtomCustomLabel(neighbor_a,labels_a);
+                }
+            }
+            frags_a[zi] = fi;
+        }
+
+        StereoMolecule mi = SynthonReactor.react(Arrays.asList(frags_a));
+        Canonizer ca = new Canonizer(mi,Canonizer.ENCODE_ATOM_SELECTION | Canonizer.ENCODE_ATOM_CUSTOM_LABELS);
+        mi = ca.getCanMolecule();
+        mi.ensureHelperArrays(cHelperCIP);
+        // now find all bonds in between marked atoms..
+        ArrayList<Integer> splitbonds = new ArrayList<>();
+        for(int zi=0;zi<mi.getBonds();zi++) {
+            if( mi.isSelectedAtom( mi.getBondAtom(0,zi) ) && mi.isSelectedAtom( mi.getBondAtom(1,zi) ) ) {
+                if( ( mi.getAtomCustomLabelBytes( mi.getBondAtom(0,zi) )[0] & mi.getAtomCustomLabelBytes( mi.getBondAtom(1,zi) )[0] ) != 0 ) {
+                    //System.out.println("split bond: " + zi);
+                    splitbonds.add(zi);
+                }
+            }
+        }
+        return new CompactUnlabeledSplitResult(mi.getIDCode(),splitbonds.stream().mapToInt(xi->xi).toArray());
     }
 
     /**
@@ -497,15 +578,23 @@ public class SynthonShredder {
 
 
 
-
     public static List<SplitResult> computeAllSplitResults(StereoMolecule mi, int num_splits, int max_fragments) {
+        return computeAllSplitResults(mi,num_splits,max_fragments,false);
+    }
+
+    public static List<SplitResult> computeAllSplitResults(StereoMolecule mi, int num_splits, int max_fragments, boolean omitRingBonds) {
         mi.ensureHelperArrays(Molecule.cHelperCIP);
         int nb = mi.getBonds();
 
         List<int[]> combi_list = CombinationGenerator.getAllOutOf(nb, num_splits);
+
         // !! returns null if b > a..
         if(combi_list==null) { return new ArrayList<>(); }
         List<int[]> splits = combi_list.stream().filter(ci -> ci.length == num_splits).collect(Collectors.toList());
+
+        if(omitRingBonds) {
+            splits = splits.stream().filter( xi -> Arrays.stream(xi).allMatch( ei -> !mi.isRingBond(ei) ) ).collect(Collectors.toList());
+        }
 
         List<SplitResult> split_results = new ArrayList<>();
         for(int[] split_pattern : splits) {
