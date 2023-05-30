@@ -10,7 +10,7 @@ public class NumericDataValue implements DataValue {
 
     @Override
     public double getAsDouble() {
-        return 0;
+        return this.val;
     }
 
     @Override

@@ -15,11 +15,11 @@ public class DataValueImpl implements DataValue {
 
     @Override
     public double getAsDouble() {
-        return 0;
+        return this.doubleValue;
     }
 
     @Override
     public String getAsText() {
-        return null;
+        return this.textValue;
     }
 }

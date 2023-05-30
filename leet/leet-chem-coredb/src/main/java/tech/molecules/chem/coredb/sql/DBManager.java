@@ -126,9 +126,14 @@ public abstract class DBManager implements CoreDB, CoreDBWriter {
     }
 
     @Override
-    public Compound createCompound(String id, StereoMolecule molecule) throws SQLException {
-        PreparedStatement statement = connection.prepareStatement("INSERT INTO compound (id) VALUES (?)");
+    public Compound createCompound(String id, StereoMolecule molecule) throws SQLException, CoreDBException {
+        if(molecule == null) {
+            throw new CoreDBException("[createCompound] StereoMolecule is null, id = "+id);
+        }
+        PreparedStatement statement = connection.prepareStatement("INSERT INTO compound (id, idcode, idcode_coordinates) VALUES (?,?,?)");
         statement.setString(1, id);
+        statement.setString(2, molecule.getIDCode());
+        statement.setString(3, molecule.getIDCoordinates());
         statement.executeUpdate();
         return new CompoundImpl(id, molecule);
     }
