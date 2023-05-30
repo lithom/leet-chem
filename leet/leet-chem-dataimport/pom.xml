@@ -42,6 +42,12 @@
             <version>${revision}</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>tech.molecules</groupId>
+            <artifactId>leet-chem-coredb</artifactId>
+            <version>${revision}</version>
+            <scope>compile</scope>
+        </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
         <dependency>

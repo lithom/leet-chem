@@ -53,7 +53,7 @@ public class ActivityCliffProbabilityCalculator {
      * @param cliffdefs
      * @param numCores
      */
-    public static void processAssays(List<Assay> consideredAssays, Function<Assay,List<AssayResult>>assay_results_provider, String numericalAttribute, List<ActivityCliffDefinition> cliffdefs, int numCores) {
+    public static List<ActivityCliffTransformationData> processAssays(List<Assay> consideredAssays, Function<Assay,List<AssayResult>>assay_results_provider, String numericalAttribute, List<ActivityCliffDefinition> cliffdefs, int numCores) {
         Map<MMPTransformation,List<NumericalMMPInstance>> mmps_sortedByTransformation = new HashMap<>();
 
         List<Runnable> tasks = new ArrayList<>();
@@ -86,7 +86,7 @@ public class ActivityCliffProbabilityCalculator {
                             allSameDirectionMMPs.addAll(mmps_sorted.get(tf_a).get(tf_canonical));
                         }
                         if(mmps_sorted.get(tf_a).containsKey(tf_toBeReversed)) {
-                            allSameDirectionMMPs.addAll(mmps_sorted.get(tf_a).get(tf_canonical).stream().map( xi -> (NumericalMMPInstance) xi.getInverseMMPInstance() ).collect(Collectors.toList()));
+                            allSameDirectionMMPs.addAll(mmps_sorted.get(tf_a).get(tf_toBeReversed).stream().map( xi -> (NumericalMMPInstance) xi.getInverseMMPInstance() ).collect(Collectors.toList()));
                         }
                         // put in..
                         mmps_sortedByTransformation_i.put( tf_canonical , allSameDirectionMMPs);
@@ -100,6 +100,7 @@ public class ActivityCliffProbabilityCalculator {
                     }
                 }
             };
+            tasks.add(ri);
         }
         try {
             Parallelizer.computeParallelBlocking(tasks,numCores,1);
@@ -120,7 +121,7 @@ public class ActivityCliffProbabilityCalculator {
             }
         }
 
-
+        return datapoints;
     }
 
     public static List<NumericalMMPInstance> processAssay(Assay assay, Function<Assay,List<AssayResult>>assay_results_provider, String numericalAttribute, List<ActivityCliffDefinition> cliffdefs) {

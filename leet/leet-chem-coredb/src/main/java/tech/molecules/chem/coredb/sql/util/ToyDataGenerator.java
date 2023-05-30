@@ -116,6 +116,8 @@ public class ToyDataGenerator {
             //query.setAssay
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        } catch (CoreDBException e) {
+            throw new RuntimeException(e);
         }
         return dbManager;
 

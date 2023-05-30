@@ -88,7 +88,7 @@ public class MMPComputationTool {
             String molid_i = ri.getTube().getBatch().getCompound().getId();
             if(!sortedResults.containsKey(molid_i)) {sortedResults.put(molid_i,new ArrayList<>());}
             sortedResults.get(molid_i).add(ri);
-            idcodeToMolid.put(molid_i,ri.getTube().getBatch().getCompound().getId());
+            idcodeToMolid.put(ri.getTube().getBatch().getCompound().getMolecule()[0],molid_i);
         });
 
         Map<String,List<FragmentDecomposition>> allDecompositions = new ConcurrentHashMap<>();
@@ -105,7 +105,8 @@ public class MMPComputationTool {
 
         int ncores = Runtime. getRuntime().availableProcessors();
         try {
-            Parallelizer.computeParallelBlocking(computeMMPDecomp,new ArrayList<>(sortedResults.keySet()),ncores);
+            //Parallelizer.computeParallelBlocking(computeMMPDecomp,new ArrayList<>(sortedResults.keySet()),ncores);
+            Parallelizer.computeParallelBlocking(computeMMPDecomp,new ArrayList<>(idcodeToMolid.keySet()),ncores);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -116,7 +117,7 @@ public class MMPComputationTool {
         for(String ki : allDecompositions.keySet()) {
             for(FragmentDecomposition fdi : allDecompositions.get(ki)) {
                 FragmentDecompositionSynthon fdsi = new FragmentDecompositionSynthon(fdi);
-                List<Long> assay_result_ids = sortedResults.get(ki).stream().map(ri -> ri.getId()).collect(Collectors.toList());
+                List<Long> assay_result_ids = sortedResults.get(idcodeToMolid.get(ki)).stream().map(ri -> ri.getId()).collect(Collectors.toList());
                 MMPFragmentDecompositionImpl decomp_i = new MMPFragmentDecompositionImpl(fdsi,assay_id,assay_result_ids);
                 allFragmentDecompositions.put(decomp_i.getDecompositionID(),decomp_i);
             }

@@ -12,7 +12,6 @@
     <artifactId>leet-chem-gui-tools</artifactId>
     <version>${revision}</version>
     <packaging>jar</packaging>
-    s
     <name>leet-chem-gui-tools</name>
 
     <description>Cheminformatics and computational chemistry algorithms and workflows.</description>

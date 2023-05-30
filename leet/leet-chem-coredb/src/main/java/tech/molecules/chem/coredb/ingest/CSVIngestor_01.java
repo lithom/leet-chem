@@ -145,6 +145,8 @@ public class CSVIngestor_01 {
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
+        } catch (CoreDBException e) {
+            throw new RuntimeException(e);
         }
         return Triple.of(ci,bi,ti);
     }
@@ -169,7 +171,7 @@ public class CSVIngestor_01 {
 
     public static void main(String args[]) {
 
-        String db = "h2db_mem";//"h2db_mem";
+        String db = "postgres";//"h2db_mem";
         int rii   = 1;
 
         String dbUrl = "";
@@ -195,7 +197,7 @@ public class CSVIngestor_01 {
             e.printStackTrace();
         }
 
-        ingestFile(dbManager,"output_chembl_activities.csv",20000);
+        ingestFile(dbManager,"output_chembl_activities.csv",2000000);
 
         try {
             List<Assay> assays = dbManager.searchAssays(new AssayQuery());

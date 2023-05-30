@@ -34,4 +34,10 @@ public class NumericalMMPInstanceImpl extends MMPInstanceImpl implements Numeric
     public double getMeanB() {
         return meanB;
     }
+
+    @Override
+    public MMPInstance getInverseMMPInstance() {
+        return new NumericalMMPInstanceImpl(b,a,attribute,meanB,meanA);
+    }
+
 }
