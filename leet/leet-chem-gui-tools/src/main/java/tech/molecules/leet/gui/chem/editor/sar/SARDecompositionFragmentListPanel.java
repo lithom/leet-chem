@@ -3,6 +3,7 @@ package tech.molecules.leet.gui.chem.editor.sar;
 import tech.molecules.leet.chem.sar.MultiFragment;
 import tech.molecules.leet.chem.sar.SARDecompositionInstruction;
 import tech.molecules.leet.chem.sar.SARElement;
+import tech.molecules.leet.chem.sar.SimpleMultiFragment;
 import tech.molecules.leet.gui.chem.editor.SARDecompositionEditor;
 import tech.molecules.leet.gui.chem.editor.SARDecompositionFragmentList;
 
@@ -29,7 +30,7 @@ public class SARDecompositionFragmentListPanel extends JPanel implements SARDeco
         this.setLayout(new BorderLayout());
         JPanel p_list = new JPanel();
         p_list.setLayout(new GridLayout(1,model.getMultiFragments().size()));
-        for(MultiFragment fi : this.model.getMultiFragments()) {
+        for(SimpleMultiFragment fi : this.model.getMultiFragments()) {
             p_list.add(new MultiFragmentPanel(fi));
         }
         this.add(p_list,BorderLayout.CENTER);
@@ -41,7 +42,7 @@ public class SARDecompositionFragmentListPanel extends JPanel implements SARDeco
         b_add.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                model.addMultiFragment(new MultiFragment());
+                model.addMultiFragment(new SimpleMultiFragment());
             }
         });
         this.add(ptop,BorderLayout.NORTH);
@@ -50,7 +51,7 @@ public class SARDecompositionFragmentListPanel extends JPanel implements SARDeco
     }
 
     @Override
-    public void onMultiFragmentAdded(MultiFragment multiFragment) {
+    public void onMultiFragmentAdded(SimpleMultiFragment multiFragment) {
         this.reinit();
     }
 

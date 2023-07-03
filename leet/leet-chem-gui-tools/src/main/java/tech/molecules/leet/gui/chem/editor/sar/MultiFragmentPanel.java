@@ -4,6 +4,8 @@ package tech.molecules.leet.gui.chem.editor.sar;
 import com.actelion.research.chem.StereoMolecule;
 import tech.molecules.leet.chem.sar.MultiFragment;
 import tech.molecules.leet.chem.sar.SARElement;
+import tech.molecules.leet.chem.sar.SimpleMultiFragment;
+import tech.molecules.leet.chem.sar.SimpleSARElement;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,13 +14,13 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MultiFragmentPanel extends JPanel implements MultiFragment.MultiFragmentListener {
+public class MultiFragmentPanel extends JPanel implements SimpleMultiFragment.MultiFragmentListener {
 
     private JTabbedPane tabbedPane;
-    private MultiFragment model;
-    private List<MultiFragment.MultiFragmentListener> listeners = new ArrayList<>();
+    private SimpleMultiFragment model;
+    private List<SimpleMultiFragment.MultiFragmentListener> listeners = new ArrayList<>();
 
-    public MultiFragmentPanel(MultiFragment model) {
+    public MultiFragmentPanel(SimpleMultiFragment model) {
         this.model = model;
         this.model.addMultiFragmentElementListener(this);
 
@@ -32,7 +34,7 @@ public class MultiFragmentPanel extends JPanel implements MultiFragment.MultiFra
         tabbedPane = new JTabbedPane();
         add(tabbedPane, BorderLayout.CENTER);
 
-        for(SARElement ei : this.model.getElements()) {
+        for(SimpleSARElement ei : this.model.getElements()) {
             SARElementPanel spi = new SARElementPanel(ei);
             this.tabbedPane.add("Element",spi);
             spi.addSARElementListener(new SARElementPanel.SARElementListener() {
@@ -53,7 +55,7 @@ public class MultiFragmentPanel extends JPanel implements MultiFragment.MultiFra
         addFragmentButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                model.addMultiFragmentElement(new SARElement(new StereoMolecule())); // your model should fire a property change event here
+                model.addMultiFragmentElement(new SimpleSARElement(new StereoMolecule())); // your model should fire a property change event here
             }
         });
 
@@ -78,7 +80,7 @@ public class MultiFragmentPanel extends JPanel implements MultiFragment.MultiFra
 
     // Invoked when a MultiFragmentElement is added
     @Override
-    public void onMultiFragmentElementAdded(SARElement element) {
+    public void onMultiFragmentElementAdded(SimpleSARElement element) {
         // Add visual representation of MultiFragmentElement to the appropriate tab
         this.reinit();
     }
@@ -90,7 +92,7 @@ public class MultiFragmentPanel extends JPanel implements MultiFragment.MultiFra
     }
 
     @Override
-    public void onSARElementSelected(SARElement si) {
+    public void onSARElementSelected(SimpleSARElement si) {
 
     }
 }

@@ -4,6 +4,7 @@ import com.actelion.research.gui.JStructureView;
 import tech.molecules.leet.chem.sar.MultiFragment;
 import tech.molecules.leet.chem.sar.SARDecompositionInstruction;
 import tech.molecules.leet.chem.sar.SARElement;
+import tech.molecules.leet.chem.sar.SimpleSARElement;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
@@ -18,9 +19,9 @@ public class SARElementPanel extends JPanel {
 
 
     // Model
-    private final SARElement fi;
+    private final SimpleSARElement fi;
 
-    public SARElementPanel(SARElement fi) {
+    public SARElementPanel(SimpleSARElement fi) {
         this.fi = fi;
         initMFE();
     }

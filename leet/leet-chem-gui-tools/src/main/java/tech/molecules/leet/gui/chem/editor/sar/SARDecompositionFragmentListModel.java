@@ -2,18 +2,19 @@ package tech.molecules.leet.gui.chem.editor.sar;
 
 import tech.molecules.leet.chem.sar.MultiFragment;
 import tech.molecules.leet.chem.sar.SARElement;
+import tech.molecules.leet.chem.sar.SimpleMultiFragment;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class SARDecompositionFragmentListModel {
 
-    private List<MultiFragment> multiFragments = new ArrayList<>();
+    private List<SimpleMultiFragment> multiFragments = new ArrayList<>();
     private List<MultiFragmentListListener> multiFragmentListeners = new ArrayList<>();
 
     private SARElement editedElement = null;
 
-    public void addMultiFragment(MultiFragment multiFragment) {
+    public void addMultiFragment(SimpleMultiFragment multiFragment) {
         multiFragments.add(multiFragment);
         fireMultiFragmentAdded(multiFragment);
     }
@@ -23,7 +24,7 @@ public class SARDecompositionFragmentListModel {
         fireMultiFragmentRemoved(index);
     }
 
-    public List<MultiFragment> getMultiFragments() {
+    public List<SimpleMultiFragment> getMultiFragments() {
         return this.multiFragments;
     }
 
@@ -35,7 +36,7 @@ public class SARDecompositionFragmentListModel {
         multiFragmentListeners.remove(listener);
     }
 
-    private void fireMultiFragmentAdded(MultiFragment multiFragment) {
+    private void fireMultiFragmentAdded(SimpleMultiFragment multiFragment) {
         for (MultiFragmentListListener listener : multiFragmentListeners) {
             listener.onMultiFragmentAdded(multiFragment);
         }
@@ -48,7 +49,7 @@ public class SARDecompositionFragmentListModel {
     }
 
     public interface MultiFragmentListListener {
-        void onMultiFragmentAdded(MultiFragment multiFragment);
+        void onMultiFragmentAdded(SimpleMultiFragment multiFragment);
         void onMultiFragmentRemoved(int index);
 
         void onSARElementSelected();
