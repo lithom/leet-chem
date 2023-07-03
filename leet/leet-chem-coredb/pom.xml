@@ -13,7 +13,7 @@
     <version>${revision}</version>
     <packaging>jar</packaging>
 
-    <name>leet-chem-core</name>
+    <name>leet-chem-coredb</name>
 
     <description>Cheminformatics and computational chemistry algorithms and workflows.</description>
     <url>https://github.com/lithom/leet-chem</url>

@@ -51,6 +51,12 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>tech.molecules</groupId>
+            <artifactId>leet-commons</artifactId>
+            <version>${revision}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <scope>compile</scope>
