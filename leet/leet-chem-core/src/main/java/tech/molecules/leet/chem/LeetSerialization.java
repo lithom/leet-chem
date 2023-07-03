@@ -1,5 +1,6 @@
 package tech.molecules.leet.chem;
 
+import com.actelion.research.chem.Canonizer;
 import com.actelion.research.chem.IDCodeParser;
 import com.actelion.research.chem.Molecule;
 import com.actelion.research.chem.StereoMolecule;
@@ -46,8 +47,11 @@ public class LeetSerialization {
         @Override
         public void serialize(StereoMolecule o, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
             jsonGenerator.writeStartObject();
-            jsonGenerator.writeStringField(OCLModule.STEREOMOLECULE_FIELD_IDC,o.getIDCode());
-            jsonGenerator.writeStringField(OCLModule.STEREOMOLECULE_FIELD_IDC_COORDS,o.getIDCoordinates());
+            Canonizer canonizer = new Canonizer(o, Canonizer.ENCODE_ATOM_CUSTOM_LABELS | Canonizer.ENCODE_ATOM_SELECTION);
+            //jsonGenerator.writeStringField(OCLModule.STEREOMOLECULE_FIELD_IDC,o.getIDCode());
+            //jsonGenerator.writeStringField(OCLModule.STEREOMOLECULE_FIELD_IDC_COORDS,o.getIDCoordinates());
+            jsonGenerator.writeStringField(OCLModule.STEREOMOLECULE_FIELD_IDC,canonizer.getIDCode());
+            jsonGenerator.writeStringField(OCLModule.STEREOMOLECULE_FIELD_IDC_COORDS,canonizer.getEncodedCoordinates(true));
             jsonGenerator.writeEndObject();
         }
     }

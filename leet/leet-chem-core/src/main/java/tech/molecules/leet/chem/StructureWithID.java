@@ -1,6 +1,7 @@
 package tech.molecules.leet.chem;
 
 import com.actelion.research.chem.StereoMolecule;
+import org.apache.commons.lang3.reflect.ConstructorUtils;
 
 import java.io.Serializable;
 
@@ -20,4 +21,12 @@ public class StructureWithID implements Serializable {
         this.molid = molid;
         this.batchid = batchid;
     }
+
+    public StructureWithID(String idc) {
+        this(idc,"",ChemUtils.parseIDCode(idc));
+    }
+    public StructureWithID(StereoMolecule mi) {
+        this(mi.getIDCode(),"",mi);
+    }
+
 }
