@@ -19,7 +19,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>8</maven.compiler.release>
-        <revision>0.0.6-SNAPSHOT</revision>
+        <revision>0.0.7-SNAPSHOT</revision>
     </properties>
 
     <developers>
@@ -50,6 +50,11 @@
         <module>leet-chem-swingtable</module>
         <module>leet-chem-coredb-analytics</module>
         <module>leet-chem-gui-tools</module>
+        <module>leet-chem-outofmemory-core</module>
+        <module>leet-chem-virtualspaces-core</module>
+        <module>leet-chem-vs-core</module>
+        <module>leet-batch-core</module>
+        <module>leet-commons</module>
     </modules>
 
     <dependencyManagement>
@@ -57,7 +62,7 @@
             <dependency>
                 <groupId>com.actelion.research</groupId>
                 <artifactId>openchemlib</artifactId>
-                <version>2022.5.3</version>
+                <version>2023.6.1</version>
                 <scope>compile</scope>
             </dependency>
             <dependency>
