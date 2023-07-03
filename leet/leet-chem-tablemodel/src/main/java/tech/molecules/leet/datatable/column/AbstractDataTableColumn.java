@@ -5,6 +5,7 @@ import tech.molecules.leet.datatable.DataTableColumn;
 import tech.molecules.leet.datatable.NumericDatasource;
 
 import java.awt.*;
+import java.util.List;
 import java.util.function.Function;
 
 public abstract class AbstractDataTableColumn<T,V> implements DataTableColumn<T,V> {
@@ -32,9 +33,22 @@ public abstract class AbstractDataTableColumn<T,V> implements DataTableColumn<T,
 
     public abstract V processData(T data);
 
+    private DataProvider.DataProviderListener dataProviderListener = new DataProvider.DataProviderListener() {
+        @Override
+        public void dataChanged(List<String> keysChanged) {
+            listenerHelper.fireDataProviderChanged(getThisColumn(),getThisColumn().dp);
+        }
+    };
+
     @Override
     public void setDataProvider(DataProvider<T> dp) {
         this.dp = dp;
+        dp.removeDataProviderListener(this.dataProviderListener);
+        dp.addDataProviderListener(this.dataProviderListener);
+    }
+
+    protected DataProvider<T> getDataProvider() {
+        return this.dp;
     }
 
     @Override
