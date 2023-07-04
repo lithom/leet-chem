@@ -37,8 +37,7 @@ CREATE TABLE assay_parameter (
     assay_id INT,
     data_type VARCHAR(255),
     name VARCHAR(255),
-    FOREIGN KEY (assay_id) REFERENCES assay(id),
-    FOREIGN KEY (data_type) REFERENCES data_type(name)
+    FOREIGN KEY (assay_id) REFERENCES assay(id)
 );
 
 CREATE TABLE assay_result (
@@ -60,12 +59,12 @@ CREATE TABLE assay_result_data (
   FOREIGN KEY (assay_parameter_id) REFERENCES assay_parameter (id)
 );
 
-CREATE TABLE data_value (
-    assay_result_id BIGINT,
-    assay_parameter_name VARCHAR(255),
-    double_value DOUBLE,
-    text_value TEXT,
-    PRIMARY KEY (assay_result_id, assay_parameter_name),
-    FOREIGN KEY (assay_result_id) REFERENCES assay_result(id),
-    FOREIGN KEY (assay_parameter_name) REFERENCES assay_parameter(name)
-);
+//CREATE TABLE data_value (
+//    assay_result_id BIGINT,
+//    assay_parameter_name VARCHAR(255),
+//    double_value DOUBLE,
+//    text_value TEXT,
+//    PRIMARY KEY (assay_result_id, assay_parameter_name),
+//    FOREIGN KEY (assay_result_id) REFERENCES assay_result(id),
+//    FOREIGN KEY (assay_parameter_name) REFERENCES assay_parameter(name)
+//);

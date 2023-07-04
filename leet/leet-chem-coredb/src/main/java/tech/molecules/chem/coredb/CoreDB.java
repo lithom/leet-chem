@@ -3,6 +3,7 @@ package tech.molecules.chem.coredb;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface CoreDB {
@@ -20,5 +21,9 @@ public interface CoreDB {
     public List<Assay> searchAssays(AssayQuery query) throws Exception;
 
     public int getNumberOfMeasurements(Assay assay) throws Exception;
+
+    public Map<String,Compound> fetchCompounds(List<String> identifiers);
+
+    public List<Batch> fetchBatches(List<String> identifiers);
 
 }

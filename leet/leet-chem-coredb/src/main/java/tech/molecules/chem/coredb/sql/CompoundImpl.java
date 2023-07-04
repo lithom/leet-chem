@@ -20,6 +20,12 @@ public class CompoundImpl implements Compound {
         this.idcode = idcode;
     }
 
+    public CompoundImpl(String id, String idcode, String idcode_coordinates) {
+        this.id = id;
+        this.idcode = idcode;
+        this.idcode_coordinates = idcode_coordinates;
+    }
+
 
     public String getId() { return id; }
     public String getIdcode() { return idcode; }

@@ -21,10 +21,11 @@ public class DBAssay {
         StringBuilder queryBuilder = new StringBuilder(
                 "SELECT assay.id AS assay_id, assay.name AS assay_name, assay.project_id AS assay_project_id , " +
                         "assay_parameter.name AS parameter_name, assay_parameter.id AS assay_parameter_id, " +
-                        "data_type.name AS data_type_name , data_type.id AS data_type_id " +
+                        "assay_parameter.data_type AS assay_parameter_data_type " +
+                        //"data_type.name AS data_type_name , data_type.id AS data_type_id " +
                         "FROM assay " +
                         "JOIN assay_parameter ON assay.id = assay_parameter.assay_id " +
-                        "JOIN data_type ON assay_parameter.data_type_id = data_type.id " +
+                        //"JOIN data_type ON assay_parameter.data_type_id = data_type.id " +
                         "WHERE assay.id IN ("
         );
 
@@ -66,10 +67,11 @@ public class DBAssay {
             }
 
             String parameterName = resultSet.getString("parameter_name");
-            String dataTypeName = resultSet.getString("data_type_name");
-            int dataTypeId = resultSet.getInt("data_type_id");
+            String dataTypeName = resultSet.getString("assay_parameter_data_type");
+            //int dataTypeId = resultSet.getInt("data_type_id");
             int assayParameterId = resultSet.getInt("assay_parameter_id");
-            DataType dataType = new DataTypeImpl(dataTypeId,dataTypeName);
+            //DataType dataType = new DataTypeImpl(dataTypeId,dataTypeName);
+            DataType dataType = DataType.fromValue(dataTypeName);
             AssayParameter parameter = new AssayParameterImpl(assayParameterId, assay, dataType, parameterName);
             assay.getParameter().add(parameter); // You need to add a method "addParameter" to the AssayImpl class.
         }

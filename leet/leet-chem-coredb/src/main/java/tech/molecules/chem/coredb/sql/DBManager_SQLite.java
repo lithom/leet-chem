@@ -12,11 +12,13 @@ public class DBManager_SQLite extends DBManager {
     }
 
     public static void createDatabaseSchema_sqlite(Connection connection) throws SQLException {
+        // TODO: add these two changes also to postgres init code..
         try (Statement statement = connection.createStatement()) {
-            statement.execute("CREATE TABLE IF NOT EXISTS data_type (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
+            //statement.execute("CREATE TABLE IF NOT EXISTS data_type (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
             statement.execute("CREATE TABLE IF NOT EXISTS project (id TEXT PRIMARY KEY, name TEXT)");
             statement.execute("CREATE TABLE IF NOT EXISTS assay (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, project_id TEXT, FOREIGN KEY(project_id) REFERENCES project(id))");
-            statement.execute("CREATE TABLE IF NOT EXISTS assay_parameter (id INTEGER PRIMARY KEY AUTOINCREMENT, assay_id INTEGER, data_type_id INTEGER, name TEXT, FOREIGN KEY(assay_id) REFERENCES assay(id), FOREIGN KEY(data_type_id) REFERENCES data_type(id))");
+            //statement.execute("CREATE TABLE IF NOT EXISTS assay_parameter (id INTEGER PRIMARY KEY AUTOINCREMENT, assay_id INTEGER, data_type_id INTEGER, name TEXT, FOREIGN KEY(assay_id) REFERENCES assay(id), FOREIGN KEY(data_type_id) REFERENCES data_type(id))");
+            statement.execute("CREATE TABLE IF NOT EXISTS assay_parameter (id INTEGER PRIMARY KEY AUTOINCREMENT, assay_id INTEGER, data_type TEXT, name TEXT, FOREIGN KEY(assay_id) REFERENCES assay(id))");
             statement.execute("CREATE TABLE IF NOT EXISTS compound (id TEXT PRIMARY KEY, idcode TEXT, idcode_coordinates TEXT)");
             statement.execute("CREATE TABLE IF NOT EXISTS batch (id TEXT PRIMARY KEY, compound_id TEXT, FOREIGN KEY(compound_id) REFERENCES compound(id))");
             statement.execute("CREATE TABLE IF NOT EXISTS tube (id TEXT PRIMARY KEY, batch_id TEXT, FOREIGN KEY(batch_id) REFERENCES batch(id))");

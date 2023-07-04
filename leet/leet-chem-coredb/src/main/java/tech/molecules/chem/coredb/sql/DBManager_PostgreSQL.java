@@ -11,11 +11,13 @@ public class DBManager_PostgreSQL extends DBManager {
     }
 
     public static void createDatabaseSchema_postgres(Connection connection) throws SQLException {
+        // TODO: fix based on H2 implementation..
         try (Statement statement = connection.createStatement()) {
-            statement.execute("CREATE TABLE IF NOT EXISTS data_type (id SERIAL PRIMARY KEY, name TEXT)");
+            //statement.execute("CREATE TABLE IF NOT EXISTS data_type (id SERIAL PRIMARY KEY, name TEXT)");
             statement.execute("CREATE TABLE IF NOT EXISTS project (id TEXT PRIMARY KEY, name TEXT)");
             statement.execute("CREATE TABLE IF NOT EXISTS assay (id SERIAL PRIMARY KEY, name TEXT, project_id TEXT, FOREIGN KEY(project_id) REFERENCES project(id))");
-            statement.execute("CREATE TABLE IF NOT EXISTS assay_parameter (id SERIAL PRIMARY KEY, assay_id INTEGER, data_type_id INTEGER, name TEXT, FOREIGN KEY(assay_id) REFERENCES assay(id), FOREIGN KEY(data_type_id) REFERENCES data_type(id))");
+            //statement.execute("CREATE TABLE IF NOT EXISTS assay_parameter (id SERIAL PRIMARY KEY, assay_id INTEGER, data_type_id INTEGER, name TEXT, FOREIGN KEY(assay_id) REFERENCES assay(id), FOREIGN KEY(data_type_id) REFERENCES data_type(id))");
+            statement.execute("CREATE TABLE IF NOT EXISTS assay_parameter (id SERIAL PRIMARY KEY, assay_id INTEGER, data_type TEXT, name TEXT, FOREIGN KEY(assay_id) REFERENCES assay(id))");
             statement.execute("CREATE TABLE IF NOT EXISTS compound (id TEXT PRIMARY KEY, idcode TEXT, idcode_coordinates TEXT)");
             statement.execute("CREATE TABLE IF NOT EXISTS batch (id TEXT PRIMARY KEY, compound_id TEXT, FOREIGN KEY(compound_id) REFERENCES compound(id))");
             statement.execute("CREATE TABLE IF NOT EXISTS tube (id TEXT PRIMARY KEY, batch_id TEXT, FOREIGN KEY(batch_id) REFERENCES batch(id))");

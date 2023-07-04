@@ -2,7 +2,8 @@ package tech.molecules.chem.coredb.sql;
 
 import tech.molecules.chem.coredb.DataType;
 
-public class DataTypeImpl implements DataType {
+@Deprecated
+public class DataTypeImpl  {
 
     private int id;
     private String name;
@@ -12,12 +13,12 @@ public class DataTypeImpl implements DataType {
         this.name = datatypeName;
     }
 
-    @Override
+    //@Override
     public int getId() {
         return id;
     }
 
-    @Override
+    //@Override
     public String getName() {
         return this.name;
     }

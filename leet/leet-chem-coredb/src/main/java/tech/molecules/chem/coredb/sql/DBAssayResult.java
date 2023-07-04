@@ -128,11 +128,11 @@ public class DBAssayResult {
         StringBuilder queryBuilder = new StringBuilder(
                 "SELECT assay_result_data.assay_result_id, " +
                         "assay_parameter.id AS parameter_id, assay_parameter.name AS parameter_name, " +
-                        "data_type.name AS data_type_name, " + "data_type.id AS data_type_id, " + "assay_parameter.assay_id AS assay_id, " +
+                        "assay_parameter.data_type AS data_type_name, " + "assay_parameter.assay_id AS assay_id, " +
                         "assay_result_data.double_value , assay_result_data.text_value AS text_value " +
                         "FROM assay_result_data " +
                         "JOIN assay_parameter ON assay_result_data.assay_parameter_id = assay_parameter.id " +
-                        "JOIN data_type ON assay_parameter.data_type_id = data_type.id " +
+                        //"JOIN data_type ON assay_parameter.data_type_id = data_type.id " +
                         "WHERE assay_result_data.assay_result_id IN ("
         );
 
@@ -155,12 +155,15 @@ public class DBAssayResult {
             long assayResultId = resultSet.getLong("assay_result_id");
             int parameterId = resultSet.getInt("parameter_id");
             String parameterName = resultSet.getString("parameter_name");
-            String dataTypeName = resultSet.getString("data_type_name");
+            //String dataTypeName = resultSet.getString("data_type_name");
+            String dataTypeId = resultSet.getString("data_type_name");
             //int assay_id = resultSet.getInt("assay_id");
             int assay_id = assayResultIds.get(assayResultId);
-            int data_type_id = resultSet.getInt("data_type_id");
+            //int data_type_id = resultSet.getInt("data_type_id");
             //Assay dummyAssay = new AssayImpl(0, "",null); // We create a dummy assay object as we only need the parameter.
-            DataType dataType = new DataTypeImpl(data_type_id, dataTypeName);
+            //DataType dataType = new DataTypeImpl(data_type_id, dataTypeName);
+            DataType dataType = DataType.fromValue(dataTypeId);
+
             AssayParameter parameter = new AssayParameterImpl(parameterId, assays_sorted.get(assay_id) , dataType, parameterName);
 
             double doubleValue = resultSet.getDouble("double_value");

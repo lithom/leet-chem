@@ -17,7 +17,7 @@ public interface CoreDBWriter {
 
     Project createProject(String id, String name) throws Exception;
 
-    DataType createDataType(String name) throws Exception;
+    //DataType createDataType(String name) throws Exception;
 
     Assay createAssay(String name, Project project) throws Exception;
 

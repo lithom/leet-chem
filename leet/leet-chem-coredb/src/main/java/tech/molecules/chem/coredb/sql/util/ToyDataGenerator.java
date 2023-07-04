@@ -70,7 +70,8 @@ public class ToyDataGenerator {
             Project project = dbManager.createProject(PROJECT_NAME, PROJECT_NAME);
             System.out.println("Created project: " + project.getName());
 
-            DataType numericDataType = dbManager.createDataType("numeric");
+            //DataType numericDataType = dbManager.createDataType("numeric");
+            DataType numericDataType = DataType.NUMERIC;
 
             List<Assay> assays = new ArrayList<>();
             for (String assayName : ASSAY_NAMES) {

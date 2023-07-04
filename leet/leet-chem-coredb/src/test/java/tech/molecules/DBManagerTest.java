@@ -20,11 +20,11 @@ public class DBManagerTest {
 
     public static void main(String[] args) {
         long ts_a = System.currentTimeMillis();
-        //test_A("sqlite");
+        test_A("sqlite");
         long ts_b = System.currentTimeMillis();
-        //test_A("h2db_mem");
+        test_A("h2db_mem");
         long ts_c = System.currentTimeMillis();
-        test_A("postgres");
+        //test_A("postgres");
         long ts_d = System.currentTimeMillis();
         System.out.println("sqlite:   "+(ts_b-ts_a));
         System.out.println("h2db_mem: "+(ts_c-ts_b));
@@ -75,7 +75,8 @@ public class DBManagerTest {
             Project project = dbManager.createProject(PROJECT_NAME,PROJECT_NAME);
             System.out.println("Created project: " + project.getName());
 
-            DataType numericDataType = dbManager.createDataType("numeric");
+            //DataType numericDataType = dbManager.createDataType("numeric");
+            DataType numericDataType = DataType.NUMERIC;
 
             List<Assay> assays = new ArrayList<>();
             for (String assayName : ASSAY_NAMES) {

@@ -51,12 +51,13 @@ public class CSVIngestor_01 {
         // we also keep track of compounds. Pair is BatchId/TubeId
         Map<String,Pair<Batch,Tube>> compoundToBatchAndTube= new HashMap<>();
 
-        // create "numeric" datatype:
-        try {
-            numericDataType = coredb.createDataType("numeric");
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        numericDataType = DataType.NUMERIC;
+//        // create "numeric" datatype:
+//        try {
+//            numericDataType = coredb.createDataType("numeric");
+//        } catch (SQLException e) {
+//            throw new RuntimeException(e);
+//        }
 
 
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {

@@ -52,22 +52,22 @@ public abstract class DBManager implements CoreDB, CoreDBWriter {
         return new ProjectImpl(id, name);
     }
 
-    @Override
-    public DataType createDataType(String name) throws SQLException {
-        //String query = "INSERT INTO data_type (name) VALUES (?)";
-        String query = helper.getInsertOrIgnoreStatement("data_type","name","?");
-        PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-        statement.setString(1, name);
-
-        statement.executeUpdate();
-        ResultSet resultSet = statement.getGeneratedKeys();
-        if (resultSet.next()) {
-            int id = resultSet.getInt(1);
-            return new DataTypeImpl(id, name);
-        } else {
-            throw new SQLException("Failed to create data type");
-        }
-    }
+//    @Override
+//    public DataType createDataType(String name) throws SQLException {
+//        //String query = "INSERT INTO data_type (name) VALUES (?)";
+//        String query = helper.getInsertOrIgnoreStatement("data_type","name","?");
+//        PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+//        statement.setString(1, name);
+//
+//        statement.executeUpdate();
+//        ResultSet resultSet = statement.getGeneratedKeys();
+//        if (resultSet.next()) {
+//            int id = resultSet.getInt(1);
+//            return new DataTypeImpl(id, name);
+//        } else {
+//            throw new SQLException("Failed to create data type");
+//        }
+//    }
 
     @Override
     public Assay createAssay(String name, Project project) throws SQLException {
@@ -88,10 +88,10 @@ public abstract class DBManager implements CoreDB, CoreDBWriter {
 
     @Override
     public AssayParameter createAssayParameter(Assay assay, DataType dataType, String name) throws SQLException {
-        String query = "INSERT INTO assay_parameter (assay_id, data_type_id, name) VALUES (?, ?, ?)";
+        String query = "INSERT INTO assay_parameter (assay_id, data_type, name) VALUES (?, ?, ?)";
         PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         statement.setInt(1, assay.getId());
-        statement.setInt(2, dataType.getId());
+        statement.setString(2, dataType.getValue());
         statement.setString(3, name);
 
         statement.executeUpdate();
@@ -113,7 +113,9 @@ public abstract class DBManager implements CoreDB, CoreDBWriter {
         PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         statement.setInt(1, assay.getId());
         statement.setDate(2, new java.sql.Date(date.getTime()));
-        statement.setString(3, tube.getId());
+        String tube_id = "<<UNKNOWN>>";
+        if(tube!=null) {tube_id = tube.getId();}
+        statement.setString(3, tube_id);
 
         statement.executeUpdate();
         ResultSet resultSet = statement.getGeneratedKeys();
@@ -283,6 +285,45 @@ public abstract class DBManager implements CoreDB, CoreDBWriter {
         }
     }
 
+    @Override
+    public Map<String,Compound> fetchCompounds(List<String> ids) {
+        List<Compound> compounds = new ArrayList<>();
+        Map<String,Compound> resolved_compounds = new HashMap<>();
+
+        //try (Connection connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD)) {
+        try {
+            String query = "SELECT * FROM compound WHERE id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+
+            for (String id : ids) {
+                statement.setString(1, id);
+                ResultSet resultSet = statement.executeQuery();
+                if (resultSet.next()) {
+                    String idcode = resultSet.getString("idcode");
+                    String idcodeCoordinates = resultSet.getString("idcode_coordinates");
+
+                    Compound compound = new CompoundImpl(id, idcode, idcodeCoordinates);
+                    compounds.add(compound);
+                    resolved_compounds.put(id,compound);
+                }
+                resultSet.close();
+            }
+            statement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            // Handle any exceptions that occurred during database access
+        }
+
+
+
+        return resolved_compounds;
+    }
+
+    @Override
+    public List<Batch> fetchBatches(List<String> identifiers) {
+        throw new RuntimeException("Not yet implemented..");
+        //return null;
+    }
 }
 
 
