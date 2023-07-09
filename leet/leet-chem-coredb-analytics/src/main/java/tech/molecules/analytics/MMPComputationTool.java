@@ -3,6 +3,7 @@ package tech.molecules.analytics;
 import com.actelion.research.chem.StereoMolecule;
 import tech.molecules.chem.coredb.AssayResult;
 import tech.molecules.chem.coredb.AssayResultQuery;
+import tech.molecules.chem.coredb.Compound;
 import tech.molecules.chem.coredb.sql.DBAssayResult;
 import tech.molecules.leet.chem.ChemUtils;
 import tech.molecules.leet.chem.mutator.FragmentDecompositionSynthon;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class MMPComputationTool {
@@ -30,7 +32,15 @@ public class MMPComputationTool {
         AssayResultQuery arq = new AssayResultQuery(assay_id,null,null,null);
         List<AssayResult> results = DBAssayResult.searchAssayResults(conn,arq);
 
-        return computeMMPFragmentDecompositions(results,
+        // TODO: implement!!
+        Function<String,Compound> compound_resolver = new Function<String, Compound>() {
+            @Override
+            public Compound apply(String s) {
+                return null;
+            }
+        };
+        return computeMMPFragmentDecompositions(
+                compound_resolver,results,
                 max_fragment_size,max_relative_fragment_size,
                 min_extension_size,
                 max_splits);
@@ -71,7 +81,8 @@ public class MMPComputationTool {
      * @param max_splits
      * @return
      */
-    public static List<MMPFragmentDecomposition> computeMMPFragmentDecompositions(List<AssayResult> results,
+    public static List<MMPFragmentDecomposition> computeMMPFragmentDecompositions(    Function<String, Compound> compoundResolver,
+                                                                                      List<AssayResult> results,
                                                                                       int max_fragment_size, double max_relative_fragment_size,
                                                                                       int min_extension_size,
                                                                                       int max_splits) {
@@ -84,11 +95,14 @@ public class MMPComputationTool {
 
         Map<String,List<AssayResult>> sortedResults = new HashMap<>();
         Map<String,String> idcodeToMolid = new HashMap<>();
+
         results.stream().forEach(ri -> {
-            String molid_i = ri.getTube().getBatch().getCompound().getId();
+            String molid_i = ri.getTube().getBatch().getCompoundId();
             if(!sortedResults.containsKey(molid_i)) {sortedResults.put(molid_i,new ArrayList<>());}
             sortedResults.get(molid_i).add(ri);
-            idcodeToMolid.put(ri.getTube().getBatch().getCompound().getMolecule()[0],molid_i);
+            String idc = compoundResolver.apply( molid_i ).getMolecule()[0];
+            //idcodeToMolid.put( ri.getTube().getBatch().getCompound().getMolecule()[0],molid_i);
+            idcodeToMolid.put( idc,molid_i);
         });
 
         Map<String,List<FragmentDecomposition>> allDecompositions = new ConcurrentHashMap<>();
