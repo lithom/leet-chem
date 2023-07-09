@@ -128,7 +128,8 @@ public class ActivityCliffProbabilityCalculator {
         List<AssayResult> results = assay_results_provider.apply(assay);
 
         // 1. compute mmp fragment decomps
-        List<MMPFragmentDecomposition> decomps = MMPComputationTool.computeMMPFragmentDecompositions(results,14,0.3,3,1);
+        // TODO implement compound resolver..
+        List<MMPFragmentDecomposition> decomps = MMPComputationTool.computeMMPFragmentDecompositions(null,results,14,0.3,3,1);
 
         // 2. compute mmps and sort by transformation
         List<MMPInstance> mmps = MMPComputationTool.computeMMPs(decomps);
