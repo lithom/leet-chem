@@ -2,20 +2,15 @@ package tech.molecules.leet.table;
 
 import com.actelion.research.chem.IDCodeParser;
 import com.actelion.research.chem.Molecule;
-import com.actelion.research.chem.PropertyCalculator;
 import com.actelion.research.chem.StereoMolecule;
-import com.actelion.research.gui.DefaultCompoundCollectionModel;
 import tech.molecules.leet.chem.mutator.properties.ChemPropertyCounts;
 import tech.molecules.leet.table.gui.DispatchingMouseAdapter;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
-import javax.swing.event.CellEditorListener;
-import javax.swing.plaf.basic.BasicGraphicsUtils;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.List;
