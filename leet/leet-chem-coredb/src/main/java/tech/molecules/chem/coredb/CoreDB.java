@@ -26,4 +26,6 @@ public interface CoreDB {
 
     public List<Batch> fetchBatches(List<String> identifiers);
 
+    public List<Tube> fetchTubes(List<String> tubeIds);
+
 }

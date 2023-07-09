@@ -96,7 +96,7 @@ public class DBAssayResult {
             String compoundId = resultSet.getString("compound_id");
             String compoundIdcode = resultSet.getString("compound_idcode");
             Compound compound = new CompoundImpl(compoundId,compoundIdcode); // You need to implement this method to fetch the StereoMolecule based on the compound ID.
-            Batch batch = new BatchImpl(batchId, compound);
+            Batch batch = new BatchImpl(batchId, compound.getId());
             Tube tube = new TubeImpl(tubeId, batch);
             AssayResult ari = new AssayResultImpl(id, null, date, tube,null);
             results.add(ari);

@@ -98,7 +98,7 @@ public class CSVIngestor_01 {
                     compoundToBatchAndTube.put(structureId,Pair.of(cta.getMiddle(),cta.getRight()));
                 }
                 else {
-                    coredb_id = compoundToBatchAndTube.get(structureId).getLeft().getCompound().getId();
+                    coredb_id = compoundToBatchAndTube.get(structureId).getLeft().getCompoundId();
                 }
                 ti = compoundToBatchAndTube.get(structureId).getRight();
                 createActivityMeasurement(coredb,ap,ti,activityData);
@@ -156,7 +156,7 @@ public class CSVIngestor_01 {
         // Implement your logic here
         // This function will be called for every line in the CSV file
         System.out.println("Creating activity measurement: AssayParameter: " + ap.getName() +
-                ", Structure ID: " + ti.getBatch().getCompound().getId() + ", Measured Activity: " + measuredActivity);
+                ", Structure ID: " + ti.getBatch().getCompoundId() + ", Measured Activity: " + measuredActivity);
 
         try {
             AssayResult ar = coredb.createAssayResult(ap.getAssay(), new Date(System.currentTimeMillis()), ti);

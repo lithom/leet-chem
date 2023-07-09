@@ -146,7 +146,7 @@ public abstract class DBManager implements CoreDB, CoreDBWriter {
         statement.setString(1, id);
         statement.setString(2, compound.getId());
         statement.executeUpdate();
-        return new BatchImpl(id, compound);
+        return new BatchImpl(id, compound.getId());
     }
 
     @Override
@@ -183,7 +183,7 @@ public abstract class DBManager implements CoreDB, CoreDBWriter {
         StringBuilder sb = new StringBuilder("SELECT tube.id as tube_id, tube.batch_id, batch.compound_id, compound.idcode ")
                 .append("FROM tube ")
                 .append("JOIN batch ON tube.batch_id = batch.id ")
-                .append("JOIN compound ON batch.compound_id = compound.id ")
+                //.append("JOIN compound ON batch.compound_id = compound.id ")
                 .append("WHERE 1=1");
 
         if (query.getBatchId() != null) {
@@ -202,16 +202,69 @@ public abstract class DBManager implements CoreDB, CoreDBWriter {
             String tubeId = resultSet.getString("tube_id");
             String batchId = resultSet.getString("batch_id");
             String compoundId = resultSet.getString("compound_id");
-            String compoundIdcode = resultSet.getString("idcode");
+            //String compoundIdcode = resultSet.getString("idcode");
 
-            StereoMolecule molecule = ChemUtils.parseIDCode(compoundIdcode);
-            Compound compound = new CompoundImpl(compoundId, molecule);
-            Batch batch = new BatchImpl(batchId, compound);
+            //StereoMolecule molecule = ChemUtils.parseIDCode(compoundIdcode);
+            //Compound compound = new CompoundImpl(compoundId, molecule);
+            Batch batch = new BatchImpl(batchId, compoundId);
 
             result.add(new TubeImpl(tubeId, batch));
         }
 
         return result;
+    }
+
+
+    public List<Tube> fetchTubes(List<String> tubeIds) {
+        List<Tube> tubes = new ArrayList<>();
+
+        try {
+            // Prepare the SQL query
+            StringBuilder queryBuilder = new StringBuilder();
+            queryBuilder.append("SELECT t.id AS tube_id, t.batch_id, b.id AS batch_id, b.compound_id ");
+            queryBuilder.append("FROM tube t ");
+            queryBuilder.append("JOIN batch b ON t.batch_id = b.id ");
+            queryBuilder.append("WHERE t.id IN (");
+            for (int i = 0; i < tubeIds.size(); i++) {
+                queryBuilder.append("?");
+                if (i < tubeIds.size() - 1) {
+                    queryBuilder.append(", ");
+                }
+            }
+            queryBuilder.append(")");
+
+            String query = queryBuilder.toString();
+
+            // Create a PreparedStatement object
+            PreparedStatement statement = connection.prepareStatement(query);
+
+            // Set the tube IDs as parameters
+            for (int i = 0; i < tubeIds.size(); i++) {
+                statement.setString(i + 1, tubeIds.get(i));
+            }
+
+            // Execute the query
+            ResultSet resultSet = statement.executeQuery();
+
+            // Process the result set
+            while (resultSet.next()) {
+                String tubeId = resultSet.getString("tube_id");
+                String batchId = resultSet.getString("batch_id");
+                String compoundId = resultSet.getString("compound_id");
+
+                Batch batch = new BatchImpl(batchId, compoundId);
+                Tube tube = new TubeImpl(tubeId, batch);
+                tubes.add(tube);
+            }
+
+            // Close the resources
+            resultSet.close();
+            statement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return tubes;
     }
 
 
@@ -321,8 +374,50 @@ public abstract class DBManager implements CoreDB, CoreDBWriter {
 
     @Override
     public List<Batch> fetchBatches(List<String> identifiers) {
-        throw new RuntimeException("Not yet implemented..");
-        //return null;
+        List<Batch> batches = new ArrayList<>();
+
+        try {
+            // Prepare the SQL query
+            StringBuilder queryBuilder = new StringBuilder();
+            queryBuilder.append("SELECT id, compound_id FROM batch WHERE id IN (");
+            for (int i = 0; i < identifiers.size(); i++) {
+                queryBuilder.append("?");
+                if (i < identifiers.size() - 1) {
+                    queryBuilder.append(", ");
+                }
+            }
+            queryBuilder.append(")");
+
+            String query = queryBuilder.toString();
+
+            // Create a PreparedStatement object
+            PreparedStatement statement = connection.prepareStatement(query);
+
+            // Set the batch IDs as parameters
+            for (int i = 0; i < identifiers.size(); i++) {
+                statement.setString(i + 1, identifiers.get(i));
+            }
+
+            // Execute the query
+            ResultSet resultSet = statement.executeQuery();
+
+            // Process the result set
+            while (resultSet.next()) {
+                String id = resultSet.getString("id");
+                String compoundId = resultSet.getString("compound_id");
+
+                Batch batch = new BatchImpl(id, compoundId);
+                batches.add(batch);
+            }
+
+            // Close the resources
+            resultSet.close();
+            statement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return batches;
     }
 }
 
