@@ -75,11 +75,16 @@ public class SimpleSARDecomposition {
             Arrays.stream(mi).forEach( xi -> sar_atoms.add(xi) );
 
             // invent coordinates based on template?
-            if(true) {
-                CoordinateInventor ci = new CoordinateInventor();
-                DescriptorHandlerLongFFP512 ffp = new DescriptorHandlerLongFFP512();
-                ci.setCustomTemplateList( Collections.singletonList(new InventorTemplate( sarFragment , ffp.createDescriptor(sarFragment) ,true)) );
-                ci.invent(mol_a);
+            try {
+                if (true) {
+                    CoordinateInventor ci = new CoordinateInventor();
+                    DescriptorHandlerLongFFP512 ffp = new DescriptorHandlerLongFFP512();
+                    ci.setCustomTemplateList(Collections.singletonList(new InventorTemplate(sarFragment, ffp.createDescriptor(sarFragment), true)));
+                    ci.invent(mol_a);
+                }
+            }
+            catch(Exception ex) {
+                System.out.println("coordinate invention problem");
             }
 
             // process match:
@@ -283,3 +288,10 @@ public class SimpleSARDecomposition {
     }
 
 }
+
+
+// Some nice examples:
+// OxAgo macros: fhq`R@MPQqP@cIIBddhieoAVjjZjjDhCXfBTYVAG_iSLLKCSenDcBpty_zahplMNW~xVLKCSejGSBpty_{AJAL
+//
+//
+

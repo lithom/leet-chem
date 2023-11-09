@@ -27,13 +27,17 @@ public class SimpleSARDecompositionModel {
     private SimpleSARProject project;
 
 
-    private List<String> compounds = new ArrayList<>();
+    //private List<String> compounds = new ArrayList<>();
 
     private Map<String,Pair<SimpleSARSeries,SimpleSARDecomposition.SimpleSARResult>> firstMatches;
     private Map<SimpleSARSeries,List<SimpleSARDecomposition.SimpleSARResult>> seriesByFirstMatch;
 
     public SimpleSARDecompositionModel(List<SimpleSARSeries> series) {
         //this.series = series;
+        this.setSeriesAndCompounds(series, new ArrayList<>());
+    }
+
+    public void setSeriesAndCompounds(List<SimpleSARSeries> series, List<String> compounds) {
         this.project = new SimpleSARProject();
         this.project.setSeries(series);
 
@@ -41,6 +45,8 @@ public class SimpleSARDecompositionModel {
         initMonitorThread(500);
         firstMatches = new HashMap<>();
         seriesByFirstMatch = new HashMap<>();
+
+        this.addCompounds(compounds);
     }
 
     // Create a ThreadPoolExecutor with n threads
@@ -51,7 +57,6 @@ public class SimpleSARDecompositionModel {
         if(numThreads<=0) {threads = Runtime.getRuntime().availableProcessors();}
         threadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(threads);
     }
-
 
     private Boolean newResults = false;
 
@@ -92,6 +97,10 @@ public class SimpleSARDecompositionModel {
         return this.project.getSeries();
     }
 
+    public SimpleSARProject getProject() {
+        return this.project;
+    }
+
     public List<SimpleSARDecomposition.SimpleSARResult> getSeriesDecomposition(SimpleSARSeries series) {
         List<SimpleSARDecomposition.SimpleSARResult> results = new ArrayList<>();
         synchronized (seriesByFirstMatch) {
@@ -99,6 +108,29 @@ public class SimpleSARDecompositionModel {
         }
         return results;
     }
+
+    public SimpleSARSeries getSeriesForCompound(String idc) {
+        SimpleSARSeries res = null;
+        synchronized (firstMatches) {
+            Pair<SimpleSARSeries, SimpleSARDecomposition.SimpleSARResult> ma = firstMatches.get(idc);
+            if(ma != null) {
+                res = ma.getLeft();
+            }
+        }
+        return res;
+    }
+    public SimpleSARDecomposition.SimpleSARResult getDecompositionForCompound(String idc) {
+        SimpleSARDecomposition.SimpleSARResult res = null;
+        synchronized (firstMatches) {
+            Pair<SimpleSARSeries, SimpleSARDecomposition.SimpleSARResult> ma = firstMatches.get(idc);
+            if(ma != null) {
+                res = ma.getRight();
+            }
+        }
+        return res;
+    }
+
+
 
     public SimpleSARDecompositionModel getThisModel() {
         return this;
