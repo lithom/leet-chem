@@ -43,6 +43,11 @@
             <version>${revision}</version>
         </dependency>
         <dependency>
+            <groupId>tech.molecules</groupId>
+            <artifactId>leet-chem-coredb</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>

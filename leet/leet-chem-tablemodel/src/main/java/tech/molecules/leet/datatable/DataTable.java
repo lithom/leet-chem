@@ -216,6 +216,14 @@ public class DataTable {
         this.taskQueue.add(new FullUpdateTask(Collections.singletonMap(fi,null).keySet(),null));
     }
 
+    public Map<DataTableColumn,List<DataFilter>> getFiltersSorted() {
+        Map<DataTableColumn,List<DataFilter>> filters_a = new HashMap<>();
+        synchronized(this.columns) {
+            filters_a = new HashMap<>(this.filters);
+        }
+        return filters_a;
+    }
+
     private List<Pair<DataTableColumn,DataSort>> sorts = new ArrayList<>();
 
 
@@ -259,6 +267,7 @@ public class DataTable {
 
         @Override
         public void runTask() {
+            long ts_start = System.currentTimeMillis();
             synchronized(allKeys) {
 
                 if(keysDataChanged==null) {
@@ -375,7 +384,8 @@ public class DataTable {
 
                 }
             }
-
+            long ts_end = System.currentTimeMillis();
+            System.out.println("Time full update: "+(ts_end-ts_start)+" ms");
             fireTableDataChanged();
         }
     }
@@ -402,11 +412,15 @@ public class DataTable {
     private List<DataTableListener> listeners = new ArrayList<>();
 
     public void addDataTableListener(DataTableListener li) {
-        listeners.add(li);
+        synchronized(this.listeners) {
+            listeners.add(li);
+        }
     }
 
     public boolean removeDataTableListener(DataTableListener li) {
-        return listeners.remove(li);
+        synchronized(this.listeners) {
+            return listeners.remove(li);
+        }
     }
 
 
@@ -434,20 +448,29 @@ public class DataTable {
 
 
     private void fireTableStructureChanged() {
-        for(DataTableListener li : listeners) {
+        List<DataTableListener> listeners_a = new ArrayList<>();
+        synchronized(this.listeners) {
+            listeners_a = new ArrayList<>(this.listeners);
+        }
+        for (DataTableListener li : listeners_a) {
             li.tableStructureChanged();
         }
+
     }
 
     private void fireTableCellsChanged(List<int[]> cells) {
-        for(DataTableListener li : listeners) {
-            li.tableCellsChanged(cells);
+        synchronized(this.listeners) {
+            for (DataTableListener li : listeners) {
+                li.tableCellsChanged(cells);
+            }
         }
     }
 
     private void fireTableDataChanged() {
-        for(DataTableListener li : listeners) {
-            li.tableDataChanged();
+        synchronized(this.listeners) {
+            for (DataTableListener li : listeners) {
+                li.tableDataChanged();
+            }
         }
     }
 

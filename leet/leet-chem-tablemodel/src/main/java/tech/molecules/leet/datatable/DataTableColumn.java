@@ -22,6 +22,8 @@ public interface DataTableColumn<T,U> {
         return new ArrayList<>();
     }
 
+    default public List<CategoricDatasource> getCategoricDatasources() { return new ArrayList<>(); }
+
     default public List<DataRepresentation> getAlternativeRepresentations() {
         return new ArrayList<>();
     }

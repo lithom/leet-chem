@@ -35,6 +35,7 @@ public class NumericRangeFilterController extends AbstractSwingFilterController<
             this.slider.addChangeListener(new ChangeListener() {
                 @Override
                 public void stateChanged(ChangeEvent e) {
+                    System.out.println("Range: "+slider.getRange()[0]+ " - "+slider.getRange()[1]);
                     callback_range.accept(slider.getRange());
                 }
             });
