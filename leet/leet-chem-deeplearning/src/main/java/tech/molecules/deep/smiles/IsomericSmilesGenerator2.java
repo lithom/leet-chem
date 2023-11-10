@@ -5,10 +5,7 @@ import com.actelion.research.chem.*;
 import com.actelion.research.chem.reaction.Reaction;
 
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class IsomericSmilesGenerator2 {
     public static final int MODE_CREATE_SMARTS = 1;
@@ -67,7 +64,7 @@ public class IsomericSmilesGenerator2 {
         for (int i=0; i<rxn.getCatalysts(); i++) {
             if (i != 0)
                 sb.append('.');
-            sb.append(new com.actelion.research.chem.IsomericSmilesCreator(rxn.getCatalyst(i)).getSmiles());
+            sb.append(new IsomericSmilesCreator(rxn.getCatalyst(i)).getSmiles());
         }
         sb.append('>');
         for (int i=0; i<rxn.getProducts(); i++) {
@@ -120,7 +117,15 @@ public class IsomericSmilesGenerator2 {
         return mSmiles;
     }
 
+    private Map<Integer,Integer> mapOrderCanonizedToSmiles = new HashMap<>();
+
+    public Map<Integer,Integer> getMapOrderCanonizedToSmiles() {
+        return mapOrderCanonizedToSmiles;
+    }
+
     private String createSmiles() {
+        this.mapOrderCanonizedToSmiles = new HashMap<>();
+
         if (mMol == null || mMol.getAllAtoms() == 0)
             return "";
 
@@ -146,6 +151,7 @@ public class IsomericSmilesGenerator2 {
         StringBuilder builder = new StringBuilder();
         StringBuilder buffer = new StringBuilder();
         boolean isFirst = true;
+        int cnt = 0;
         for (SmilesAtom smilesAtom:mGraphAtomList) {
             if (smilesAtom.parent == -1) {
                 if (isFirst)
@@ -153,9 +159,13 @@ public class IsomericSmilesGenerator2 {
                 else
                     builder.append('.');
             }
+            //System.out.println(smilesAtom.atom+ ":"+PeriodicTable.getElement(mMol.getAtomicNo(smilesAtom.atom)));
+            this.mapOrderCanonizedToSmiles.put(smilesAtom.atom,cnt);
+            cnt++;
             addAtomString(smilesAtom, builder, buffer);
         }
 
+        //System.out.println(builder.toString());
         return builder.toString();
     }
 

@@ -18,8 +18,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
+        <!--<maven.compiler.source>1.7</maven.compiler.source>-->
+        <!--<maven.compiler.target>1.7</maven.compiler.target>-->
     </properties>
 
     <!--
@@ -41,6 +41,17 @@
             <artifactId>leet-chem-core</artifactId>
             <version>${revision}</version>
             <scope>compile</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/ncsa.hdf/lib-hdf -->
+        <dependency>
+            <groupId>org.hdfgroup</groupId>
+            <artifactId>hdf-java</artifactId>
+            <version>2.6.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.bio</groupId>
+            <artifactId>npy</artifactId>
+            <version>0.3.5</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.pytorch/pytorch_java_only -->
         <dependency>
@@ -103,6 +114,9 @@
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.0</version>
+                    <configuration>
+                        <release>11</release>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>

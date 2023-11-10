@@ -2,10 +2,7 @@ package tech.molecules.deep.smiles;
 
 import com.actelion.research.chem.*;
 
-import org.nd4j.common.util.ArrayUtil;
-import org.nd4j.linalg.api.buffer.DataType;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
+
 import tech.molecules.leet.chem.ChemUtils;
 
 import java.io.*;
@@ -17,7 +14,7 @@ public class RunCreateChemblDataset {
     /**
      * Length of padded input / output data
      */
-    public static final int LENGTH = 32;
+    public static final int LENGTH = 64;
 
     public static final char paddingChar = 'y';
     public static final char blindedChar = 'x';
@@ -25,7 +22,7 @@ public class RunCreateChemblDataset {
 
 
     public static void main(String args[]) {
-        String infile = "C:\\Temp\\leet_input\\chembl_size26_input_smiles.csv";
+        String infile = "C:\\datasets\\idcodes\\CM_Available_Compounds_idcodes.txt";
 
 
         BufferedReader in = null;
@@ -42,12 +39,14 @@ public class RunCreateChemblDataset {
             String line = null;
             while ((line = in.readLine()) != null) {
 
-                if(selectedMolecules.size() > 40000) {
+                if(selectedMolecules.size() > 400000) {
                     break;
                 }
 
                 try {
-                    SmilesParser sp = new SmilesParser();
+                    if(line.trim().length()>48) {continue;}
+                    //SmilesParser sp = new SmilesParser();
+                    IDCodeParser sp = new IDCodeParser();
                     StereoMolecule mi = new StereoMolecule();
                     sp.parse(mi, line);
                     mi.ensureHelperArrays(Molecule.cHelperCIP);
@@ -57,6 +56,8 @@ public class RunCreateChemblDataset {
                         continue;
                     }
                     if(mi.getAtoms()<12) {continue;}
+                    if(mi.getAtoms()>36) {continue;}
+
                     selectedMolecules.add(mi.getIDCode());
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -85,24 +86,24 @@ public class RunCreateChemblDataset {
         data_1.stream().map( xi -> xi.toCSV()).forEach( xi -> {for(Character ci : xi.toCharArray()) {characters_used.add(ci);}} );
 
         try {
-            BufferedWriter out1 = new BufferedWriter(new FileWriter(new File("smilesdata_b_025.csv")));
+            BufferedWriter out1 = new BufferedWriter(new FileWriter(new File("smilesdata_x64_025.csv")));
             for (TrainingSample ti : data_025) {
                 out1.write(ti.toCSV() + "\n");
             }
             out1.flush();out1.close();
-            BufferedWriter out2 = new BufferedWriter(new FileWriter(new File("smilesdata_b_05.csv")));
+            BufferedWriter out2 = new BufferedWriter(new FileWriter(new File("smilesdata_x64_05.csv")));
             for (TrainingSample ti : data_05) {
                 out2.write(ti.toCSV() + "\n");
             }
             out2.flush();
             out2.close();
-            BufferedWriter out3 = new BufferedWriter(new FileWriter(new File("smilesdata_b_075.csv")));
+            BufferedWriter out3 = new BufferedWriter(new FileWriter(new File("smilesdata_x64_075.csv")));
             for (TrainingSample ti : data_075) {
                 out3.write(ti.toCSV() + "\n");
             }
             out3.flush();
             out3.close();
-            BufferedWriter out4 = new BufferedWriter(new FileWriter(new File("smilesdata_b_1.csv")));
+            BufferedWriter out4 = new BufferedWriter(new FileWriter(new File("smilesdata_x64_1.csv")));
             for (TrainingSample ti : data_05) {
                 out4.write(ti.toCSV() + "\n");
             }
