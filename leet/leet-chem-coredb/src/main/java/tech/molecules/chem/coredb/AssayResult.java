@@ -9,6 +9,8 @@ public interface AssayResult {
     public Date getDate();
     public Tube getTube();
 
+    public String getCompoundId();
+
     public DataValue getData(AssayParameter ap);
     public DataValue getData(String parameter_name);
 }

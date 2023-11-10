@@ -40,11 +40,25 @@ public class ChemUtils {
         return smiles_creator.getSmiles();
     }
 
+    public static String idCodeToSmiles(String idc) {
+        StereoMolecule sm = parseIDCode(idc);
+        IsomericSmilesCreator smiles_creator = new IsomericSmilesCreator(sm);
+        return smiles_creator.getSmiles();
+    }
+
 
     public static StereoMolecule parseIDCode(String idc) {
         IDCodeParser icp = new IDCodeParser();
         StereoMolecule mi = new StereoMolecule();
         icp.parse(mi,idc);
+        mi.ensureHelperArrays(Molecule.cHelperCIP);
+        return mi;
+    }
+
+    public static StereoMolecule parseIDCode(String idc, String coords) {
+        IDCodeParserWithoutCoordinateInvention icp = new IDCodeParserWithoutCoordinateInvention();
+        StereoMolecule mi = new StereoMolecule();
+        icp.parse(mi,idc,coords);
         mi.ensureHelperArrays(Molecule.cHelperCIP);
         return mi;
     }
@@ -59,6 +73,11 @@ public class ChemUtils {
         }
         mi.ensureHelperArrays(Molecule.cHelperCIP);
         return mi;
+    }
+
+    public static String smilesToIDCode(String smiles) {
+        StereoMolecule mi = parseSmiles(smiles);
+        return mi.getIDCode();
     }
 
 
@@ -501,6 +520,71 @@ public class ChemUtils {
             throw new RuntimeException(e);
         }
         return mols;
+    }
+
+    public static Map<String, Integer> findLabeledAtoms(StereoMolecule mi) {
+        Map<String,Integer> labeled = new HashMap<>();
+        mi.ensureHelperArrays(Molecule.cHelperNeighbours);
+        for(int zi=0;zi<mi.getAtoms();zi++) {
+            String li = mi.getAtomCustomLabel(zi);
+            if(li != null && li.length()>0) {
+                labeled.put(li,zi);
+            }
+        }
+        return labeled;
+    }
+
+    public static BufferedImage createImageFromStructure(String idcode, int width, int height) {
+        StereoMolecule mi = parseIDCode(idcode);
+        return createImageFromStructure(mi,width,height);
+    }
+    public static BufferedImage createImageFromStructure(String idcode, String idcode_coords, int width, int height) {
+        StereoMolecule mi = parseIDCode(idcode,idcode_coords);
+        return createImageFromStructure(mi,width,height);
+    }
+
+    public static void createPNGFromStructure(String idcode, String path, int width, int height) {
+        BufferedImage bi = createImageFromStructure(idcode,width,height);
+            try {
+                if(true) {
+                    ImageIO.write(bi, "png", new File(path));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+    }
+
+    public static BufferedImage createImageFromStructure(StereoMolecule mi, int width, int height) {
+            BufferedImage bi = new BufferedImage(width,height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g_1 = bi.createGraphics();
+
+            g_1.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            //g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+            g_1.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+            g_1.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+
+            Depictor2D pic = new Depictor2D(mi);
+            //Rectangle.Double rect = new Rectangle2D.Double(0,0,width,height);
+            GenericRectangle rect = new GenericRectangle(0,0,width,height);
+            //pic.setTransformation(new DepictorTransformation(4,0,0));
+            pic.validateView(g_1,rect,Depictor2D.cModeInflateToMaxAVBL | Depictor2D.cDModeSuppressChiralText);
+
+            //pic.setDisplayMode(Depictor2D.cDModeNoTabus);
+            pic.paint(g_1);
+
+
+
+            GenericRectangle bounds = pic.getBoundingRect();
+            g_1.setColor(Color.blue);
+            g_1.drawRect((int)bounds.x,(int)bounds.y,(int)bounds.width,(int)bounds.height);
+
+
+
+            // BufferedImage bi_2 = new BufferedImage((int)Math.ceil(bounds.width),(int)Math.ceil(bounds.height), BufferedImage.TYPE_INT_ARGB);
+            // Graphics2D    g_2  = bi_2.createGraphics();
+            // pic.validateView(g_2,bounds,Depictor2D.cModeInflateToMaxAVBL);
+            // pic.paint(g_2);
+         return bi;
     }
 
 

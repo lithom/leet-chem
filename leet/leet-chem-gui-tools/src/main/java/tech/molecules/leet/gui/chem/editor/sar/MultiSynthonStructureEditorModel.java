@@ -6,6 +6,7 @@ import tech.molecules.leet.chem.sar.SimpleMultiSynthonStructure;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class MultiSynthonStructureEditorModel {
 
@@ -13,13 +14,16 @@ public class MultiSynthonStructureEditorModel {
     private StereoMolecule synthonEditedVersion;
     private StereoMolecule synthonOriginalReference;
 
-    public MultiSynthonStructureEditorModel(SimpleMultiSynthonStructure multiStructure, StereoMolecule editedSynthon) {
+    private Consumer<StereoMolecule> callbackStructureChanged;
+
+    public MultiSynthonStructureEditorModel(SimpleMultiSynthonStructure multiStructure, StereoMolecule editedSynthon, Consumer<StereoMolecule> callbackStructureChanged) {
         this.multiStructure = multiStructure;
 
         this.synthonEditedVersion = new StereoMolecule();
         this.synthonOriginalReference = editedSynthon;
-
         this.synthonOriginalReference.copyMolecule(this.synthonEditedVersion);
+
+        this.callbackStructureChanged = callbackStructureChanged;
     }
 
     public SimpleMultiSynthonStructure getMultiStructure() {
@@ -64,6 +68,7 @@ public class MultiSynthonStructureEditorModel {
     }
 
     private void fireMultiSynthonStructureChanged() {
+        callbackStructureChanged.accept(this.synthonOriginalReference);
         for (MultiSynthonStructureEditorModelListener listener : listeners) {
             listener.multiSynthonStructureChanged();
         }

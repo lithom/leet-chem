@@ -19,7 +19,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>8</maven.compiler.release>
-        <revision>0.0.7-SNAPSHOT</revision>
+        <revision>0.0.8</revision>
     </properties>
 
     <developers>
@@ -62,7 +62,7 @@
             <dependency>
                 <groupId>com.actelion.research</groupId>
                 <artifactId>openchemlib</artifactId>
-                <version>2023.7.3</version>
+                <version>2023.7.4</version>
                 <scope>compile</scope>
             </dependency>
             <dependency>

@@ -19,19 +19,22 @@ public class CSVIterator implements Iterator<List<String>> {
 
     int idx;
 
+    private String sep = ",";
+
     public CSVIterator(String file, boolean skip_first, List<Integer> col_idx) throws IOException {
-        this.file = file;
-        this.skip_first = skip_first;
-        this.col_idx = col_idx;
-        in = new BufferedReader(new FileReader(this.file));
-        init();
+        this(new BufferedReader(new FileReader(file)),skip_first,col_idx);
     }
 
     public CSVIterator(BufferedReader in, boolean skip_first, List<Integer> col_idx) throws IOException {
+        this(in,skip_first,col_idx,",");
+    }
+
+    public CSVIterator(BufferedReader in, boolean skip_first, List<Integer> col_idx, String sep) throws IOException {
         this.in = in;
         this.file = file;
         this.skip_first = skip_first;
         this.col_idx = col_idx;
+        this.sep = sep;
         init();
     }
 
@@ -60,7 +63,7 @@ public class CSVIterator implements Iterator<List<String>> {
                 return false;
             }
             // extract:
-            String splits[] = last_line.split(",");
+            String splits[] = last_line.split(sep);
             last_extracted = new ArrayList<>();
             for (int zi = 0; zi < col_idx.size(); zi++) {
                 last_extracted.add(splits[this.col_idx.get(zi)]);

@@ -31,6 +31,11 @@ public class AssayResultImpl implements AssayResult {
     public Date getDate() { return date; }
     public Tube getTube() { return tube; }
 
+    @Override
+    public String getCompoundId() {
+        return this.tube.getBatch().getCompoundId();
+    }
+
     public void setAssay(Assay assay) {this.assay = assay;}
 
     public void setDataValueMap(Map<AssayParameter, DataValue> dataValueMap) {

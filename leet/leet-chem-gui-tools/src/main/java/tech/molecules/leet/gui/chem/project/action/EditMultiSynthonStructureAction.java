@@ -14,12 +14,12 @@ import java.util.function.Supplier;
 
 public class EditMultiSynthonStructureAction extends AbstractAction implements ObjectSpecific {
 
-    private final Consumer<Object> callbackMultiStructureChanged;
+    private final Consumer<StereoMolecule> callbackMultiStructureChanged;
     private final Supplier<JPanel> targetPanel;
 
     private SimpleMultiSynthonStructure multiStructure;
 
-    public EditMultiSynthonStructureAction(Consumer<Object> callbackMultiStructureChanged, Supplier<JPanel> targetPanel) {
+    public EditMultiSynthonStructureAction(Consumer<StereoMolecule> callbackMultiStructureChanged, Supplier<JPanel> targetPanel) {
         super("Edit Structures..");
         this.callbackMultiStructureChanged = callbackMultiStructureChanged;
         this.targetPanel = targetPanel;
@@ -52,7 +52,7 @@ public class EditMultiSynthonStructureAction extends AbstractAction implements O
         panel.setLayout(new BorderLayout());
 
         // create the synthon editor
-        MultiSynthonStructureEditorModel model = new MultiSynthonStructureEditorModel(multiStructure,multiStructure.getSynthonSets().get(0).getSynthons().get(0));
+        MultiSynthonStructureEditorModel model = new MultiSynthonStructureEditorModel(multiStructure,multiStructure.getSynthonSets().get(0).getSynthons().get(0),this.callbackMultiStructureChanged);
 
         MultiSynthonStructureEditorView view = new MultiSynthonStructureEditorView(model);
         panel.add(view,BorderLayout.CENTER);

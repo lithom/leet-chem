@@ -73,7 +73,8 @@ public abstract class AbstractDataTableColumn<T,V> implements DataTableColumn<T,
 
     @Override
     public void setBackgroundColor(NumericDatasource nd, Function<Double, Color> colormap) {
-
+        this.backgroundColormap = colormap;
+        this.backgroundNumericDatasource = nd;
     }
 
     private DataTableColumnListenerHelper listenerHelper = new DataTableColumnListenerHelper();
