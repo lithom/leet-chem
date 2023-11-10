@@ -11,7 +11,7 @@ public class FilteredAssayInfo {
 
     @JsonPropertyDescription("filter based on input parameters")
     @JsonProperty("osirisFilter")
-    public CoreDBFilterInfo coreDBFiltero;
+    public CoreDBFilterInfo coreDBFilter;
 
     @JsonPropertyDescription("filter based on assay result properties (e.g. quality))")
     @JsonProperty("assayResultFilter")

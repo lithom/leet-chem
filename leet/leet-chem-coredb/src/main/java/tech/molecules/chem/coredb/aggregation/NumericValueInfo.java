@@ -9,31 +9,32 @@ public class NumericValueInfo {
     @JsonProperty("Assay")
     private FilteredAssayInfo assay;
 
-    @JsonPropertyDescription("OutValue, i.e. the value that we are interested in")
-    @JsonProperty("outValue")
-    private String outValue;
-
+    //@JsonPropertyDescription("OutValue, i.e. the value that we are interested in")
+    //@JsonProperty("outValue")
+    //private String outValue;
 
     @JsonPropertyDescription("Aggregation info")
     @JsonProperty("aggregation")
-    private NumericAggregationInfo aggregation = new NumericAggregationInfo(NumericAggregationInfo.AGGREGATION_MEAN);
-    @JsonPropertyDescription("Handle assay scores logarithmically?")
-    @JsonProperty("handleLogarithmic")
-    private boolean handleLogarithmic = false;
+    private NumericAggregationInfo aggregation; // = new NumericAggregationInfo("",NumericAggregationInfo.AGGREGATION_MEAN);
 
+    public NumericValueInfo(FilteredAssayInfo assay, NumericAggregationInfo aggregation) {
+        this.assay = assay;
+        this.aggregation = aggregation;
+    }
 
-    //@JsonPropertyDescription("Scoring description")
-    //@JsonProperty("Score")
-    //private NumericScore score = null;
+    public FilteredAssayInfo getAssay() {
+        return assay;
+    }
 
-    @JsonPropertyDescription("Manually set lower bound (NaN means not set)")
-    @JsonProperty("fixedLB")
-    private double fixedLB = Double.NaN;
+    public void setAssay(FilteredAssayInfo assay) {
+        this.assay = assay;
+    }
 
-    @JsonPropertyDescription("Manually set upper bound (NaN means not set)")
-    @JsonProperty("fixedUB")
-    private double fixedUB = Double.NaN;
+    public NumericAggregationInfo getAggregation() {
+        return aggregation;
+    }
 
-
-
+    public void setAggregation(NumericAggregationInfo aggregation) {
+        this.aggregation = aggregation;
+    }
 }
