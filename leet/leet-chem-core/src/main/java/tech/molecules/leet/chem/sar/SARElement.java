@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  * All is done via labeling:
  *
  * Atom can be labeled as follows:
- * "R-xxx" defines r-roup xxx
+ * "R-xxx" defines r-group xxx
  * "R-xxx{c(13)}" defines r-group xxx and requires connection c(13)
  * no label : "prevent further substitution"
  *
