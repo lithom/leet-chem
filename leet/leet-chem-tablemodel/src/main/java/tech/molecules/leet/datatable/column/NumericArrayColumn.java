@@ -1,6 +1,5 @@
 package tech.molecules.leet.datatable.column;
 
-import com.actelion.research.util.datamodel.DoubleArray;
 import tech.molecules.leet.data.NumericArray;
 import tech.molecules.leet.datatable.AbstractNumericDatasource;
 import tech.molecules.leet.datatable.NumericDatasource;
