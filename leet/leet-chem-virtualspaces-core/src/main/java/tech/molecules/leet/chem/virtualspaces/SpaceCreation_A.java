@@ -6,29 +6,37 @@ import com.actelion.research.chem.chemicalspaces.ChemicalSpaceCreator;
 import com.actelion.research.chem.io.RXNFileParser;
 import com.actelion.research.chem.io.SDFileParser;
 import com.actelion.research.chem.reaction.Reaction;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class SpaceCreation_A {
 
+    /**
+     * Actually we select the N smallest bbs that we find in all of the considered input files.
+     *
+     * @param args
+     * @throws FileNotFoundException
+     */
     public static void main(String[] args) throws FileNotFoundException {
 
-        String pathOutputDir = "C:\\Temp\\virtual_spaces";
+        String pathOutputDir = "C:\\Temp\\virtual_spaces_divchem_64k";
         //String pathRxnDir    = "C:\\Temp\\virtual_spaces\\Virtual-Fragment-Spaces-main\\reactions";
         String pathRxnDir    = "C:\\Temp\\virtual_spaces\\Virtual-Fragment-Spaces-main\\reactions_a";
         String[] pathBBFile0   = new String[]{"C:\\Temp\\virtual_spaces\\Virtual-Fragment-Spaces-main\\building_blocks\\Enamine_Building_Blocks.sdf","IDNUMBER"};
         String[] pathBBFile1   = new String[]{"C:\\buildingblocks\\chemdiv\\DC01_400000.sdf","IDNUMBER"};//"C:\\Temp\\virtual_spaces\\Virtual-Fragment-Spaces-main\\building_blocks\\Enamine_Building_Blocks.sdf";
         String[] pathBBFile2   = new String[]{"C:\\buildingblocks\\chemdiv\\DC02_400000.sdf","IDNUMBER"};
-        String[] pathBBFile3   = new String[]{"C:\\buildingblocks\\chemdiv\\DC03_241250.sdf","Enamine-ID"};
+        String[] pathBBFile3   = new String[]{"C:\\buildingblocks\\chemdiv\\DC03_241250.sdf","IDNUMBER"};
         List<String[]> paths_BBFiles = new ArrayList<>();
         //paths_BBFiles.add(pathBBFile0);
         paths_BBFiles.add(pathBBFile1);
-        //paths_BBFiles.add(pathBBFile2);
-        //paths_BBFiles.add(pathBBFile3);
+        paths_BBFiles.add(pathBBFile2);
+        paths_BBFiles.add(pathBBFile3);
         //String idfieldName   = "IDNUMBER";//"Enamine-ID";
 
         RXNFileParser rxnParser = new RXNFileParser();
@@ -56,8 +64,10 @@ public class SpaceCreation_A {
         /*
          * parsing the files with the building blocks
          */
-        Set<String> bbs = new HashSet<>();
+        Set<Pair<String,Integer>> bbs_1 = new HashSet<>();
         Map<String, Map<String, List<String>>> bbData = new HashMap<String, Map<String, List<String>>>();
+
+        //List<Pair<String,Integer>> sortedMols = new ArrayList<>();
 
         for(String[] pathBBFileData : paths_BBFiles) {
             String pathBBFile = pathBBFileData[0];
@@ -76,16 +86,21 @@ public class SpaceCreation_A {
                 if (bb.getAtoms() > 20) {
                     continue;
                 }
-                bbs.add(bb.getIDCode());
+                bbs_1.add(Pair.of(bb.getIDCode(),bb.getAtoms()));
                 bbData.putIfAbsent(bb.getIDCode(), new HashMap<String, List<String>>());
                 Map<String, List<String>> propertyMap = bbData.get(bb.getIDCode());
                 propertyMap.putIfAbsent("BB-ID", new ArrayList<>());
                 propertyMap.get("BB-ID").add(enamineID);
                 cnt++;
-                if(bbs.size()>2000) {break;}
+                //if(bbs.size()>2000) {break;}
             }
         }
-        System.out.println("Parsing done.. Compounds: "+bbs.size());
+
+        System.out.println("Parsing done.. Compounds_total: "+bbs_1.size());
+        // Now take the N smallest:
+        List<Pair<String,Integer>> bbs_1_selected = bbs_1.stream().sorted( (x,y) -> Integer.compare(x.getRight(),y.getRight()) ).collect(Collectors.toList()).subList(0,64000);
+        Set<String> bbs = new HashSet<>( bbs_1_selected.stream().map(xi -> xi.getLeft()).collect(Collectors.toList()) );
+
         /*
          * create the space
          */
