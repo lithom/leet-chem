@@ -2,27 +2,42 @@ package tech.molecules.deep.smiles;
 
 import com.actelion.research.chem.*;
 
-
+import org.nd4j.common.util.ArrayUtil;
+import org.nd4j.linalg.api.buffer.DataType;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 import tech.molecules.leet.chem.ChemUtils;
 
 import java.io.*;
 import java.nio.Buffer;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class RunCreateChemblDataset {
 
     /**
      * Length of padded input / output data
      */
-    public static final int LENGTH = 64;
+    public static final int LENGTH_A = 32;
+
+    public static final int LENGTH_B = 96;
 
     public static final char paddingChar = 'y';
     public static final char blindedChar = 'x';
 
 
-
     public static void main(String args[]) {
-        String infile = "C:\\datasets\\idcodes\\CM_Available_Compounds_idcodes.txt";
+        //String infile_b = "C:\\Temp\\leet_input\\chembl_size26_input_smiles.csv";
+        //createCSVFiles(infile_b, "b2",32);
+
+        String infile_c = "C:\\Temp\\leet_input\\chembl_size90_input_smiles.csv";
+
+        createCSVFiles(infile_c, "xx40", 40);
+        //createCSVFiles(infile_c, "xx60", 60);
+        //createCSVFiles(infile_c, "xx90_2", 90);
+    }
+
+    public static void createCSVFiles(String infile, String identifier, int length) {
 
 
         BufferedReader in = null;
@@ -38,15 +53,12 @@ public class RunCreateChemblDataset {
         try {
             String line = null;
             while ((line = in.readLine()) != null) {
-
-                if(selectedMolecules.size() > 400000) {
+                if(selectedMolecules.size() > 200000) {
+                //if (selectedMolecules.size() > 200000) {
                     break;
                 }
-
                 try {
-                    if(line.trim().length()>48) {continue;}
-                    //SmilesParser sp = new SmilesParser();
-                    IDCodeParser sp = new IDCodeParser();
+                    SmilesParser sp = new SmilesParser();
                     StereoMolecule mi = new StereoMolecule();
                     sp.parse(mi, line);
                     mi.ensureHelperArrays(Molecule.cHelperCIP);
@@ -55,9 +67,12 @@ public class RunCreateChemblDataset {
                     if (ratioCAtoms < 0.4) {
                         continue;
                     }
-                    if(mi.getAtoms()<12) {continue;}
-                    if(mi.getAtoms()>36) {continue;}
-
+                    if (mi.getAtoms() < 12) {
+                        continue;
+                    }
+                    //if (mi.getAtoms() > 30) {
+                    //    continue;
+                    //}
                     selectedMolecules.add(mi.getIDCode());
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -67,14 +82,25 @@ public class RunCreateChemblDataset {
             throw new RuntimeException(e);
         }
 
+        // sort according to size roughly..
+        Collections.shuffle(selectedMolecules);
+        createCSVFiles(selectedMolecules,identifier,length);
+    }
+    public static void createCSVFiles(List<String> selectedMolecules, String identifier, int length) {
         System.out.println("Structures: "+selectedMolecules.size());
 
 
         // create samples blinded 0.25:
-        List<TrainingSample> data_025  = createTrainingSamples(new Random(123),selectedMolecules, 0.25, 1);
-        List<TrainingSample> data_05   = createTrainingSamples(new Random(124),selectedMolecules, 0.5, 1);
-        List<TrainingSample> data_075  = createTrainingSamples(new Random(125),selectedMolecules, 0.75, 1);
-        List<TrainingSample> data_1    = createTrainingSamples(new Random(126),selectedMolecules, 1.0, 1);
+        List<TrainingSample> data_025  = createTrainingSamples(new Random(123),selectedMolecules, 0.25, 1, length);
+        List<TrainingSample> data_05   = new ArrayList<>();//createTrainingSamples(new Random(124),selectedMolecules, 0.5, 1, length);
+        List<TrainingSample> data_075  = new ArrayList<>();createTrainingSamples(new Random(125),selectedMolecules, 0.75, 1, length);
+        List<TrainingSample> data_1    = createTrainingSamples(new Random(126),selectedMolecules, 1.0, 1, length);
+
+        // sort the data_1 samples:
+        Set<Character> padding_characters = new HashSet<>(); padding_characters.add('x'); padding_characters.add('y');
+        List<TrainingSample> data_1_less_than_36    = data_1.stream().filter( xi -> xi.input_Smiles.length() - countCharacters(xi.input_Smiles,padding_characters) < 36 ).collect(Collectors.toList());
+        List<TrainingSample> data_1_less_than_64    = data_1.stream().filter( xi -> xi.input_Smiles.length() - countCharacters(xi.input_Smiles,padding_characters) < 64 ).collect(Collectors.toList());
+
 
         System.out.println("okay :)");
 
@@ -85,56 +111,92 @@ public class RunCreateChemblDataset {
         data_075.stream().map( xi -> xi.toCSV()).forEach( xi -> {for(Character ci : xi.toCharArray()) {characters_used.add(ci);}} );
         data_1.stream().map( xi -> xi.toCSV()).forEach( xi -> {for(Character ci : xi.toCharArray()) {characters_used.add(ci);}} );
 
+        String outname_a = "smilesdata_"+identifier+"_";
+
         try {
-            BufferedWriter out1 = new BufferedWriter(new FileWriter(new File("smilesdata_x64_025.csv")));
+            //BufferedWriter out1 = new BufferedWriter(new FileWriter(new File("smilesdata_b_025.csv")));
+            BufferedWriter out1 = new BufferedWriter(new FileWriter(new File(outname_a+"025.csv")));
             for (TrainingSample ti : data_025) {
                 out1.write(ti.toCSV() + "\n");
             }
             out1.flush();out1.close();
-            BufferedWriter out2 = new BufferedWriter(new FileWriter(new File("smilesdata_x64_05.csv")));
+            //BufferedWriter out2 = new BufferedWriter(new FileWriter(new File("smilesdata_b_05.csv")));
+            BufferedWriter out2 = new BufferedWriter(new FileWriter(new File(outname_a+"05.csv")));
             for (TrainingSample ti : data_05) {
                 out2.write(ti.toCSV() + "\n");
             }
             out2.flush();
             out2.close();
-            BufferedWriter out3 = new BufferedWriter(new FileWriter(new File("smilesdata_x64_075.csv")));
+            //BufferedWriter out3 = new BufferedWriter(new FileWriter(new File("smilesdata_b_075.csv")));
+            BufferedWriter out3 = new BufferedWriter(new FileWriter(new File(outname_a+"075.csv")));
             for (TrainingSample ti : data_075) {
                 out3.write(ti.toCSV() + "\n");
             }
             out3.flush();
             out3.close();
-            BufferedWriter out4 = new BufferedWriter(new FileWriter(new File("smilesdata_x64_1.csv")));
-            for (TrainingSample ti : data_05) {
+            //BufferedWriter out4 = new BufferedWriter(new FileWriter(new File("smilesdata_b_1.csv")));
+            BufferedWriter out4 = new BufferedWriter(new FileWriter(new File(outname_a+"1_all.csv")));
+            for (TrainingSample ti : data_1) {
                 out4.write(ti.toCSV() + "\n");
             }
             out4.flush();
             out4.close();
-
+            BufferedWriter out5 = new BufferedWriter(new FileWriter(new File(outname_a+"1_lessThan36.csv")));
+            for (TrainingSample ti : data_1_less_than_36) {
+                out5.write(ti.toCSV() + "\n");
+            }
+            out5.flush();
+            out5.close();
+            BufferedWriter out6 = new BufferedWriter(new FileWriter(new File(outname_a+"1_lessThan64.csv")));
+            for (TrainingSample ti : data_1_less_than_64) {
+                out6.write(ti.toCSV() + "\n");
+            }
+            out6.flush();
+            out6.close();
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-
         System.out.println("characters: "+characters_used.size());
         System.out.println("Alphabet:\n");
-        for(Character ci : characters_used) {
+        StringBuilder alphabet_str = new StringBuilder();
+        for(Character ci : characters_used.stream().sorted().collect(Collectors.toList())) {
             System.out.print(ci);
+            alphabet_str.append(ci);
+        }
+        try {
+            BufferedWriter out_alphabet = new BufferedWriter(new FileWriter(identifier + "_alphabet.txt"));
+            out_alphabet.write(alphabet_str.toString());
+            out_alphabet.flush();
+            out_alphabet.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         System.out.println("\nmkay");
     }
 
-    public static List<TrainingSample> createTrainingSamples(Random ri, List<String> mols, double blinded, int numSamplesPerMolecule) {
+    public static int countCharacters(String str, Set<Character> chars) {
+        int count = 0;
+        char[] ca = str.toCharArray();
+        for(char ci : ca) {
+            if(chars.contains(ci)) {count++;}
+        }
+        return count;
+    }
+
+    public static List<TrainingSample> createTrainingSamples(Random ri, List<String> mols, double blinded, int numSamplesPerMolecule, int length) {
         List<TrainingSample> samples = new ArrayList<>();
+
         for(int zi=0;zi<mols.size();zi++) {
             StereoMolecule mi = ChemUtils.parseIDCode(mols.get(zi));
-            List<TrainingSample> samples_i = createTrainingSamples(ri,mi,blinded,numSamplesPerMolecule);
+            List<TrainingSample> samples_i = createTrainingSamples(ri,mi,blinded,numSamplesPerMolecule, length);
             samples.addAll(samples_i);
         }
         return samples;
     }
 
-    public static List<TrainingSample> createTrainingSamples(Random ri, StereoMolecule mi, double blinded, int numSamples) {
+    public static List<TrainingSample> createTrainingSamples(Random ri, StereoMolecule mi, double blinded, int numSamples, int length) {
 
 //        IDCodeParser icp = new IDCodeParser();
 //        StereoMolecule mi = new StereoMolecule();
@@ -145,7 +207,7 @@ public class RunCreateChemblDataset {
         List<TrainingSample> samples = new ArrayList<>();
 
         try {
-            samples = createTrainingSet(mi,ri,LENGTH,blinded,numSamples);
+            samples = createTrainingSet(mi,ri,length,blinded,numSamples);
         } catch (Exception e) {
             e.printStackTrace();
             return samples;
@@ -220,11 +282,13 @@ public class RunCreateChemblDataset {
             IsomericSmilesGenerator2 isc = new IsomericSmilesGenerator2(mi, IsomericSmilesGenerator2.MODE_INCLUDE_MAPPING,ri);
             String smi = isc.getSmiles();
             if(smi.length() > length) {continue;}
-            String smi_padded = addPadding(smi,paddingChar,length);
+            //String smi_padded = addPadding(smi,paddingChar,length);
+            double paddingDistribution = ri.nextDouble();
+            String smi_padded = addPaddingBothSides(smi,paddingChar,length,paddingDistribution);
 
             char[] canonized_blinded = canonized_a.toCharArray();
             StringBuilder sb_blinded = new StringBuilder();
-            for(int zj=0;zj<smi.length();zj++) {
+            for(int zj=0;zj<canonized.length();zj++) {
                 if(ri.nextDouble()<blinded) {
                     sb_blinded.append(canonized_blinded[zj]);
                     canonized_blinded[zj] = blindedChar;
@@ -232,7 +296,7 @@ public class RunCreateChemblDataset {
             }
 
             //trainingData.add(new TrainingSample(smi_padded,new String(canonized_blinded),canonized_a));
-            trainingData.add(new TrainingSample(smi_padded,new String(canonized_blinded),addPadding(sb_blinded.toString(),paddingChar,LENGTH)));
+            trainingData.add(new TrainingSample(smi_padded,new String(canonized_blinded),addPadding(sb_blinded.toString(),paddingChar,length)));
         }
         return trainingData;
     }
@@ -248,6 +312,29 @@ public class RunCreateChemblDataset {
         for (int i = 0; i < paddingLength; i++) {
             paddedString.append(paddingChar);
         }
+        return paddedString.toString();
+    }
+
+    public static String addPaddingBothSides(String input, char paddingChar, int desiredLength, double distribution) {
+        int paddingLength = desiredLength - input.length();
+        if (paddingLength <= 0) {
+            // No padding needed or negative padding length
+            return input;
+        }
+
+        int padding_before = (int) (distribution*paddingLength);
+        int padding_after  = paddingLength - padding_before;
+
+        //StringBuilder paddedString = new StringBuilder(input);
+        StringBuilder paddedString = new StringBuilder();
+        for (int i = 0; i < padding_before; i++) {
+            paddedString.append(paddingChar);
+        }
+        paddedString.append(input);
+        for (int i = 0; i < padding_after; i++) {
+            paddedString.append(paddingChar);
+        }
+
         return paddedString.toString();
     }
 

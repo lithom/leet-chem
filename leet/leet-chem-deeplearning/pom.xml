@@ -42,12 +42,6 @@
             <version>${revision}</version>
             <scope>compile</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/ncsa.hdf/lib-hdf -->
-        <dependency>
-            <groupId>org.hdfgroup</groupId>
-            <artifactId>hdf-java</artifactId>
-            <version>2.6.1</version>
-        </dependency>
         <dependency>
             <groupId>org.jetbrains.bio</groupId>
             <artifactId>npy</artifactId>
@@ -115,7 +109,7 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.0</version>
                     <configuration>
-                        <release>11</release>
+                        <release>11</release>  <!--or <release>10</release>-->
                     </configuration>
                 </plugin>
                 <plugin>
@@ -145,5 +139,15 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>11</source>
+                    <target>11</target>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>
