@@ -3,9 +3,13 @@ package tech.molecules.leet.datatable.filter;
 import javafx.scene.control.TableColumn;
 import tech.molecules.leet.datatable.*;
 
+import java.io.Serializable;
 import java.util.regex.Pattern;
 
-public class NumericRangeFilter<U> extends AbstractCachedDataFilter<U> {
+public class NumericRangeFilter<U> extends AbstractCachedDataFilter<U> implements Serializable {
+
+    // Explicit serialVersionUID for interoperability
+    private static final long serialVersionUID = 1L;
 
     public static NumericRangeFilter.NumericRangeFilterType TYPE = new NumericRangeFilter.NumericRangeFilterType();
 

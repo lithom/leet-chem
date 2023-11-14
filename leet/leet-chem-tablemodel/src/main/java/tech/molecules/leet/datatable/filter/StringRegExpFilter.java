@@ -2,13 +2,17 @@ package tech.molecules.leet.datatable.filter;
 
 import tech.molecules.leet.datatable.*;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class StringRegExpFilter extends AbstractCachedDataFilter<String> {
+public class StringRegExpFilter extends AbstractCachedDataFilter<String> implements Serializable {
+
+    // Explicit serialVersionUID for interoperability
+    private static final long serialVersionUID = 1L;
 
     public static StringRegExpFilterType TYPE = new StringRegExpFilterType();
 

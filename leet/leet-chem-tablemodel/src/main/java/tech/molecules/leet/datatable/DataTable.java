@@ -3,6 +3,7 @@ package tech.molecules.leet.datatable;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.awt.*;
+import java.io.Serializable;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -26,7 +27,10 @@ import java.util.stream.Collectors;
  *
  *
  */
-public class DataTable {
+public class DataTable implements Serializable {
+
+    // Explicit serialVersionUID for interoperability
+    private static final long serialVersionUID = 1L;
 
 
 
@@ -42,8 +46,8 @@ public class DataTable {
         }
     }
 
-    private BlockingQueue<DataTableTask> taskQueue;
-    private Thread processingThread;
+    transient private BlockingQueue<DataTableTask> taskQueue;
+    transient private Thread processingThread;
 
     public void initDataTableUpdateThread() {
         taskQueue = new LinkedBlockingQueue<>();
@@ -86,6 +90,13 @@ public class DataTable {
     }
 
 
+    public Map<DataTableColumn,DataProvider> getDataTableProviderStructure() {
+        Map<DataTableColumn,DataProvider> dataStructure = new HashMap<>();
+        for(DataTableColumn ci : getDataColumns()) {
+            dataStructure.put(ci,ci.getDataProvider());
+        }
+        return dataStructure;
+    }
 
     public List<String> getVisibleKeysSortedAt(int rows[]) {
         List<String> rows_a = new ArrayList<>();
@@ -143,8 +154,8 @@ public class DataTable {
 
 
     private List<String> allKeys = new ArrayList<>();
-    private List<String> visibleKeysUnsorted = new ArrayList<>();
-    private List<String> visibleKeysSorted = new ArrayList<>();
+    transient private List<String> visibleKeysUnsorted = new ArrayList<>();
+    transient private List<String> visibleKeysSorted = new ArrayList<>();
 
     //private Map<String,Integer> visibleKeyPositions = new HashMap<>();
 
@@ -230,7 +241,7 @@ public class DataTable {
     /**
      * The separate BitSets are wrt allKeys
      */
-    private Map<DataFilter,BitSet> filterData = new ConcurrentHashMap<>();
+    transient private Map<DataFilter,BitSet> filterData = new ConcurrentHashMap<>();
 
     /**
      * This defines the positions
@@ -409,7 +420,7 @@ public class DataTable {
 //        }
 //    }
 
-    private List<DataTableListener> listeners = new ArrayList<>();
+    transient private List<DataTableListener> listeners = new ArrayList<>();
 
     public void addDataTableListener(DataTableListener li) {
         synchronized(this.listeners) {

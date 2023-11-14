@@ -4,6 +4,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +14,8 @@ import java.util.function.Function;
 public interface DataTableColumn<T,U> {
 
     public void setDataProvider(DataProvider<T> dp);
+
+    public DataProvider<T> getDataProvider();
 
     public CellValue<U> getValue(String key);
 
@@ -50,7 +53,9 @@ public interface DataTableColumn<T,U> {
         return new HashMap<>(); // TODO implement..
     }
 
-    public static class CellValue<U> {
+    public static class CellValue<U> implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         public final U val;
         public final Color colBG;
         public CellValue(U val, Color colBG) {

@@ -9,21 +9,27 @@ import java.util.List;
 
 public class DataTableColumnListenerHelper {
 
+    private DataTableColumn col;
+
+    public DataTableColumnListenerHelper(DataTableColumn col) {
+        this.col = col;
+    }
+
     private List<DataTableColumn.DataTableColumnListener> listeners = new ArrayList<>();
 
-    public void fireFilteringChanged(DataTableColumn col) {
+    public void fireFilteringChanged() {
         for(DataTableColumn.DataTableColumnListener li : this.listeners) {
             li.filteringChanged(col);
         }
     }
 
-    public void fireSortingChanged(DataTableColumn col) {
+    public void fireSortingChanged() {
         for(DataTableColumn.DataTableColumnListener li : this.listeners) {
             li.sortingChanged(col);
         }
     }
 
-    public void fireDataProviderChanged(DataTableColumn col, DataProvider ndp) {
+    public void fireDataProviderChanged(DataProvider ndp) {
         for(DataTableColumn.DataTableColumnListener li : this.listeners) {
             li.dataProviderChanged(col,ndp);
         }

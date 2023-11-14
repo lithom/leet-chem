@@ -10,6 +10,7 @@ import tech.molecules.leet.datatable.CategoricDatasource;
 import tech.molecules.leet.datatable.DataTable;
 import tech.molecules.leet.datatable.NumericDatasource;
 
+import javax.swing.*;
 import java.sql.Array;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,6 +26,9 @@ public class LeetXYZDataSet implements XYZDataset, XYDataset {
     private NumericDatasource dataY = null;
     private NumericDatasource dataZ = null;
     private CategoricDatasource dataCategoric = null;
+
+    // indicates if the dataset is currently recomputing
+    private boolean updating = false;
 
 
     public LeetXYZDataSet(DataTable table) {
@@ -42,9 +46,25 @@ public class LeetXYZDataSet implements XYZDataset, XYDataset {
 
             @Override
             public void tableCellsChanged(List<int[]> cells) {
-                recompute();
+                setUpdatingStatus(true);
+                fireDataSetChanged();
+                Thread ti = new Thread() {
+                    @Override
+                    public void run() {
+                        recompute();
+                    }
+                };
+                ti.start();
             }
         });
+    }
+
+    private void setUpdatingStatus(boolean updating) {
+        this.updating = updating;
+    }
+
+    public boolean isUpdating() {
+        return updating;
     }
 
     /**
@@ -148,7 +168,8 @@ public class LeetXYZDataSet implements XYZDataset, XYDataset {
         }
 
         this.data = series;
-        this.fireDataSetChanged();
+        SwingUtilities.invokeLater( () -> this.fireDataSetChanged() );
+        //this.fireDataSetChanged();
     }
 
     @Override
@@ -221,6 +242,8 @@ public class LeetXYZDataSet implements XYZDataset, XYDataset {
     public void removeChangeListener(DatasetChangeListener datasetChangeListener) {
         this.listeners.remove(datasetChangeListener);
     }
+
+
 
     private void fireDataSetChanged() {
         for(DatasetChangeListener li : listeners) {

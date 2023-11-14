@@ -5,12 +5,16 @@ import tech.molecules.leet.datatable.DataTableColumn;
 import tech.molecules.leet.datatable.NumericDatasource;
 
 import java.awt.*;
+import java.io.Serializable;
 import java.util.List;
 import java.util.function.Function;
 
-public abstract class AbstractDataTableColumn<T,V> implements DataTableColumn<T,V> {
+public abstract class AbstractDataTableColumn<T,V> implements DataTableColumn<T,V> , Serializable {
 
-    private DataProvider<T> dp = null;
+    // Explicit serialVersionUID for interoperability
+    private static final long serialVersionUID = 1L;
+
+    transient private DataProvider<T> dp = null;
     private Class<V> representationClass;
 
     public AbstractDataTableColumn(Class<V> representationClass) {
@@ -33,21 +37,43 @@ public abstract class AbstractDataTableColumn<T,V> implements DataTableColumn<T,
 
     public abstract V processData(T data);
 
-    private DataProvider.DataProviderListener dataProviderListener = new DataProvider.DataProviderListener() {
+    private static class DefaultDataProviderListener implements DataProvider.DataProviderListener {
+        private DataTableColumn col;
+        private DataTableColumnListenerHelper dpListener;
+        public DefaultDataProviderListener(DataTableColumn col) {
+            this.col = col;
+            this.dpListener = new DataTableColumnListenerHelper(col);
+        }
         @Override
         public void dataChanged(List<String> keysChanged) {
-            listenerHelper.fireDataProviderChanged(getThisColumn(),getThisColumn().dp);
+            //col.listenerHelper.fireDataProviderChanged(getThisColumn(),getThisColumn().dp);
+            this.dpListener.fireDataProviderChanged(col.getDataProvider());
         }
-    };
+    }
+
+    transient private DefaultDataProviderListener defaultDataProviderListener;
+
+//    private DataProvider.DataProviderListener dataProviderListener = new DataProvider.DataProviderListener() {
+//        @Override
+//        public void dataChanged(List<String> keysChanged) {
+//            listenerHelper.fireDataProviderChanged(getThisColumn(),getThisColumn().dp);
+//        }
+//    };
 
     @Override
     public void setDataProvider(DataProvider<T> dp) {
         this.dp = dp;
-        dp.removeDataProviderListener(this.dataProviderListener);
-        dp.addDataProviderListener(this.dataProviderListener);
+        if(this.defaultDataProviderListener!=null) {
+            dp.removeDataProviderListener(this.defaultDataProviderListener);
+        }
+        this.defaultDataProviderListener = new DefaultDataProviderListener(this);
+        dp.addDataProviderListener(this.defaultDataProviderListener);
+        //dp.removeDataProviderListener(this.dataProviderListener);
+        //dp.removeDataProviderListener(this.dataProviderListener);
+        //dp.addDataProviderListener(this.dataProviderListener);
     }
 
-    protected DataProvider<T> getDataProvider() {
+    public DataProvider<T> getDataProvider() {
         return this.dp;
     }
 
@@ -77,7 +103,7 @@ public abstract class AbstractDataTableColumn<T,V> implements DataTableColumn<T,
         this.backgroundNumericDatasource = nd;
     }
 
-    private DataTableColumnListenerHelper listenerHelper = new DataTableColumnListenerHelper();
+    transient private DataTableColumnListenerHelper listenerHelper = new DataTableColumnListenerHelper(this);
 
     @Override
     public void addColumnListener(DataTableColumnListener li) {

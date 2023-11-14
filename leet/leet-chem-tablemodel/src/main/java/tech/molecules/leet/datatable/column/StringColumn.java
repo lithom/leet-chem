@@ -1,6 +1,11 @@
 package tech.molecules.leet.datatable.column;
 
-public class StringColumn extends AbstractDataTableColumn<String,String> {
+import java.io.Serializable;
+
+public class StringColumn extends AbstractDataTableColumn<String,String> implements Serializable {
+
+    // Explicit serialVersionUID for interoperability
+    private static final long serialVersionUID = 1L;
 
     public StringColumn() {
         super(String.class);

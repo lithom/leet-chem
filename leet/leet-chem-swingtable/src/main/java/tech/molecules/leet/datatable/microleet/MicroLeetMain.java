@@ -11,9 +11,7 @@ import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.DefaultXYItemRenderer;
 import org.jfree.data.json.impl.JSONArray;
-import tech.molecules.leet.datatable.DataTable;
-import tech.molecules.leet.datatable.DataTableColumn;
-import tech.molecules.leet.datatable.NumericDatasource;
+import tech.molecules.leet.datatable.*;
 import tech.molecules.leet.datatable.chart.jfc.LeetXYZDataSet;
 import tech.molecules.leet.datatable.chart.jfc.VisualizationComponent;
 import tech.molecules.leet.datatable.chem.CalculatedBasicStructurePropertyNumericDatasource;
@@ -32,9 +30,7 @@ import javax.swing.*;
 import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -170,15 +166,40 @@ public class MicroLeetMain {
 
         this.mainMenu.add(this.menuFile);
         this.mainMenu.add(this.menuChem);
+
+
+        this.menuFile.add( new AbstractAction("TestSerialization"){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                DataTableSerializer dts = new DataTableSerializer();
+                dts.serialize( dataModel.getDataTable() );
+                DataTable dt2 = dts.deserializeDataTable( "datatable1.data" );
+                System.out.println("deserialized..");
+            }
+        });
+
     }
 
 
+    public static class FunctionA implements Function<Double, Color>, Serializable {
+        transient Colormap colormap_0 = Colormaps.Sequential.CubeYF();
+        @Override
+        public Color apply(Double aDouble) {
+            Color ca = colormap_0.get( (float) Math.min(1.0,(aDouble/2000.0)));
+            return new Color(ca.getRed(),ca.getGreen(),ca.getBlue(),60);
+        }
+        private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+            in.defaultReadObject();
+            this.colormap_0 = Colormaps.Sequential.CubeYF();
+        }
+    };
 
     public static void main(String args[]) {
         MicroLeetMain main = new MicroLeetMain();
         main.init();
 
-        String filepath = "C:\\Users\\liphath1\\OneDrive - Idorsia\\Documents\\Osiris_Project_Profile_TEST.tsv";
+        //String filepath = "C:\\Users\\liphath1\\OneDrive - Idorsia\\Documents\\Osiris_Project_Profile_TEST.tsv";
+        String filepath = "C:\\datasets\\chembl_size90_input_smiles_SERIES_A_1.txt";
         // load test dwar tsv file..
         if(true) {
             DataWarriorTSVParserHelper helper_a = new DataWarriorTSVParserHelper();
@@ -210,14 +231,7 @@ public class MicroLeetMain {
 
                 // Color the activity column a bit
                 DataTableColumn col_0 = main.getSwingTableController().getModel().getDataTable().getDataColumns().get(numeric_cols.get(0));
-                Colormap colormap_0 = Colormaps.Sequential.CubeYF();
-                Function<Double,Color> f_0 = new Function<Double, Color>() {
-                    @Override
-                    public Color apply(Double aDouble) {
-                        Color ca = colormap_0.get( (float) Math.min(1.0,(aDouble/2000.0)));
-                        return new Color(ca.getRed(),ca.getGreen(),ca.getBlue(),60);
-                    }
-                };
+                FunctionA f_0 = new FunctionA();
                 col_0.setBackgroundColor((NumericDatasource) col_0.getNumericDatasources().get(0),f_0);
 
 
@@ -237,6 +251,10 @@ public class MicroLeetMain {
 
                 // Create Plot..
                 DataTable table = MicroLeetMain.Main.dataModel.getDataTable();
+                DataTableSerializer dts = new DataTableSerializer();
+                dts.serialize(table);
+                System.out.println("mkay");
+
                 NumericDatasource ndx = (NumericDatasource) table.getDataColumns().get( numeric_cols.get(0) ).getNumericDatasources().get(0);
                 NumericDatasource ndy = (NumericDatasource) table.getDataColumns().get( numeric_cols.get(1) ).getNumericDatasources().get(0);
                 LeetXYZDataSet dataset = new LeetXYZDataSet(MicroLeetMain.Main.dataModel.getDataTable());

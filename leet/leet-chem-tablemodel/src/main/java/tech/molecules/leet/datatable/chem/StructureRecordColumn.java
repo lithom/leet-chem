@@ -10,10 +10,13 @@ import tech.molecules.leet.datatable.DataProvider;
 import tech.molecules.leet.datatable.NumericDatasource;
 import tech.molecules.leet.datatable.column.AbstractDataTableColumn;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class StructureRecordColumn extends AbstractDataTableColumn<StructureRecord,StructureRecord> {
+public class StructureRecordColumn extends AbstractDataTableColumn<StructureRecord,StructureRecord> implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     public StructureRecordColumn() {
         super(StructureRecord.class);

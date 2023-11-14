@@ -1,8 +1,9 @@
 package tech.molecules.leet.datatable;
 
+import java.io.Serializable;
 import java.util.DoubleSummaryStatistics;
 
-public abstract class AbstractNumericDatasource<U> implements NumericDatasource<U> {
+public abstract class AbstractNumericDatasource<U> implements NumericDatasource<U> , Serializable {
 
     private String name;
     private DataTableColumn<?,U> col;

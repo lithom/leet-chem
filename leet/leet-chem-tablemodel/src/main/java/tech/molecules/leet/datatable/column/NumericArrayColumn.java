@@ -5,10 +5,14 @@ import tech.molecules.leet.datatable.AbstractNumericDatasource;
 import tech.molecules.leet.datatable.NumericDatasource;
 import tech.molecules.leet.datatable.numeric.AggregatedNumericArray;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NumericArrayColumn extends AbstractDataTableColumn<NumericArray, AggregatedNumericArray> {
+public class NumericArrayColumn extends AbstractDataTableColumn<NumericArray, AggregatedNumericArray> implements Serializable {
+
+    // Explicit serialVersionUID for interoperability
+    private static final long serialVersionUID = 1L;
 
     public NumericArrayColumn() {
         super(AggregatedNumericArray.class);

@@ -12,11 +12,16 @@ import tech.molecules.leet.datatable.DataFilterType;
 import tech.molecules.leet.datatable.DataTableColumn;
 import tech.molecules.leet.datatable.filter.NumericRangeFilter;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
-public class SubstructureFilter<T extends StructureRecord> extends AbstractCachedDataFilter<T> {
+public class SubstructureFilter<T extends StructureRecord> extends AbstractCachedDataFilter<T>  implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     // determines the max number of threads for parallel filtering
     private int numSearchers = 8;
@@ -25,7 +30,7 @@ public class SubstructureFilter<T extends StructureRecord> extends AbstractCache
     private BitSet substructureFFP = null;
     //private SSSearcher ssi = new SSSearcher
 
-    private PoolManager<SSSearcher> searcherPool;
+    transient private PoolManager<SSSearcher> searcherPool;
 
     public void setSubstructure(StereoMolecule ss) {
         this.substructure = ss;
@@ -83,6 +88,16 @@ public class SubstructureFilter<T extends StructureRecord> extends AbstractCache
     public double getApproximateFilterSpeed() {
         return 0.1;
     }
+
+    // Custom deserialization method
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        // Default deserialization
+        in.defaultReadObject();
+
+        // reinit:
+        this.setSubstructure(this.substructure);
+    }
+
 
 
     public static class SubstructureFilterType<T extends StructureRecord> implements DataFilterType<T> {

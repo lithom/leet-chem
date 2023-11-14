@@ -2,12 +2,16 @@ package tech.molecules.leet.datatable.numeric;
 
 import tech.molecules.leet.data.NumericArray;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class AggregatedNumericArray {
+public class AggregatedNumericArray implements Serializable {
+
+    // Explicit serialVersionUID for interoperability
+    private static final long serialVersionUID = 1L;
 
     public static enum AGGREGATION {NONE}
 

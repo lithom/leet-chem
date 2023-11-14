@@ -4,18 +4,19 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.awt.*;
+import java.io.Serializable;
 import java.util.*;
 import java.util.List;
 
-public class DataTableSelectionModel {
+public class DataTableSelectionModel implements Serializable {
 
-
+    private static final long serialVersionUID = 1L;
 
     public DataTableSelectionModel() {
         this.initDataTableSelectionTypes();
     }
 
-    public static class SelectionType {
+    public static class SelectionType implements Serializable  {
         private String name;
         private Color color;
         public SelectionType(String name, Color color) {
@@ -123,7 +124,7 @@ public class DataTableSelectionModel {
         public void selectionStatusChanged(Collection<String> rows);
     }
 
-    private List<SelectionListener> listeners = new ArrayList<>();
+    transient private List<SelectionListener> listeners = new ArrayList<>();
 
     public void addSelectionListener(SelectionListener li) {
         this.listeners.add(li);
