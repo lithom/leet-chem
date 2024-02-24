@@ -25,13 +25,17 @@ public class SpaceCreation_A {
      */
     public static void main(String[] args) throws FileNotFoundException {
 
-        String pathOutputDir = "C:\\Temp\\virtual_spaces_divchem_64k";
+        //String pathOutputDir = "C:\\Temp\\virtual_spaces_divchem_64k";
+        String pathOutputDir = "C:\\temp\\virtual_spaces\\divchem_v2size18  _xxl_s2_xxl";
         //String pathRxnDir    = "C:\\Temp\\virtual_spaces\\Virtual-Fragment-Spaces-main\\reactions";
-        String pathRxnDir    = "C:\\Temp\\virtual_spaces\\Virtual-Fragment-Spaces-main\\reactions_a";
+        String pathRxnDir    = "C:\\datasets\\reactions\\reactions_b";//"C:\\Temp\\virtual_spaces\\Virtual-Fragment-Spaces-main\\reactions_a";
+        //String pathRxnDir    = "C:\\datasets\\reactions\\reactions";//"C:\\Temp\\virtual_spaces\\Virtual-Fragment-Spaces-main\\reactions_a";
+
         String[] pathBBFile0   = new String[]{"C:\\Temp\\virtual_spaces\\Virtual-Fragment-Spaces-main\\building_blocks\\Enamine_Building_Blocks.sdf","IDNUMBER"};
-        String[] pathBBFile1   = new String[]{"C:\\buildingblocks\\chemdiv\\DC01_400000.sdf","IDNUMBER"};//"C:\\Temp\\virtual_spaces\\Virtual-Fragment-Spaces-main\\building_blocks\\Enamine_Building_Blocks.sdf";
-        String[] pathBBFile2   = new String[]{"C:\\buildingblocks\\chemdiv\\DC02_400000.sdf","IDNUMBER"};
-        String[] pathBBFile3   = new String[]{"C:\\buildingblocks\\chemdiv\\DC03_241250.sdf","IDNUMBER"};
+        String path_BB_chemdiv = "C:\\datasets\\buildingblocks\\divchem";
+        String[] pathBBFile1   = new String[]{path_BB_chemdiv+"\\DC01_400000.sdf","IDNUMBER"};//"C:\\Temp\\virtual_spaces\\Virtual-Fragment-Spaces-main\\building_blocks\\Enamine_Building_Blocks.sdf";
+        String[] pathBBFile2   = new String[]{path_BB_chemdiv+"\\DC02_400000.sdf","IDNUMBER"};
+        String[] pathBBFile3   = new String[]{path_BB_chemdiv+"\\DC03_241250.sdf","IDNUMBER"};
         List<String[]> paths_BBFiles = new ArrayList<>();
         //paths_BBFiles.add(pathBBFile0);
         paths_BBFiles.add(pathBBFile1);
@@ -79,11 +83,12 @@ public class SpaceCreation_A {
             int idField = parser.getFieldIndex(idfieldName);
             int cnt = 0;
             while (parser.next()) {
-                //if(cnt>=200000) {break;}
+                //if(cnt>=20000) {break;}
                 String enamineID = parser.getFieldData(idField);
                 StereoMolecule bb = parser.getMolecule();
                 bb.ensureHelperArrays(Molecule.cHelperParities);
-                if (bb.getAtoms() > 20) {
+                //if (bb.getAtoms() > 20) {
+                if (bb.getAtoms() > 18) {
                     continue;
                 }
                 bbs_1.add(Pair.of(bb.getIDCode(),bb.getAtoms()));
@@ -98,7 +103,7 @@ public class SpaceCreation_A {
 
         System.out.println("Parsing done.. Compounds_total: "+bbs_1.size());
         // Now take the N smallest:
-        List<Pair<String,Integer>> bbs_1_selected = bbs_1.stream().sorted( (x,y) -> Integer.compare(x.getRight(),y.getRight()) ).collect(Collectors.toList()).subList(0,64000);
+        List<Pair<String,Integer>> bbs_1_selected = bbs_1.stream().sorted( (x,y) -> Integer.compare(x.getRight(),y.getRight()) ).collect(Collectors.toList());//.subList(0,64000);//bbs_1.stream().sorted( (x,y) -> Integer.compare(x.getRight(),y.getRight()) ).collect(Collectors.toList()).subList(0,64000);
         Set<String> bbs = new HashSet<>( bbs_1_selected.stream().map(xi -> xi.getLeft()).collect(Collectors.toList()) );
 
         /*
