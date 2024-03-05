@@ -2,6 +2,7 @@ package tech.molecules.leet.chem.virtualspaces.gui;
 
 import com.actelion.research.chem.reaction.Reaction;
 import com.actelion.research.gui.table.ChemistryCellRenderer;
+import com.formdev.flatlaf.FlatLightLaf;
 import tech.molecules.leet.chem.virtualspaces.gui.task.AddBuildingBlockFilesTask;
 import tech.molecules.leet.chem.virtualspaces.gui.task.AddReactionDirectoryTask;
 
@@ -23,11 +24,21 @@ public class SpaceCreatorView {
     public SpaceCreatorView(SpaceCreatorController controller, SpaceCreatorModel model) {
         this.controller = controller;
         this.model = model;
+
+        initLAF();
         reinitUI();
     }
 
+    private void initLAF() {
+        try {
+            UIManager.setLookAndFeel( new FlatLightLaf() );
+        } catch( Exception ex ) {
+            System.err.println( "Failed to initialize LaF" );
+        }
+    }
+
     private void reinitUI() {
-        frame = new JFrame("My Application");
+        frame = new JFrame("Library Builder 0.1");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new GridLayout(2, 1));
 

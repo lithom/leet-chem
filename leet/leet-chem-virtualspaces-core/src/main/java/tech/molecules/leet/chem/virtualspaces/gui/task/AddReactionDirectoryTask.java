@@ -11,7 +11,7 @@ public class AddReactionDirectoryTask extends AbstractAction {
     private SpaceCreatorController controller;
 
     public AddReactionDirectoryTask(SpaceCreatorController controller) {
-        super("Add Building Block Files..");
+        super("Add Reactions Directory..");
         this.controller = controller;
     }
 
