@@ -20,6 +20,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.actelion.research.chem.CanonizerUtil;
@@ -56,16 +57,24 @@ public class ChemicalSpaceCreator2 {
     private List<Reaction> functionalizations;
     private ConcurrentMap<String,long[]> fps;
 
+    private Consumer<String> statusOutput;
+
     public ChemicalSpaceCreator2(Set<String> bbs, List<Reaction> reactions, File outdirectory) {
+        this(bbs,reactions,outdirectory,(x)->{});
+    }
+
+    public ChemicalSpaceCreator2(Set<String> bbs, List<Reaction> reactions, File outdirectory, Consumer<String> statusOutput) {
         this.bbs = bbs;
         this.reactions = reactions;
         this.outdirectory = outdirectory;
+        this.statusOutput = statusOutput;
         this.functionalizations = new ArrayList<>(); //reactions that only consist of modifications ("functionalizations") of one building block are treated specially
         for(Reaction rxn : reactions ) {
             if(rxn.getReactants()==1)
                 functionalizations.add(rxn);
         }
         reactions.removeAll(functionalizations);
+
     }
 
 
@@ -97,7 +106,9 @@ public class ChemicalSpaceCreator2 {
         fps = new ConcurrentHashMap<String,long[]>();
         calcFragFPs(processedToOrigIDCode.keySet(),fps);
         System.out.println("Start generating synthons..");
+        statusOutput.accept("Generate Synthons");
         generateSynthons(reactions, processedToOrigIDCode, reactionsWithSynthons,fps,allSynthonTransformations);
+        statusOutput.accept("Generate Synthons [DONE]");
         generateCombinatoriaLibraries2(reactionsWithSynthons, bbs, allSynthonTransformations);
         //generateCombinatoriaLibraries(reactionsWithSynthons, bbs, allSynthonTransformations);
     }
@@ -362,6 +373,7 @@ public class ChemicalSpaceCreator2 {
         reactions.stream().forEach(reaction -> {
             if(reaction.getReactants()<2)
                 return;
+            statusOutput.accept("Process reaction: "+reaction.getName());
             IDCodeParser parser = new IDCodeParser();
             CombinatorialLibrary combiLibrary = new CombinatorialLibrary();
             combiLibrary.reaction = reaction;
@@ -518,9 +530,11 @@ public class ChemicalSpaceCreator2 {
                         }
 
                         System.out.println("Synthons to be processed: "+synthonTasks.size());
+                        statusOutput.accept("Synthons to be processed: "+synthonTasks.size());
                         long tsa = System.currentTimeMillis();
                         synthonTasks.parallelStream().forEach(xi -> xi.run());
                         System.out.println("done! time= "+(System.currentTimeMillis()-tsa));
+                        statusOutput.accept("done! time= "+(System.currentTimeMillis()-tsa));
 
                         // if the BB that is used in the precursor step also matches any role of the second reaction, it is excluded (otherwise multiple products may be formed)
                         for(int j_=0;j_<reactionsWithSynthons.get(precursorReaction).size();j_++) { //get synthons from rxn1 that are compatible with the two-connector synthon
@@ -565,9 +579,11 @@ public class ChemicalSpaceCreator2 {
                                     tasksSortOut.add(ri);
                                 }
                                 System.out.println("Synthons to be processed [sort out]: "+tasksSortOut.size());
+                                statusOutput.accept("Synthons to be processed [sort out]: "+tasksSortOut.size());
                                 long tsa2 = System.currentTimeMillis();
                                 tasksSortOut.parallelStream().forEach(xi -> xi.run());
                                 System.out.println("Synthons [sort out]: done, time= "+(System.currentTimeMillis()-tsa2));
+                                statusOutput.accept("Synthons [sort out]: done, time= "+(System.currentTimeMillis()-tsa2));
 
                                 synchronized (libSynthons) {
                                     libSynthons.get(j).putAll(mutatedSynthons);
@@ -642,6 +658,7 @@ public class ChemicalSpaceCreator2 {
         }
 
         long size = sizes.stream().reduce(0L,(e1,e2) -> e1+e2);
+        statusOutput.accept("Done, totalSize="+size);
         System.out.println("totSize");
         System.out.println(size);
     }
@@ -688,6 +705,7 @@ public class ChemicalSpaceCreator2 {
     }
 
     private  void writeCombinatorialLibrary(CombinatorialLibrary combiLib) throws IOException {
+        statusOutput.accept("Write combinatorial library..");
         File htmcdir = new File(this.outdirectory + "/CombinatorialLibraries/");
         htmcdir.mkdir();
         File htmcSubDir = new File(htmcdir.getAbsolutePath() + "/" +  combiLib.reaction.getName());
@@ -828,7 +846,7 @@ public class ChemicalSpaceCreator2 {
             i++;
         }
 
-
+        statusOutput.accept("Write combinatorial library.. [DONE]");
     }
 
     private static class CombinatorialLibrary {

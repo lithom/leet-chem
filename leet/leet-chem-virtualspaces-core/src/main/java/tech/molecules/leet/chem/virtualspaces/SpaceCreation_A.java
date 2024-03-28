@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -127,7 +128,7 @@ public class SpaceCreation_A {
      * @param bbFilters return true if bb should be used, false if bb should be filtered out
      * @return
      */
-    public static ChemicalSpaceCreator2 createSpaceCreator(List<LoadedBB> bbs, List<Reaction> reactions, File outputDir, List<Function<LoadedBB,Boolean>> bbFilters) {
+    public static ChemicalSpaceCreator2 createSpaceCreator(List<LoadedBB> bbs, List<Reaction> reactions, File outputDir, List<Function<LoadedBB,Boolean>> bbFilters, Consumer<String> statusOutput) {
 
         if(bbFilters == null) {bbFilters = new ArrayList<>();}
 
@@ -148,7 +149,8 @@ public class SpaceCreation_A {
             }
             if(addThisOne) { consideredBBs.add(bb.getIdcode()); }
         }
-        ChemicalSpaceCreator2 creator = new ChemicalSpaceCreator2(new HashSet<>(consideredBBs),reactions,outputDir);
+        statusOutput.accept("BBs: "+consideredBBs.size() + " Rxns: "+reactions.size());
+        ChemicalSpaceCreator2 creator = new ChemicalSpaceCreator2(new HashSet<>(consideredBBs),reactions,outputDir,statusOutput);
         creator.setBBData(bbData);
         return creator;
     }

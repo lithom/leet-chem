@@ -92,11 +92,16 @@ public class SpaceCreatorView {
         //buttonCreateSpace.setEnabled(false);
 
         panelMain.add(panelTop);
+        panelA.revalidate();
+        panelB.revalidate();
         panelMain.add(panelA);
         panelMain.add(panelB);
         frame.getContentPane().add(panelMain,BorderLayout.CENTER);
 
         frame.pack();
+        frame.setSize(1200,1024);
+        panelMain.revalidate();
+        panelMain.repaint();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
