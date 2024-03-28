@@ -40,6 +40,8 @@ public class SpaceCreatorController {
     // Methods to handle actions from the view, like adding a BuildingBlockFile
     public void addBuildingBlockFile(BuildingBlockFile file) {
         this.model.getBuildingBlockFileTableModel().addBuildingBlockFile(file);
+        BuildingBlockFileAnalysisWorker worker = new BuildingBlockFileAnalysisWorker(this.model.getBuildingBlockFileTableModel(),file);
+        worker.execute();
     }
 
     public void addReaction(File rxnFile) throws Exception {

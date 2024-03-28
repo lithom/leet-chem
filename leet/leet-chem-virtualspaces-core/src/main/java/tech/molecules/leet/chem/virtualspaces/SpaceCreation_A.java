@@ -7,12 +7,14 @@ import com.actelion.research.chem.io.RXNFileParser;
 import com.actelion.research.chem.io.SDFileParser;
 import com.actelion.research.chem.reaction.Reaction;
 import org.apache.commons.lang3.tuple.Pair;
+import tech.molecules.leet.chem.virtualspaces.gui.LoadedBB;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class SpaceCreation_A {
@@ -113,6 +115,42 @@ public class SpaceCreation_A {
         creator.setBBData(bbData);
         creator.create();
 
+    }
+
+    /**
+     * Initializes the space creator with the building blocks.
+     * The molid property is set to "BB-ID".
+     *
+     * @param bbs
+     * @param reactions
+     * @param outputDir
+     * @param bbFilters return true if bb should be used, false if bb should be filtered out
+     * @return
+     */
+    public static ChemicalSpaceCreator2 createSpaceCreator(List<LoadedBB> bbs, List<Reaction> reactions, File outputDir, List<Function<LoadedBB,Boolean>> bbFilters) {
+
+        if(bbFilters == null) {bbFilters = new ArrayList<>();}
+
+        Map<String, Map<String, List<String>>> bbData = new HashMap<>();
+        List<String> consideredBBs = new ArrayList<>();
+        for(LoadedBB bb : bbs) {
+            bbData.putIfAbsent(bb.getIdcode(), new HashMap<String, List<String>>());
+            Map<String, List<String>> propertyMap = bbData.get(bb.getIdcode());
+            propertyMap.putIfAbsent("BB-ID", new ArrayList<>());
+            propertyMap.get("BB-ID").add(bb.getMolid());
+
+            // check if we put it:
+            boolean addThisOne = true;
+            for(Function<LoadedBB,Boolean> filter : bbFilters) {
+                boolean ok = filter.apply(bb);
+                if(!ok) {addThisOne = false;}
+                break;
+            }
+            if(addThisOne) { consideredBBs.add(bb.getIdcode()); }
+        }
+        ChemicalSpaceCreator2 creator = new ChemicalSpaceCreator2(new HashSet<>(consideredBBs),reactions,outputDir);
+        creator.setBBData(bbData);
+        return creator;
     }
 
 }

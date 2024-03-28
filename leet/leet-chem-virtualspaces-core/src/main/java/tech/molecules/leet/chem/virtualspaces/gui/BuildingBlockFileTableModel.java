@@ -119,4 +119,9 @@ public class BuildingBlockFileTableModel extends AbstractTableModel {
     public void setLoadedBBs(BuildingBlockFile bbFile, List<LoadedBB> loadedBBs) {
         this.loadedBBs.put(bbFile,loadedBBs);
     }
+
+    public Map<BuildingBlockFile,List<LoadedBB>> getLoadedBBs() {
+        return this.loadedBBs;
+    }
+
 }

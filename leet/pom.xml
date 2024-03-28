@@ -20,6 +20,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>8</maven.compiler.release>
         <revision>0.0.8</revision>
+        <hyperspace.version>2.2.2</hyperspace.version>
     </properties>
 
     <developers>
@@ -62,7 +63,20 @@
             <dependency>
                 <groupId>com.actelion.research</groupId>
                 <artifactId>openchemlib</artifactId>
-                <version>2023.7.4</version>
+                <!--<version>2023.7.4</version>-->
+                <version>2024.1.1</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.idorsia.research</groupId>
+                <artifactId>openchemlib-hyperspace-core</artifactId>
+                <version>${hyperspace.version}</version><!--<version>${revision}</version>-->
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.idorsia.research</groupId>
+                <artifactId>openchemlib-hyperspace-tools</artifactId>
+                <version>${hyperspace.version}</version><!--<version>${revision}</version>-->
                 <scope>compile</scope>
             </dependency>
             <dependency>
@@ -200,6 +214,7 @@
 <!--                    </execution>-->
 <!--                </executions>-->
 <!--            </plugin>-->
+
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
@@ -211,6 +226,8 @@
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 </configuration>
             </plugin>
+
+
         </plugins>
     </build>
 

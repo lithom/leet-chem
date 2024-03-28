@@ -3,6 +3,7 @@ package tech.molecules.leet.chem.virtualspaces.gui;
 import com.actelion.research.chem.reaction.Reaction;
 
 import javax.swing.table.AbstractTableModel;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -72,6 +73,10 @@ public class ReactionMechanismTableModel extends AbstractTableModel {
     @Override
     public String getColumnName(int column) {
         return columnNames[column];
+    }
+
+    public List<ReactionMechanism> getSelectedReactionMechanisms() {
+        return new ArrayList<>(this.selectedReactionMechanisms);
     }
 
     // Methods to add and remove ReactionMechanism objects similar to BuildingBlockFileTableModel

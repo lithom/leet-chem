@@ -6,10 +6,8 @@ import com.actelion.research.chem.io.SDFileParser;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class BuildingBlockFileAnalysisWorker extends SwingWorker<Void, Void> {
     private BuildingBlockFileTableModel tableModel;
@@ -48,7 +46,9 @@ public class BuildingBlockFileAnalysisWorker extends SwingWorker<Void, Void> {
             parser = new SDFileParser(pathBBFile, columns);
             int idField = parser.getFieldIndex(idfieldName);
             if(idField < 0) {
-
+                setTextFailed("ID Field Name not found");
+                System.out.println("Field names: "+ Arrays.stream(parser.getFieldNames()).map(xi -> xi).collect(Collectors.joining(",")));
+                return null;
             }
             int cnt = 0;
             while (parser.next()) {

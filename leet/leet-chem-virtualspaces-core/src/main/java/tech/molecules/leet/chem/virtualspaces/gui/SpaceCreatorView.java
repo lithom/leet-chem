@@ -1,10 +1,12 @@
 package tech.molecules.leet.chem.virtualspaces.gui;
 
 import com.actelion.research.chem.reaction.Reaction;
+import com.actelion.research.gui.VerticalFlowLayout;
 import com.actelion.research.gui.table.ChemistryCellRenderer;
 import com.formdev.flatlaf.FlatLightLaf;
 import tech.molecules.leet.chem.virtualspaces.gui.task.AddBuildingBlockFilesTask;
 import tech.molecules.leet.chem.virtualspaces.gui.task.AddReactionDirectoryTask;
+import tech.molecules.leet.chem.virtualspaces.gui.task.CreateSpaceTask;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,6 +16,12 @@ public class SpaceCreatorView {
     private SpaceCreatorModel model;
 
     private JFrame frame;
+
+    private JPanel panelMain;
+
+    private JPanel panelTop;
+    private JButton buttonCreateSpace;
+
     private JTable tableA;
     private JTable tableB;
     private JButton addButtonA;
@@ -40,7 +48,15 @@ public class SpaceCreatorView {
     private void reinitUI() {
         frame = new JFrame("Library Builder 0.1");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLayout(new GridLayout(2, 1));
+        //frame.setLayout(new VerticalFlowLayout());
+        frame.getContentPane().setLayout(new BorderLayout());
+        try{
+            ImageIcon icon = new ImageIcon(getClass().getResource("/library_builder_icon_a.png"));
+            this.getFrame().setIconImage(icon.getImage());
+        }
+        catch(Exception ex) {ex.printStackTrace();}
+
+        panelMain = new JPanel(new VerticalFlowLayout());
 
         tableA = new JTable(model.getBuildingBlockFileTableModel());
         JScrollPane scrollPaneA = new JScrollPane(tableA);
@@ -69,8 +85,16 @@ public class SpaceCreatorView {
         buttonsPanelB.add(removeButtonB);
         panelB.add(buttonsPanelB, BorderLayout.SOUTH);
 
-        frame.add(panelA);
-        frame.add(panelB);
+
+        panelTop = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        buttonCreateSpace = new JButton();
+        panelTop.add(buttonCreateSpace);
+        //buttonCreateSpace.setEnabled(false);
+
+        panelMain.add(panelTop);
+        panelMain.add(panelA);
+        panelMain.add(panelB);
+        frame.getContentPane().add(panelMain,BorderLayout.CENTER);
 
         frame.pack();
         frame.setLocationRelativeTo(null);
@@ -87,6 +111,7 @@ public class SpaceCreatorView {
     private void addActions() {
         addButtonA.setAction(new AddBuildingBlockFilesTask(this.controller));
         addButtonB.setAction(new AddReactionDirectoryTask(this.controller));
+        buttonCreateSpace.setAction(new CreateSpaceTask(this.controller));
     }
 
 }

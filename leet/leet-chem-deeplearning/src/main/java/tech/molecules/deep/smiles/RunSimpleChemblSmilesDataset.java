@@ -72,7 +72,7 @@ public class RunSimpleChemblSmilesDataset {
         try {
             String line = null;
             while ((line = in.readLine()) != null) {
-                if (selectedMolecules.size() > 12000) {
+                if (selectedMolecules.size() > 2000) {
                     //if (selectedMolecules.size() > 200000) {
                     break;
                 }
