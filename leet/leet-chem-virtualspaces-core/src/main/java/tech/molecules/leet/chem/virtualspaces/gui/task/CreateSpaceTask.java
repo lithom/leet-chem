@@ -257,10 +257,8 @@ public class CreateSpaceTask extends AbstractAction {
             getContentPane().add(scrollPane,BorderLayout.CENTER);
         }
 
-        public void addStatusMessage(String message) {
+        public synchronized void addStatusMessage(String message) {
             SwingUtilities.invokeLater(() -> textArea.append(message + "\n"));
-            this.revalidate();
-            this.repaint();
         }
     }
 
