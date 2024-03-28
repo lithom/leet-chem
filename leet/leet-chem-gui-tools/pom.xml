@@ -5,12 +5,12 @@
     <parent>
         <artifactId>leet</artifactId>
         <groupId>tech.molecules</groupId>
-        <version>dev-SNAPSHOT</version>
+        <version>0.0.9</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>leet-chem-gui-tools</artifactId>
-    <version>${revision}</version>
+    <version>0.0.9</version>
     <packaging>jar</packaging>
     <name>leet-chem-gui-tools</name>
 
@@ -40,12 +40,12 @@
         <dependency>
             <groupId>tech.molecules</groupId>
             <artifactId>leet-chem-core</artifactId>
-            <version>${revision}</version>
+            <version>0.0.9</version>
         </dependency>
         <dependency>
             <groupId>tech.molecules</groupId>
             <artifactId>leet-chem-tablemodel</artifactId>
-            <version>${revision}</version>
+            <version>0.0.9</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>

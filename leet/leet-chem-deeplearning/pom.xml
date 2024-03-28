@@ -5,12 +5,12 @@
     <parent>
         <artifactId>leet</artifactId>
         <groupId>tech.molecules</groupId>
-        <version>dev-SNAPSHOT</version>
+        <version>0.0.9</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>leet-chem-deeplearning</artifactId>
-    <version>${revision}</version>
+    <version>0.0.9</version>
     <name>leet-chem-deeplearning</name>
 
     <!-- FIXME change it to the project's website -->
@@ -39,7 +39,7 @@
         <dependency>
             <groupId>tech.molecules</groupId>
             <artifactId>leet-chem-core</artifactId>
-            <version>${revision}</version>
+            <version>0.0.9</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
