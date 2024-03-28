@@ -28,7 +28,11 @@ jobs:
       uses: actions/checkout@v3
       with:
         repository: Actelion/openchemlib-hyperspace
-        ref: v2.2.2    
+        ref: v2.2.2
+        path: openchemlib-hyperspace
+
+    - name: List directories in default working directory
+      run: ls -l
               
     - name: Set up JDK 17
       uses: actions/setup-java@v3
@@ -37,9 +41,9 @@ jobs:
         distribution: 'temurin'
         cache: maven
         
-    - name: Build openchemlib-hyperspace with Maven
-      working-directory: openchemlib-hyperspace
+    - name: Build openchemlib-hyperspace with Maven      
       run: mvn -B clean install
+      working-directory: openchemlib-hyperspace
       
     - name: Build with Maven
       run: mvn -B package --file pom.xml
