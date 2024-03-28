@@ -5,12 +5,12 @@
     <parent>
         <artifactId>leet</artifactId>
         <groupId>tech.molecules</groupId>
-        <version>0.0.9</version>
+        <version>0.0.10</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>leet-batch-core</artifactId>
-    <version>0.0.9</version>
+    <version>0.0.10</version>
     <packaging>jar</packaging>
 
     <name>leet-batch-core</name>

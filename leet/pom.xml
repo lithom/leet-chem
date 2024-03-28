@@ -11,7 +11,7 @@
     <artifactId>leet</artifactId>
     <packaging>pom</packaging>
     <name>leet-chem</name>
-    <version>0.0.9</version>
+    <version>0.0.10</version>
 
     <description>A software library providing cheminformatics and computational chemistry tools and workflows.</description>
     <url>https://github.com/lithom/leet-chem</url>
