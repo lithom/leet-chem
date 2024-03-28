@@ -38,7 +38,7 @@ jobs:
         cache: maven
         
     - name: Build openchemlib-hyperspace with Maven
-      working-directory: ./openchemlib-hyperspace
+      working-directory: openchemlib-hyperspace
       run: mvn -B clean install
       
     - name: Build with Maven
