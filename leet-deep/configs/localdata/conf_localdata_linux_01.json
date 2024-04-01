@@ -1,0 +1,17 @@
+{
+  "input_file_smiles": "/data/leet_deep_local/input/smi64_atoms32_alphabet50_MEDIUM_NEW_01_SmilesEncoded.npy",
+  "input_file_adj_matrices": "/data/leet_deep_local/input/smi64_atoms32_alphabet50_MEDIUM_NEW_01_adjMatrices.npy",
+  "input_file_atom_type_matrices": "/data/leet_deep_local/input/smi64_atoms32_alphabet50_MEDIUM_NEW_01_atomTypeMatrices.npy",
+  "input_file_conformation": "",
+  "conformer_blinding_rate": 0.2,
+  "conformer_bounding_box_length": 50.0,
+  "output_dir": "/data/leet_deep_local/deep_localdata/r01",
+  "model_dim": 64,
+  "model_layers": 3,
+  "model_start_file": "",
+  "optim_learning_rate": 0.0004,
+  "optim_num_epochs": 700,
+  "optim_batch_size": 128,
+  "optim_batches_per_minibatch": 32,
+  "device": "cuda"
+}
