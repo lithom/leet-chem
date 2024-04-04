@@ -3,6 +3,7 @@ import os
 import sys
 
 import torch
+from torch.optim.lr_scheduler import CyclicLR
 from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.optim as optim
@@ -10,7 +11,9 @@ import torch.optim as optim
 from leet_deep.canonicalsmiles import Seq2SeqModel_5, AutoEncoderTransformerEncoder, AutoEncoderTransformerDecoder, \
     GeneralTransformerModel
 from leet_deep.canonicalsmiles.leet_transformer import CustomTransformerEncoder
-from leet_deep.deepspace2.data_loader_ds2 import MoleculeDataset4_3D
+from leet_deep.canonicalsmiles.model_3D_A import EnhancedPointNet
+from leet_deep.deepspace2.data_loader_ds2 import MoleculeDataset4_3D, MoleculeDataset5_3D
+
 
 
 class ConfigurationLocalData:
@@ -19,7 +22,7 @@ class ConfigurationLocalData:
         #self.input_file_SmilesEnc = None
         #self.input_file_adjMatrices = None
         #self.input_file_atomCounts = None
-
+        self.input_file = None
         self.output_dir = None
         self.basemodel_dim = None
         self.basemodel_layers = None
@@ -44,6 +47,7 @@ class ConfigurationLocalData:
         # self.conformer_blinding_rate = config.get('conformer_blinding_rate')
         # self.input_file_conformation = config.get('input_file_conformation')
         self.config = config
+        self.input_file = config.get('input_file')
         self.output_dir = config.get('output_dir')
         self.basemodel_dim = config.get('basemodel_dim')
         self.basemodel_layers = config.get('basemodel_layers')
@@ -69,7 +73,8 @@ def create_dataset(conf : ConfigurationLocalData ):
     # Create the Dataset
     print(f'Init Dataset..')
     #dataset = MoleculeDataset2(conf)  # MoleculeDataset_Int('C:/dev7/leet/smi64_atoms32_alphabet50_SmilesEncoded.npy', 'C:/dev7/leet/smi64_atoms32_alphabet50_DM.npy')
-    dataset = MoleculeDataset4_3D(conf,8)
+    #dataset = MoleculeDataset4_3D(conf,8)
+    dataset = MoleculeDataset5_3D(conf.input_file, True, 8, selected_batches=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
 
     # Split the Dataset into training and validation sets
     train_size = int(0.8 * len(dataset))
@@ -135,7 +140,8 @@ base_model = Seq2SeqModel_5(sequence_length=64,vocab_size_in=44,expansions_list=
 
 base_model_full_dim = conf.basemodel_dim * 2 * conf.basemodel_layers # this is the size of the full output (all layers, x2 because encoder / decoders layers)
 
-diffusion_model = GeneralTransformerModel(base_model_full_dim,3,conf.diffusion_model_dim,3,8,conf.diffusion_model_layers)
+#diffusion_model = GeneralTransformerModel(base_model_full_dim, 3 + 32 ,conf.diffusion_model_dim,3,8,conf.diffusion_model_layers)
+diffusion_model = EnhancedPointNet(seq_dim=1024)
 #autoencoder_encoder = AutoEncoderTransformerEncoder(64,32,base_model_full_dim,d_model=8,num_layers=1)
 #autoencoder_decoder = AutoEncoderTransformerDecoder(64,32,base_model_full_dim,d_model=128,num_layers=6)
 
@@ -207,11 +213,18 @@ def generate_distance_mask(num_atoms, max_atoms=32):
     return distance_mask
 
 
+scheduler = CyclicLR(optimizer, base_lr=0.0001, max_lr=0.001, step_size_up=10000,
+                     step_size_down=10000, mode='triangular', gamma=0.9, cycle_momentum=False)
+
 # Training loop
+optimizer.zero_grad()
 epochs = conf.optim_num_epochs  # Adjust as necessary
 for epoch in range(epochs):
     batch_cnt = 0
-    for smiles_a, conformations_a , distances_a , num_atoms_a , mask_conformation_flat , mask_distances_flat , diffused_conformer_a , diffused_dm_a , in train_loader:
+    minibatch_loss = 0.0
+    for batch_idx, batch in enumerate(train_loader):
+        smiles_a, conformations_a, num_atoms_a, mask_conformation_flat, diffused_conformer_a = batch['smiles_enc'], \
+        batch['conformation'], batch['num_atoms'], batch['mask_conformation'], batch['diffused_conformation']
 
         # ramp up:
         # if(epoch==0):
@@ -220,49 +233,49 @@ for epoch in range(epochs):
 
         smiles = smiles_a.to(device)
         conformations = conformations_a.to(device)
-        distances = distances_a.to(device)
         num_atoms = num_atoms_a.to(device)
         mask_conformation = mask_conformation_flat.to(device)
-        mask_distances = mask_distances_flat.to(device)
         diffused_conformer = diffused_conformer_a.to(device)
-        diffused_dm = diffused_dm_a.to(device)
-
         # Generate masks
-        #conformation_mask = generate_conformation_mask(num_atoms).unsqueeze(-1)  # Add an extra dimension for broadcasting
-        #distance_mask = generate_distance_mask(num_atoms)
-
-        # We have to apply this of course to the predicted values..
+        # We have to apply this of course to the predicted values
         conformations_masked = conformations * mask_conformation
         #distances_masked = distances * mask_distances
 
-        optimizer.zero_grad()
+        #optimizer.zero_grad()
 
         # Evaluate BaseModel to get SMILES embeddings
         smiles_embeddings = base_model(smiles,smiles)  # Adjust this call based on BaseModel's actual interface
-
-
-        # Add noise to conformations for generalization
-        #noisy_conformations = add_noise(conformations)
-
-        # Forward pass through the autoencoder encoder part
+        # Calculate Euclidean distances
+        #euclidean_distances = torch.norm(diffused_conformer.unsqueeze(2) - diffused_conformer.unsqueeze(1), dim=-1)
+        # Concatenate original tensor and Euclidean distances along the last dimension
+        #extended_diffused_conformer = torch.cat((diffused_conformer, euclidean_distances), dim=-1)
+        #predicted_noise_all = diffusion_model(smiles_embeddings[0], extended_diffused_conformer)
         predicted_noise_all = diffusion_model(smiles_embeddings[0], diffused_conformer)
         predicted_noise = predicted_noise_all[:,:32,:]
         predicted_noise = predicted_noise * mask_conformation#conformation_mask
-
         predicted_noise_scaled = predicted_noise * 25.0
-
-
         # Calculate loss
-
         loss_conf = criterion( diffused_conformer - predicted_noise_scaled, conformations_masked)
         #loss_dist = criterion(reconstructed_distances_scaled, distances_masked)
         loss = loss_conf # + loss_dist # loss_conf + loss_dist
-
         loss.backward()
-        print(f"Loss: {loss.item()}")
-        #print(f"Loss_Conf: {loss_conf.item()}  Loss_Dist: {loss_dist.item()}")
-        optimizer.step()
+        minibatch_loss = minibatch_loss + loss.detach()
 
+        if (batch_idx + 1) % conf.optim_batches_per_minibatch == 0:
+            # Backpropagation and optimization only after a certain number of batches
+            #minibatch_loss /= optim_batches_per_minibatch  # Average loss over minibatch
+            #minibatch_loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+
+            print(
+                f"Epoch [{epoch + 1}/{epochs}], Batch [{batch_idx + 1 - len(train_loader) * (epoch)}/{len(train_loader)}], Minibatch Loss: {minibatch_loss:.4f}")
+            minibatch_loss = 0.0  # Reset minibatch loss
+
+        #loss.backward()
+        #print(f"Loss: {loss.item()}")
+        #print(f"Loss_Conf: {loss_conf.item()}  Loss_Dist: {loss_dist.item()}")
+        #optimizer.step()
 
     print(f"Epoch {epoch+1}, Loss: {loss.item()}")
     # save models:

@@ -1,0 +1,11 @@
+{
+  "input_file": "/data/tests_a/smiles_x64_h0.csv",
+  "output_dir": "/data/output/run_04_d368_l5",
+  "model_dim": 368,
+  "model_layers": 5,
+  "model_start_file": "",
+  "optim_learning_rate": 0.0002,
+  "optim_num_epochs": 400,
+  "optim_batch_size": 256,
+  "device": "cuda"
+}

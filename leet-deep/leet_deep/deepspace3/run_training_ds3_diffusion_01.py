@@ -9,9 +9,12 @@ import torch.nn as nn
 import torch.optim as optim
 
 from leet_deep.canonicalsmiles import Seq2SeqModel_5, AutoEncoderTransformerEncoder, AutoEncoderTransformerDecoder, \
-    GeneralTransformerModel
+    GeneralTransformerModel, GeneralTransformerModel2
 from leet_deep.canonicalsmiles.leet_transformer import CustomTransformerEncoder
 from leet_deep.deepspace2.data_loader_ds2 import MoleculeDataset4_3D, MoleculeDataset5_3D
+from leet_deep.deepspace3 import run_training_ds3_base
+from leet_deep.deepspace3.data_loader_ds3 import MoleculeDataset_DS3_A
+
 
 # !!! This one works nicely with the conf_diffusion_3d_a_02_new.json config!!
 # Now we try with a slightly smaller model!
@@ -77,8 +80,8 @@ def create_dataset(conf : ConfigurationLocalData ):
     #dataset = MoleculeDataset4_3D(conf,8) # this works, but we want to replace this..
     #dataset = MoleculeDataset5_3D(conf.input_file,True, 8,selected_batches=(1,2,3,4))
     #dataset = MoleculeDataset5_3D(conf.input_file, True, 8, selected_batches=None)
-    dataset = MoleculeDataset5_3D(conf.input_file, True, 8, selected_batches=(1,2,3,4,5,6,7,8,9,10))
-    #dataset = MoleculeDataset5_3D(conf.input_file, True, 8, selected_batches=None)
+    #dataset = MoleculeDataset_DS3_A(conf.input_file, True, 8, selected_batches=(1,2,3,4,5,6,7,8,9,10))
+    dataset = MoleculeDataset_DS3_A(conf.input_file, '3d', 8, selected_batches=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
 
     # Split the Dataset into training and validation sets
     train_size = int(0.8 * len(dataset))
@@ -110,32 +113,20 @@ def create_model(conf_file):
     else:
         print("Output folder already exists.")
 
-    # Hyperparameters Base Model
-    basemodel_n_tokens = 64 # sequence length
-    basemodel_nhead = 8
-    basemodel_dim_feedforward = 2048 #1024
+    #conf_base_model = {'model_dim': conf.basemodel_dim, 'model_layers': conf.base_model_layers}
+    base_model = run_training_ds3_base.create_model(conf.basemodel_dim,conf.basemodel_layers)
 
-    #warmup_steps = 200
-    #warmup_steps = 6
+
     val_loader, train_loader = create_dataset(conf)
 
-    print(f'Init Model, dim={conf.basemodel_dim}, nhead={basemodel_nhead}, nlayers={conf.basemodel_layers}, dim_ff={basemodel_dim_feedforward}')
+    print(f'Init Base Model, dim={conf.basemodel_dim}, nlayers={conf.basemodel_layers}') # nhead={basemodel_nhead}, , dim_ff={basemodel_dim_feedforward}')
     # to change for later: dim_expansion_out_1 should then be 8..
 
-    expansions = []
-    # ( num_classes, (shape_of_elements_out) )
-    # total_elements_out must be multiple of sequence length 64
-    # shape_of_elements_out MUST INCLUDE classes, in fact last element of shape_of_elements MUST BE num classes
-    #expansions.append( (2,(32,32,8,2)) ) # adj matrix
-    expansions.append( (2,(32,32,2,2)) ) # adj matrix
-    expansions.append( (2,(32,6,8)) ) # chem properties (0..7) for the counts.
-    #expansions.append( (16,(32,13,4,16)) ) # atom counts
 
-    base_model = Seq2SeqModel_5(sequence_length=64,vocab_size_in=44,expansions_list=expansions,model_dim=conf.basemodel_dim, num_layers=conf.basemodel_layers) # (B)
+    base_model_full_dim = 128  # this is the size of the full output (all layers, x2 because encoder / decoders layers)
 
-    base_model_full_dim = conf.basemodel_dim * 2 * conf.basemodel_layers # this is the size of the full output (all layers, x2 because encoder / decoders layers)
-
-    diffusion_model = GeneralTransformerModel(base_model_full_dim,3,conf.diffusion_model_dim,3,8,conf.diffusion_model_layers)
+    #diffusion_model = GeneralTransformerModel(base_model_full_dim,3,conf.diffusion_model_dim,3,8,conf.diffusion_model_layers)
+    diffusion_model = GeneralTransformerModel2(base_model_full_dim, 3, conf.diffusion_model_dim, 3, 8,conf.diffusion_model_layers)
     #autoencoder_encoder = AutoEncoderTransformerEncoder(64,32,base_model_full_dim,d_model=8,num_layers=1)
     #autoencoder_decoder = AutoEncoderTransformerDecoder(64,32,base_model_full_dim,d_model=128,num_layers=6)
 

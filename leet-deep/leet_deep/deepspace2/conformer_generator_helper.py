@@ -10,7 +10,7 @@ import matplotlib
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.animation import FuncAnimation
 
-
+from leet_deep.deepspace3 import run_training_ds3_diffusion_01
 
 
 def generate_conformers(base_model, diffusion_model, device, smiles_input, num_atoms, num_steps, num_conformers):
@@ -31,7 +31,7 @@ def generate_conformers(base_model, diffusion_model, device, smiles_input, num_a
 
     with torch.no_grad():
         # Initialize with noise
-        current_state = torch.randn(num_conformers, 32, 3)
+        current_state = torch.randn(num_conformers, 32, 3) * 2.0
         current_state = current_state.to(device)
 
         all_conformers = torch.zeros(num_steps+1,num_conformers,32,3)
@@ -47,6 +47,14 @@ def generate_conformers(base_model, diffusion_model, device, smiles_input, num_a
             predicted_noise = diffusion_model(base_model_out_a,current_state)
             predicted_noise_scaled = predicted_noise[:,:32,:] * 25
             current_state = current_state - predicted_noise_scaled
+
+            if True: # manual centering..
+                #hmm.. manually stabilize, was not needed for deepsspace2..
+                # Compute the mean of each batch
+                batch_means = torch.mean(current_state, dim=1, keepdim=True)
+                # Subtract the mean from each point in the corresponding batch
+                current_state = current_state - batch_means
+
             norms = torch.sum( torch.norm( predicted_noise_scaled[:,:num_atoms,:] , p=2 , dim=2 ) , dim=1  )
             print(norms)
             all_conformers[step+1,:,:,:] = current_state
@@ -54,28 +62,25 @@ def generate_conformers(base_model, diffusion_model, device, smiles_input, num_a
         return current_state , all_conformers
 
 
-# Assuming `model` is your trained model
-# Example parameters
-num_atoms = 32  # Adjust based on your molecule
-num_steps = 100  # Total diffusion steps in reverse
-num_conformers = 16  # Number of conformers to generate
+
+# Visualization of the first generated conformer
+def plot_conformer(conformer, num_atoms):
+    """
+    Plot a single conformer using matplotlib.
+
+    Parameters:
+    - conformer: A tensor of shape (num_atoms, 3) representing the conformer's coordinates.
+    """
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(conformer[:num_atoms, 0], conformer[:num_atoms, 1], conformer[:num_atoms, 2])
+
+    ax.set_xlabel('X Axis')
+    ax.set_ylabel('Y Axis')
+    ax.set_zlabel('Z Axis')
+    plt.show()
 
 
-#base_model, diffusion_model, conf = run_training_3d_diffusion_01.create_model("C:\\dev\\leet-chem\\leet-deep\\configs\\diffusion_3d_dm\\conf_diffusion_3d_a_02.json")
-base_model, diffusion_model, conf = run_training_3d_diffusion_01.create_model("C:\\dev\\leet-chem\\leet-deep\\configs\\diffusion_3d_dm\\conf_diffusion_3d_a_02_new.json")
-train_loader , val_loader = run_training_3d_diffusion_01.create_dataset(conf)
-
-base_model = base_model.to(conf.device)
-diffusion_model = diffusion_model.to(conf.device)
-
-batch = next(iter(train_loader))
-inputs_pre = batch['smiles_enc'].to(conf.device)
-idx_mol = 0
-inputs = torch.unsqueeze(inputs_pre[idx_mol,:],0)
-num_atoms = batch['num_atoms'][idx_mol]
-
-
-generated_conformers , all_conformers = generate_conformers(base_model, diffusion_model, conf.device, inputs, num_atoms, num_steps, num_conformers)
 
 
 def plot_conformers_2(conformers):
@@ -103,14 +108,16 @@ def plot_conformers_2(conformers):
 
 
 
-def plot_conformer_with_bonds_from_rdkit_mol(ax, conformer, mol):
+def plot_conformer_with_bonds_from_rdkit_mol(ax, conformer_a, mol):
+    conformer = conformer_a[:mol.GetNumAtoms(),:]
     # Plotting atoms
-    atom_colors = {'C': 'black', 'H': 'gray', 'O': 'red', 'N': 'blue'}  # Extend this dictionary based on your needs
+    atom_colors = {'C': 'black', 'H': 'gray', 'O': 'red', 'N': 'blue' ,'F': 'green','S': 'yellow', 'Cl': 'YellowGreen', 'Br': 'orange'}  # Extend this dictionary based on your needs
     for atom in mol.GetAtoms():
         idx = atom.GetIdx()
         pos = conformer[idx]
-        color = atom_colors.get(atom.GetSymbol(), 'yellow')  # Default color if element not in dict
-        ax.scatter(pos[0], pos[1], pos[2], color=color, s=100)  # Adjust size (s) as needed
+        #print(atom.GetSymbol())
+        color = atom_colors.get(atom.GetSymbol(), 'cyan')  # Default color if element not in dict
+        ax.scatter(pos[0], pos[1], pos[2], color=color, s=60, alpha=0.6)  # Adjust size (s) as needed
 
     # Plotting bonds
     for bond in mol.GetBonds():
@@ -209,33 +216,160 @@ def animate_diffusion_process(diffusion_steps, smiles):
     return anim
 
 
-plot_conformer_with_bonds_from_smiles( None,all_conformers[50,0,:num_atoms,:].cpu() , batch['smiles'][idx_mol],create_figure_and_axes=True)
-
-# Assuming generated_conformers is the tensor of shape (num_conformers, num_atoms, 3)
-#plot_conformers_2(generated_conformers.cpu())
-matplotlib.use('TkAgg')  # Use the TkAgg backend for interactive plots
-
-for zi in range(20):
-    anim_a = animate_diffusion_process( all_conformers[0:40,zi,:num_atoms,:].cpu(),batch['smiles'][idx_mol])
-    anim_a.save(f'diffusion_animation_x_{zi}.gif', writer='pillow')
-    #anim_a.save(f'diffusion_animation_{random.randint(0,100000)}.gif', writer='pillow')
-
-
-
-# Visualization of the first generated conformer
-def plot_conformer(conformer, num_atoms):
+def animate_diffusion_process_multiple(diffusion_steps, smiles):
     """
-    Plot a single conformer using matplotlib.
+    Creates an animation showing the diffusion process for a single conformer.
 
     Parameters:
-    - conformer: A tensor of shape (num_atoms, 3) representing the conformer's coordinates.
+    - diffusion_steps: A tensor of shape (steps, num_atoms, 3) representing the conformer's coordinates at each step.
     """
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(conformer[:num_atoms, 0], conformer[:num_atoms, 1], conformer[:num_atoms, 2])
+    plots_x = 4
+    plots_y = 4
 
-    ax.set_xlabel('X Axis')
-    ax.set_ylabel('Y Axis')
-    ax.set_zlabel('Z Axis')
-    plt.show()
+    # Create a 4x4 grid of subplots
+    fig, axes = plt.subplots(4, 4, figsize=(12, 12), subplot_kw={'projection': '3d'})
+
+    # Adjust layout to prevent overlap of titles
+    plt.tight_layout()
+
+    # Loop through each subplot and set some dummy data
+    mols = [None] * (plots_x*plots_y)
+
+    for i in range(4):
+        for j in range(4):
+            idx = i*plots_x+j
+            mol = Chem.MolFromSmiles(smiles[idx].decode().replace('y', ''))
+            mols[idx] = mol
+            ax = axes[i, j]
+            ax.plot([0, 1, 2, 3, 4], [0, 1, 4, 9, 16])  # Dummy data
+            ax.set_title(f'Subplot {i + 1},{j + 1}')  # Set subplot title
+            ax.set_xlim(-6,6)
+            ax.set_ylim(-6, 6)
+            ax.set_zlim(-6, 6)
+
+    #fig = plt.figure(figsize=(10, 8))
+    #ax = fig.add_subplot(111, projection='3d')
+
+
+
+    # Parse the SMILES string with RDKit
+
+    # Use RDKit to generate 3D coordinates
+    #AllChem.EmbedMolecule(mol, AllChem.ETKDG())
+
+    # Align the RDKit-generated coordinates with the conformer using a simple RMSD alignment
+    # This step assumes that both sets of coordinates are in a compatible order
+    #AllChem.AlignMolConformers(mol)
+
+    def init():
+        for i in range(plots_x):
+            for j in range(plots_y):
+                idx = i * plots_x + j
+                #print(idx)
+                ax = axes[i,j]
+                mol = mols[idx]
+                """Initializes the plot with the first frame."""
+                ax.clear()
+                conformer = diffusion_steps[idx,0,:,:]
+                plot_conformer_with_bonds_from_rdkit_mol(ax,conformer,mol)
+                ax.set_xlabel('X Axis')
+                ax.set_ylabel('Y Axis')
+                ax.set_zlabel('Z Axis')
+                ax.set_xlim(-6, 6)
+                ax.set_ylim(-6, 6)
+                ax.set_zlim(-6, 6)
+        return fig,
+
+    def update(step):
+        print(f"frame {step}")
+        for i in range(plots_x):
+            for j in range(plots_y):
+                idx = i * plots_x + j
+                ax = axes[i,j]
+                mol = mols[idx]
+                print(idx)
+                """Updates the plot for each frame."""
+                ax.clear()
+                conformer = diffusion_steps[idx,step,:,:]
+                plot_conformer_with_bonds_from_rdkit_mol(ax,conformer,mol)
+                ax.set_title(f'Step {step+1}')
+                ax.set_xlabel('X Axis')
+                ax.set_ylabel('Y Axis')
+                ax.set_zlabel('Z Axis')
+                ax.set_xlim(-6, 6)
+                ax.set_ylim(-6, 6)
+                ax.set_zlim(-6, 6)
+        return fig,
+
+    anim = FuncAnimation(fig, update, frames=range(diffusion_steps.shape[1]), init_func=init, blit=True)
+    #plt.show()
+    plt.close()  # Prevents the final frame from being shown statically below the animation.
+    return anim
+
+
+
+
+
+if __name__ == "__main__":
+    # Assuming `model` is your trained model
+    # Example parameters
+    num_atoms = 32  # Adjust based on your molecule
+    num_steps = 40  # Total diffusion steps in reverse
+    num_conformers = 16  # Number of conformers to generate
+
+    for iteration in range(32):
+        #base_model, diffusion_model, conf = run_training_3d_diffusion_01.create_model("C:\\dev\\leet-chem\\leet-deep\\configs\\diffusion_3d_dm\\conf_diffusion_3d_a_02.json")
+        #base_model, diffusion_model, conf = run_training_3d_diffusion_01.create_model("C:\\dev\\leet-chem\\leet-deep\\configs\\diffusion_3d_dm\\conf_diffusion_3d_a_02_new.json")
+        base_model, diffusion_model, conf = run_training_3d_diffusion_01.create_model("C:\\dev\\leet-chem\\leet-deep\\configs\\diffusion_3d_dm\\conf_diffusion_3d_a_03_smaller_a.json")
+        base_model_3ds, diffusion_model_3ds, conf_3ds = run_training_ds3_diffusion_01.create_model("C:\\dev\\leet-chem\\leet-deep\\configs\\ds3_diffusion3d\\diffusion3d_conf_01_run_01.json")
+
+        train_loader , val_loader = run_training_3d_diffusion_01.create_dataset(conf)
+
+        base_model = base_model.to(conf.device)
+        diffusion_model = diffusion_model.to(conf.device)
+
+        base_model_3ds = base_model_3ds.to(conf.device)
+        diffusion_model_3ds = diffusion_model_3ds.to(conf.device)
+
+
+        batch = next(iter(train_loader))
+        inputs_pre = batch['smiles_enc'].to(conf.device)
+        #idx_mol = 0
+
+
+        multiple_molecules_conformers = torch.zeros((16,num_steps,num_atoms,3),device=conf.device)
+        multiple_molecules_num_atoms  = torch.zeros((16,1))
+        multiple_molecules_idxmol     = range(16)
+        for idx_mol in multiple_molecules_idxmol:
+            inputs = torch.unsqueeze(inputs_pre[idx_mol, :], 0)
+            num_atoms_i = batch['num_atoms'][idx_mol]
+
+            print('\n\n\n\n\n\n--------------------------------------------------------------')
+            generated_conformers , all_conformers = generate_conformers(base_model, diffusion_model, conf.device, inputs, num_atoms_i, num_steps, num_conformers)
+            print('\n\n\n\n\n\n--------------------------------------------------------------')
+            generated_conformers_3ds, all_conformers_3ds = generate_conformers(base_model_3ds, diffusion_model_3ds, conf.device, inputs,num_atoms_i, num_steps, num_conformers)
+            print('\n\n\n\n\n\n--------------------------------------------------------------')
+
+            #multiple_molecules_conformers[idx_mol,:,:,:] = all_conformers[0:num_steps,0,:,:]
+            multiple_molecules_conformers[idx_mol, :, :, :] = all_conformers_3ds[0:num_steps, 0, :, :]
+
+        print("Conformers generated")
+
+
+        #plot_conformer_with_bonds_from_smiles( None,all_conformers[38,0,:num_atoms,:].cpu() , batch['smiles'][idx_mol],create_figure_and_axes=True)
+
+        # Assuming generated_conformers is the tensor of shape (num_conformers, num_atoms, 3)
+        plot_conformers_2(generated_conformers.cpu())
+        matplotlib.use('TkAgg')  # Use the TkAgg backend for interactive plots
+
+        #anim_a = animate_diffusion_process_multiple(all_conformers[0:40, 0:16, :num_atoms, :].cpu(), batch['smiles'][idx_mol])
+        #anim_a = animate_diffusion_process_multiple(multiple_molecules_conformers[0:16,0:40,:,:].cpu(), batch['smiles'])
+        anim_a = animate_diffusion_process_multiple(multiple_molecules_conformers[0:16, 0:40, :, :].cpu(),batch['smiles'])
+        anim_a.save(f'diffusion_ds3_x16_{iteration}.gif', writer='pillow')
+
+        # for zi in range(20):
+        #     anim_a = animate_diffusion_process( all_conformers[0:40,zi,:num_atoms,:].cpu(),batch['smiles'][idx_mol])
+        #     anim_a.save(f'diffusion_animation_x_{zi}.gif', writer='pillow')
+            #anim_a.save(f'diffusion_animation_{random.randint(0,100000)}.gif', writer='pillow')
+
 

@@ -90,6 +90,12 @@ class MoleculeDataset3(Dataset):
 
         return smiles_flat , adj_matrices_flat, atom_properties_flat , num_atoms_flat #atom_type_counts_flat
 
+
+
+
+
+
+
 def compute_distances(conformation):
     """Computes the pairwise Euclidean distances between atoms in a molecule."""
     distances = np.sqrt(np.sum((conformation[:, np.newaxis, :] - conformation[np.newaxis, :, :]) ** 2, axis=-1))

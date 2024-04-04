@@ -1,0 +1,12 @@
+{
+  "input_file_data": "C:\\dev7\\leet\\smilesdata_xx60_1_lessThan32.csv",
+  "input_file_alphabet": "C:\\dev7\\leet\\xx60_alphabet.txt",
+  "output_dir": "C:\\Temp\\Run_xx60_d368_l4_01_resumed_2",
+  "model_dim": 368,
+  "model_layers": 4,
+  "model_start_file": "C:\\Temp\\Run_xx60_d368_l4_01_resumed\\model_19.pth",
+  "optim_learning_rate": 0.0001,
+  "optim_num_epochs": 400,
+  "optim_batch_size": 256,
+  "device": "cuda"
+}

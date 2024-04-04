@@ -203,6 +203,99 @@ class Seq2SeqModel_5(nn.Module):
     #         x = x + self.pe[:x.size(0), :]
     #         return x
 
+
+# expansions_list: each element is a tuple (num_classes,dim_expansion)
+# outputs [1..n] are automatically shaped into class format
+class Seq2SeqModel_6(nn.Module):
+    def __init__(self, vocab_size_in, sequence_length_in, sequence_length_out, expansions_list, model_dim, num_layers):
+        super(Seq2SeqModel_6, self).__init__()
+        self.embedding = nn.Embedding(vocab_size_in, model_dim)
+        self.pos_encoder = PositionalEncoding(model_dim,max_len=256)
+        self.transformer = LeetTransformer(d_model=model_dim, nhead=8, num_encoder_layers=num_layers, num_decoder_layers=num_layers)#Transformer(d_model=model_dim, nhead=8, num_encoder_layers=num_layers, num_decoder_layers=num_layers)
+
+        self.sequence_length_in = sequence_length_in
+        self.sequence_length_out = sequence_length_out
+        self.linReducer = nn.Linear(sequence_length_in-sequence_length_out,sequence_length_out)
+
+        self.output_layers = nn.ModuleList()
+        self.expansions_list = expansions_list
+        for exp_class, exp_dimensions in expansions_list:
+            out_dimension_total = tuple_product(exp_dimensions)
+            if( exp_class=='c2_a'):
+                sequential_i = nn.Sequential(
+                    nn.Linear(model_dim, model_dim),
+                    nn.ReLU(),
+                    nn.Linear(model_dim, out_dimension_total),
+                    #nn.LogSoftmax()
+                )
+                self.output_layers.append(sequential_i)
+            if(exp_class=='cx_a'):
+                sequential_i = nn.Sequential(
+                    nn.Linear(model_dim, model_dim),
+                    nn.ReLU(),
+                    nn.Linear(model_dim, out_dimension_total),
+                    #nn.LogSoftmax()
+                )
+                self.output_layers.append(sequential_i)
+            if (exp_class == 'n_a'):
+                sequential_i = nn.Sequential(
+                    nn.Linear(model_dim, model_dim),
+                    nn.ReLU(),
+                    nn.Linear(model_dim, out_dimension_total)
+                )
+                self.output_layers.append(sequential_i)
+
+
+    def forward(self, input1, input2):
+        # Embedding the inputs
+        input1 = self.embedding(input1).permute(1, 0, 2)
+        input2 = self.embedding(input2).permute(1, 0, 2)
+
+        # Add positional encodings
+        input1 = self.pos_encoder(input1)
+        input2 = self.pos_encoder(input2)
+
+        out, encoder_intermediate_outputs, decoder_intermediate_outputs = self.transformer(input1, input2)
+
+        out_normalized = out.permute(1,0,2)
+
+        out_formatted = out_normalized[:,:self.sequence_length_out,:]
+        out_formatted_remainder = out_normalized[:, self.sequence_length_out:,:]
+        out_formatted = F.relu( out_formatted + F.relu( self.linReducer( out_formatted_remainder.permute(0,2,1) ).permute(0,2,1) ) )
+
+        intermediate = encoder_intermediate_outputs+decoder_intermediate_outputs
+        all_intermediate_outputs = torch.cat(intermediate, dim=2).permute(1, 0, 2)
+        #all_intermediate_outputs = torch.flatten(all_intermediate_outputs,start_dim=1)
+
+        out_all = []
+        out_all.append(out_formatted)
+        out_all.append(all_intermediate_outputs)
+
+        for idx, output_layer in enumerate( self.output_layers ):
+            out_i = output_layer(out_formatted)
+            #out_i = out_i.reshape( (out_i.size()[0], *(self.expansions_list[idx][1]) ) )
+            out_i = out_i.reshape( (out_i.size()[0],self.sequence_length_out,*(self.expansions_list[idx][1])))
+            out_all.append(out_i)
+
+        return out_all
+
+    # class PositionalEncoding(nn.Module):
+    #     def __init__(self, d_model, max_len=5000):
+    #         super(PositionalEncoding, self).__init__()
+    #         self.d_model = d_model
+    #         pe = torch.zeros(max_len, d_model)
+    #         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+    #         div_term = torch.exp(torch.arange(0, d_model, 2).float() * -(math.log(10000.0) / d_model))
+    #         pe[:, 0::2] = torch.sin(position * div_term)
+    #         pe[:, 1::2] = torch.cos(position * div_term)
+    #         pe = pe.unsqueeze(0).transpose(0, 1)
+    #         self.register_buffer('pe', pe)
+    #
+    #     def forward(self, x):
+    #         x = x + self.pe[:x.size(0), :]
+    #         return x
+
+
 class AutoEncoderTransformerEncoder(nn.Module):
     def __init__(self, length_smiles, num_atoms, dim_smiles, d_model=32, nhead=8, num_layers=2, dropout=0.1):
         super(AutoEncoderTransformerEncoder, self).__init__()
@@ -343,6 +436,94 @@ class GeneralTransformerModel(nn.Module):
 
         x = torch.cat( (x_smiles,x_other), dim = 1 )
         x_tf = x.permute(1,0,2)
+        x_tf_pos = self.pos_encoder(x_tf)
+        y_tf = self.transformer_decoder(x_tf_pos, x_tf_pos)
+        y = y_tf.permute(1,0,2)
+        return self.fc_out(y)
+
+
+# combines
+class GeneralTransformerModel2(nn.Module):
+    def __init__(self, d_base_data , d_extension_data , d_model, d_out, nhead, num_decoder_layers, dropout=0.1):
+        super(GeneralTransformerModel2, self).__init__()
+        self.d_base_data = d_base_data
+        self.d_extension_data = d_extension_data
+        self.input_projection = nn.Linear(d_base_data + d_extension_data, d_model)
+        self.pos_encoder = PositionalEncoding(d_model)
+
+        self.transformer_decoder = nn.TransformerDecoder(
+            nn.TransformerDecoderLayer(d_model=d_model, nhead=nhead, dropout=dropout),
+            num_layers=num_decoder_layers
+        )
+        self.fc_out = nn.Linear(d_model, d_out)  # Output size = number of elements in upper right part of the matrix
+
+    def forward(self, x_base_data, x_other):
+        x_combined  =  torch.cat( (x_base_data,x_other), dim = 2 )
+        x_combined  =  F.relu(self.input_projection(x_combined))
+
+        x_tf = x_combined.permute(1,0,2)
+        x_tf_pos = self.pos_encoder(x_tf)
+        y_tf = self.transformer_decoder(x_tf_pos, x_tf_pos)
+        y = y_tf.permute(1,0,2)
+        return self.fc_out(y)
+
+#assumption: length_extension_data > length_base_data
+#            output length is length of extension data
+class GeneralTransformerModel4(nn.Module):
+    def __init__(self, d_base_data , d_extension_data , length_base_data, length_extension_data, d_model, d_out, nhead, num_decoder_layers, dropout=0.1):
+        super(GeneralTransformerModel4, self).__init__()
+        self.d_base_data = d_base_data
+        self.d_extension_data = d_extension_data
+        self.input_projection_a = nn.Linear(length_base_data, length_extension_data)
+        self.input_projection_b = nn.Linear(d_base_data + d_extension_data, d_model)
+        self.pos_encoder = PositionalEncoding(d_model)
+
+        self.transformer_decoder = nn.TransformerDecoder(
+            nn.TransformerDecoderLayer(d_model=d_model, nhead=nhead, dropout=dropout),
+            num_layers=num_decoder_layers
+        )
+        self.fc_out = nn.Linear(d_model, d_out)  # Output size = number of elements in upper right part of the matrix
+
+    def forward(self, x_base_data, x_extension):
+        x_adjusted = self.input_projection_a(x_base_data.permute(0,2,1)).permute(0,2,1)
+        x_combined  =  torch.cat( (x_adjusted,x_extension), dim = 2 )
+        x_combined  =  F.relu(self.input_projection_b(x_combined))
+
+        x_tf = x_combined.permute(1,0,2)
+        x_tf_pos = self.pos_encoder(x_tf)
+        y_tf = self.transformer_decoder(x_tf_pos, x_tf_pos)
+        y = y_tf.permute(1,0,2)
+        return self.fc_out(y)
+
+
+
+# assumption: base_data and extension_data have same length, but out seq is longer
+# not tested yet..
+class GeneralTransformerModel3(nn.Module):
+    def __init__(self, d_base_data , d_extension_data , length_data_in, length_seq_out, d_model, d_out, nhead, num_decoder_layers, dropout=0.1):
+        super(GeneralTransformerModel3, self).__init__()
+        self.d_base_data = d_base_data
+        self.d_extension_data = d_extension_data
+        self.input_projection = nn.Linear(d_base_data + d_extension_data, d_model)
+        self.pos_encoder = PositionalEncoding(d_model)
+
+        #extend sequence:
+        self.extension_projection = nn.Linear(length_data_in,length_seq_out-length_data_in)
+
+        self.transformer_decoder = nn.TransformerDecoder(
+            nn.TransformerDecoderLayer(d_model=d_model, nhead=nhead, dropout=dropout),
+            num_layers=num_decoder_layers
+        )
+        self.fc_out = nn.Linear(d_model, d_out)  # Output size = number of elements in upper right part of the matrix
+
+    def forward(self, x_base_data, x_other):
+        x_combined  =  torch.cat( (x_base_data,x_other), dim = 2 )
+        x_combined  =  F.relu(self.input_projection(x_combined))
+
+        x_extension = F.relu( self.extension_projection( x_combined.permute(0,2,1) ) ).permute(0,2,1)
+        x_extended = torch.cat( (x_combined,x_extension) , 1 )
+
+        x_tf = x_extended.permute(1,0,2)
         x_tf_pos = self.pos_encoder(x_tf)
         y_tf = self.transformer_decoder(x_tf_pos, x_tf_pos)
         y = y_tf.permute(1,0,2)

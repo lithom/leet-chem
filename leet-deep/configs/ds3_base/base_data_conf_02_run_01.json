@@ -1,0 +1,13 @@
+{
+  "input_file": "C:\\deep\\localdata_a\\data_medium_03\\smi64_atoms32_NEW_MEDIUM_04_with3D",
+  "conformer_bounding_box_length": 50.0,
+  "output_dir": "C:\\Temp\\deep_localdata\\ds3_base_conf_02_run_01",
+  "model_dim": 128,
+  "model_layers": 3,
+  "model_start_file": "C:\\Temp\\deep_localdata\\ds3_base_conf_02_run_01\\model_198.pth",
+  "optim_learning_rate": 0.00025,
+  "optim_num_epochs": 2000,
+  "optim_batch_size": 512,
+  "optim_batches_per_minibatch": 2,
+  "device": "cuda"
+}
