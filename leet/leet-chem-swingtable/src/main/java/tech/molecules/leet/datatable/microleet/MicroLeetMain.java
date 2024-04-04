@@ -199,7 +199,8 @@ public class MicroLeetMain {
         main.init();
 
         //String filepath = "C:\\Users\\liphath1\\OneDrive - Idorsia\\Documents\\Osiris_Project_Profile_TEST.tsv";
-        String filepath = "C:\\datasets\\chembl_size90_input_smiles_SERIES_A_1.txt";
+        //String filepath = "C:\\datasets\\chembl_size90_input_smiles_SERIES_A_1.txt";
+        String filepath = "/home/liphath1/datasets/ListOfSmallMoleculeDrugsFrlomDrugCentral2021.txt";
         // load test dwar tsv file..
         if(true) {
             DataWarriorTSVParserHelper helper_a = new DataWarriorTSVParserHelper();
