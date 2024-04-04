@@ -1,0 +1,19 @@
+{
+  "input_file_smiles": "C:\\dev7\\leet\\smi64_atoms32_alphabet50_MEDIUM_FIRST_3D_2_SmilesEncoded.npy",
+  "input_file_dm": "C:\\dev7\\leet\\smi64_atoms32_alphabet50_MEDIUM_FIRST_3D_2_DM.npy",
+  "input_file_cheminfo": "C:\\dev7\\leet\\smi64_atoms32_alphabet50_MEDIUM_FIRST_3D_2_ChemInfo.npy",
+  "input_file_dist_first_atom": "C:\\dev7\\leet\\smi64_atoms32_alphabet50_MEDIUM_FIRST_3D_2_distFirst.npy",
+  "input_file_full_dm": "C:\\dev7\\leet\\smi64_atoms32_alphabet50_MEDIUM_FIRST_3D_2_fullDM.npy",
+  "input_file_conformation": "C:\\dev7\\leet\\smi64_atoms32_alphabet50_MEDIUM_FIRST_3D_2_conformation.npy",
+  "conformer_blinding_rate": 0.2,
+  "conformer_bounding_box_length": 50.0
+  "output_dir": "C:\\Temp\\deep_dm\\r04",
+  "model_dim": 32,
+  "model_layers": 3,
+  "model_start_file": "C:\\Temp\\deep_dm\\r04\\model_2.pth",
+  "optim_learning_rate": 0.00015,
+  "optim_num_epochs": 700,
+  "optim_batch_size": 128,
+  "optim_batches_per_minibatch": 32,
+  "device": "cuda"
+}

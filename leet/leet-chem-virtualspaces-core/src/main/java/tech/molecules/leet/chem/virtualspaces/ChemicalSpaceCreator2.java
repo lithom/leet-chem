@@ -20,6 +20,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.actelion.research.chem.CanonizerUtil;
@@ -39,6 +40,13 @@ import com.actelion.research.chem.reaction.Reactor;
 import org.apache.commons.lang3.tuple.Pair;
 
 
+/**
+ *
+ * Largely based on code from publication
+ * Wahl, Joel, and Thomas Sander. "Fully automated creation of virtual chemical fragment spaces using the open-source library OpenChemLib." Journal of Chemical Information and Modeling 62.9 (2022): 2202-2211.
+ *
+ */
+
 public class ChemicalSpaceCreator2 {
 
 
@@ -49,16 +57,24 @@ public class ChemicalSpaceCreator2 {
     private List<Reaction> functionalizations;
     private ConcurrentMap<String,long[]> fps;
 
+    private Consumer<String> statusOutput;
+
     public ChemicalSpaceCreator2(Set<String> bbs, List<Reaction> reactions, File outdirectory) {
+        this(bbs,reactions,outdirectory,(x)->{});
+    }
+
+    public ChemicalSpaceCreator2(Set<String> bbs, List<Reaction> reactions, File outdirectory, Consumer<String> statusOutput) {
         this.bbs = bbs;
         this.reactions = reactions;
         this.outdirectory = outdirectory;
+        this.statusOutput = statusOutput;
         this.functionalizations = new ArrayList<>(); //reactions that only consist of modifications ("functionalizations") of one building block are treated specially
         for(Reaction rxn : reactions ) {
             if(rxn.getReactants()==1)
                 functionalizations.add(rxn);
         }
         reactions.removeAll(functionalizations);
+
     }
 
 
@@ -90,7 +106,9 @@ public class ChemicalSpaceCreator2 {
         fps = new ConcurrentHashMap<String,long[]>();
         calcFragFPs(processedToOrigIDCode.keySet(),fps);
         System.out.println("Start generating synthons..");
+        statusOutput.accept("Generate Synthons");
         generateSynthons(reactions, processedToOrigIDCode, reactionsWithSynthons,fps,allSynthonTransformations);
+        statusOutput.accept("Generate Synthons [DONE]");
         generateCombinatoriaLibraries2(reactionsWithSynthons, bbs, allSynthonTransformations);
         //generateCombinatoriaLibraries(reactionsWithSynthons, bbs, allSynthonTransformations);
     }
@@ -191,14 +209,19 @@ public class ChemicalSpaceCreator2 {
             //for(String idcode : rList) {
 
             rList.parallelStream().forEach(idcode -> {
-                IDCodeParser parser = new IDCodeParser();
-                StereoMolecule bb = new StereoMolecule();
-                parser.parse(bb, idcode);
-                bb.ensureHelperArrays(Molecule.cHelperCIP);
-                String synthonIDCode = transformToSynthon(synthonTransformation,bb);
-                String origIDCode = processedToOrigBB.get(idcode);
-                if(synthonIDCode!=null) {
-                    synthonList.put(synthonIDCode, origIDCode);
+                try {
+                    IDCodeParser parser = new IDCodeParser();
+                    StereoMolecule bb = new StereoMolecule();
+                    parser.parse(bb, idcode);
+                    bb.ensureHelperArrays(Molecule.cHelperCIP);
+                    String synthonIDCode = transformToSynthon(synthonTransformation, bb);
+                    String origIDCode = processedToOrigBB.get(idcode);
+                    if (synthonIDCode != null) {
+                        synthonList.put(synthonIDCode, origIDCode);
+                    }
+                }
+                catch(Exception ex) {
+                    ex.printStackTrace();
                 }
             });
         }
@@ -243,7 +266,7 @@ public class ChemicalSpaceCreator2 {
         }
     }
 
-    private static String transformToSynthon(Reaction synthonTransformation, StereoMolecule bb) {
+    private static String transformToSynthon(Reaction synthonTransformation, StereoMolecule bb) throws Exception {
         String synthonIDCode = null;
         Reactor reactor = new Reactor(synthonTransformation, Reactor.MODE_RETAIN_COORDINATES
                 +Reactor.MODE_FULLY_MAP_REACTIONS+Reactor.MODE_REMOVE_DUPLICATE_PRODUCTS+Reactor.MODE_ALLOW_CHARGE_CORRECTIONS, Integer.MAX_VALUE);
@@ -350,6 +373,7 @@ public class ChemicalSpaceCreator2 {
         reactions.stream().forEach(reaction -> {
             if(reaction.getReactants()<2)
                 return;
+            statusOutput.accept("Process reaction: "+reaction.getName());
             IDCodeParser parser = new IDCodeParser();
             CombinatorialLibrary combiLibrary = new CombinatorialLibrary();
             combiLibrary.reaction = reaction;
@@ -368,15 +392,21 @@ public class ChemicalSpaceCreator2 {
                 }
                 return;
             }
-            SSSearcherWithIndex[] searchers = new SSSearcherWithIndex[reaction.getReactants()];
-            for(int i=0;i<searchers.length;i++) {
-                SSSearcherWithIndex searcher = new SSSearcherWithIndex();
-                searcher.setFragment(reaction.getReactant(i), (long[]) null);
-                searchers[i] = searcher;
+            //SSSearcherWithIndex[] searchers = new SSSearcherWithIndex[reaction.getReactants()];
+            //Pair<StereoMolecule,String>[] searcherFragments = new Pair[reaction.getReactants()];
+            StereoMolecule[] searcherFragments = new StereoMolecule[reaction.getReactants()];
+            MultithreadedSSSHelper sssHelper = new MultithreadedSSSHelper();
+            for(int i=0;i<searcherFragments.length;i++) {
+                //SSSearcherWithIndex searcher = new SSSearcherWithIndex();
+                //searcher.setFragment(reaction.getReactant(i), (long[]) null);
+                //searchers[i] = searcher;
+                //searcherFragments[i] = Pair.of(reaction.getReactant(i),reaction.getReactant(i).getIDCode());
+                searcherFragments[i] = reaction.getReactant(i);
             }
 
-            for(int libReactantID=0;libReactantID<reactionsWithSynthons.get(libraryReaction).size();libReactantID++) {
-                Map<String,List<Map<String,String>>> precursorLib = new HashMap<String,List<Map<String,String>>>();
+            for(int libReactantID_=0;libReactantID_<reactionsWithSynthons.get(libraryReaction).size();libReactantID_++) {
+                final int libReactantID = libReactantID_;
+                Map<String,List<Map<String,String>>> precursorLib = new ConcurrentHashMap<String,List<Map<String,String>>>();
                 precursorLibs.add(precursorLib);
                 Reaction synthonTransformation = synthonTransformations.get(libraryReaction).get(libReactantID);
                 StereoMolecule genericProduct = synthonTransformation.getProduct(0);
@@ -385,16 +415,20 @@ public class ChemicalSpaceCreator2 {
                     if(genericProduct.getAtomicNo(a)>=92)
                         offset++;
                 }
+                final int final_offset = offset;
 
                 for(Reaction reactionPrec : reactions) { // precursor reaction
                     if(reactionPrec.getReactants()!=2)
                         continue;
                     String precursorReaction = reactionPrec.getName();
 
-                    for(int reactantID=0;reactantID<reactionsWithSynthons.get(precursorReaction).size();reactantID++) {
+                    List<Runnable> tasksForReactants = new ArrayList<>();
+                    for(int reactantID_=0;reactantID_<reactionsWithSynthons.get(precursorReaction).size();reactantID_++) {
+                        final int reactantID = reactantID_;
+
                         List<Map<String,String>> libSynthons = new ArrayList<>();
-                        String precursorName = null;
-                        precursorName = precursorReaction + "_" + reactantID;
+                        //String precursorName = null;
+                        String precursorName = precursorReaction + "_" + reactantID;
                         precursorLib.put(precursorName, libSynthons);
                         Map<Integer,StereoMolecule> dummyReactants = new HashMap<Integer,StereoMolecule>();
                         for(int l=0;l<reactionPrec.getReactants();l++) {
@@ -405,99 +439,161 @@ public class ChemicalSpaceCreator2 {
                             }
                         }
                         for(int i=0;i<reactionsWithSynthons.get(precursorReaction).size();i++) {
-                            Map<String,String> precursorSynthons = new HashMap<String,String>();
+                            Map<String,String> precursorSynthons = new ConcurrentHashMap<String,String>();
                             libSynthons.add(precursorSynthons);
                         }
                         Map<String,String> twoConnectorSynthons = libSynthons.get(reactantID);
 
                         Map<String,String> synthons = reactionsWithSynthons.get(precursorReaction).get(reactantID);
+                        List<Runnable> synthonTasks = new ArrayList<>();
+
                         for(String synthon : synthons.keySet()) {
-                            StereoMolecule mol = new StereoMolecule();
-                            String bb = synthons.get(synthon);
-                            parser.parse(mol, synthon);
-                            StereoMolecule reactedBB = dummyReaction(bb,reactionPrec,dummyReactants,reactantID);
-                            if(reactedBB==null)
-                                continue;
-                            // we create candidate products by a "dummy reaction" and see if it still matches the substructure query of rxn1
-                            if (matchesReactionRole(reaction, searchers, libReactantID, reactedBB,null)) { // synthon also matches library rxn
-                                mutateConnectorAtoms(mol,offset);
-                                String transformedSynthon = transformToSynthon(synthonTransformation,mol);
-                                if(transformedSynthon!=null)
-                                    twoConnectorSynthons.put(transformedSynthon,bb);
-                            }
-                            //now check if a functionalization/deprotection step can lead to additional matches to the library rxn
+                            Runnable ri = new Runnable() {
+                                @Override
+                                public void run() {
+                                    IDCodeParser icp = new IDCodeParser();
+                                    StereoMolecule mol = new StereoMolecule();
+                                    String bb = synthons.get(synthon);
+                                    icp.parse(mol, synthon);
+                                    StereoMolecule reactedBB = null;
+                                    try {
+                                        reactedBB = dummyReaction(bb,reactionPrec,dummyReactants,reactantID);
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                    if(reactedBB==null)
+                                        return;
+                                        //continue;
+                                    // we create candidate products by a "dummy reaction" and see if it still matches the substructure query of rxn1
+                                    //if (matchesReactionRole(reaction, searchers, libReactantID, reactedBB,null)) { // synthon also matches library rxn
+                                    if (matchesReactionRole(reaction, sssHelper, searcherFragments, libReactantID, reactedBB,null)) { // synthon also matches library rxn
+                                        mutateConnectorAtoms(mol,final_offset);
+                                        String transformedSynthon = null;
+                                        try {
+                                            transformedSynthon = transformToSynthon(synthonTransformation,mol);
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                        if(transformedSynthon!=null)
+                                            synchronized(twoConnectorSynthons) {
+                                                twoConnectorSynthons.put(transformedSynthon, bb);
+                                            }
+                                    }
+                                    //now check if a functionalization/deprotection step can lead to additional matches to the library rxn
 
-                            else {
-                                for(Reaction functionalization : functionalizations) {
-                                    if(functionalizations.contains(reactionPrec))
-                                        continue; //don't couple two functionalization reactions
-                                    SSSearcher ssearcher = new SSSearcher();
-                                    ssearcher.setFragment(functionalization.getReactant(0));
-                                    ssearcher.setMolecule(reactedBB);
-                                    if (ssearcher.isFragmentInMolecule()) {// can be functionalized
-                                        StereoMolecule product = getProduct(functionalization,Arrays.asList(reactedBB));
-                                        if(product==null)
-                                            continue;
-                                        else {
-                                            StereoMolecule functionalizedReactant = product;
-                                            if(matchesReactionRole(reaction, searchers,libReactantID,functionalizedReactant,null)) { //functionalized BB matches rxn1
-                                                //now functionalize synthon BB and create second linker
-                                                StereoMolecule prod = getProduct(functionalization,Arrays.asList(mol));
-                                                if(prod==null)
+                                    else {
+                                        for(Reaction functionalization : functionalizations) {
+                                            if(functionalizations.contains(reactionPrec))
+                                                continue; //don't couple two functionalization reactions
+                                            SSSearcher ssearcher = new SSSearcher();
+                                            ssearcher.setFragment(functionalization.getReactant(0));
+                                            ssearcher.setMolecule(reactedBB);
+                                            if (ssearcher.isFragmentInMolecule()) {// can be functionalized
+                                                StereoMolecule product = getProduct(functionalization,Arrays.asList(reactedBB));
+                                                if(product==null)
                                                     continue;
-                                                mutateConnectorAtoms(prod,offset);
+                                                else {
+                                                    StereoMolecule functionalizedReactant = product;
+                                                    //if(matchesReactionRole(reaction, searchers,libReactantID,functionalizedReactant,null)) { //functionalized BB matches rxn1
+                                                    if(matchesReactionRole(reaction, sssHelper, searcherFragments,libReactantID,functionalizedReactant,null)) { //functionalized BB matches rxn1
+                                                        //now functionalize synthon BB and create second linker
+                                                        StereoMolecule prod = getProduct(functionalization,Arrays.asList(mol));
+                                                        if(prod==null)
+                                                            continue;
+                                                        mutateConnectorAtoms(prod,final_offset);
 
-                                                String transformedSynthon = transformToSynthon(synthonTransformation,prod);
-                                                if(!precursorLib.containsKey(precursorName)) {
-                                                    List<Map<String,String>> libSynthons2 = new ArrayList<>();
-                                                    precursorLib.put(precursorName, libSynthons2);
-                                                    for(int i=0;i<reactionsWithSynthons.get(precursorReaction).size();i++) {
-                                                        Map<String,String> precursorSynthons2 = new HashMap<String,String>();
-                                                        libSynthons2.add(precursorSynthons2);
+                                                        String transformedSynthon = null;
+                                                        try {
+                                                            transformedSynthon = transformToSynthon(synthonTransformation,prod);
+                                                        } catch (Exception e) {
+                                                            e.printStackTrace();
+                                                        }
+                                                        synchronized(precursorLib) {
+                                                            if (!precursorLib.containsKey(precursorName)) {
+                                                                List<Map<String, String>> libSynthons2 = Collections.synchronizedList(new ArrayList<>());
+                                                                precursorLib.put(precursorName, libSynthons2);
+                                                                for (int i = 0; i < reactionsWithSynthons.get(precursorReaction).size(); i++) {
+                                                                    Map<String, String> precursorSynthons2 = new ConcurrentHashMap<String, String>();
+                                                                    libSynthons2.add(precursorSynthons2);
+                                                                }
+                                                            }
+                                                            precursorLib.get(precursorName).get(reactantID).put(transformedSynthon, bb);
+                                                        }
                                                     }
                                                 }
-                                                precursorLib.get(precursorName).get(reactantID).put(transformedSynthon, bb);
-
                                             }
                                         }
-
                                     }
                                 }
-                            }
+                            };
+                            synthonTasks.add(ri);
                         }
 
+                        System.out.println("Synthons to be processed: "+synthonTasks.size());
+                        statusOutput.accept("Synthons to be processed: "+synthonTasks.size());
+                        long tsa = System.currentTimeMillis();
+                        synthonTasks.parallelStream().forEach(xi -> xi.run());
+                        System.out.println("done! time= "+(System.currentTimeMillis()-tsa));
+                        statusOutput.accept("done! time= "+(System.currentTimeMillis()-tsa));
 
                         // if the BB that is used in the precursor step also matches any role of the second reaction, it is excluded (otherwise multiple products may be formed)
-                        for(int j=0;j<reactionsWithSynthons.get(precursorReaction).size();j++) { //get synthons from rxn1 that are compatible with the two-connector synthon
-                            if(j==reactantID) {
+                        for(int j_=0;j_<reactionsWithSynthons.get(precursorReaction).size();j_++) { //get synthons from rxn1 that are compatible with the two-connector synthon
+                            final int j = j_;
+
+                            if (j == reactantID) {
                                 continue;
-                            }
-                            else {
-                                Map<String,String> compatibleSynthons = reactionsWithSynthons.get(precursorReaction).get(j);
-                                Map<String,String> mutatedSynthons = new HashMap<String,String>();
-                                for(String s: compatibleSynthons.keySet()) {
-                                    StereoMolecule mutatedSynthon = new StereoMolecule();
-                                    boolean compatible = true;
-                                    parser.parse(mutatedSynthon, s);
-                                    for(SSSearcherWithIndex sssearcher : searchers) {
-                                        sssearcher.setMolecule(mutatedSynthon,(long[]) null);
-                                        if(sssearcher.isFragmentInMolecule())
-                                            compatible = false;
-                                    }
-                                    if(!compatible) //matches also role from second reaction --> don't add to library
-                                        continue;
+                                //return;
+                            } else {
 
-                                    mutateConnectorAtoms(mutatedSynthon,offset);
+                                Map<String, String> compatibleSynthons = reactionsWithSynthons.get(precursorReaction).get(j);
+                                Map<String, String> mutatedSynthons = new ConcurrentHashMap<String, String>();
 
-                                    mutatedSynthons.put(mutatedSynthon.getIDCode(), compatibleSynthons.get(s));
+                                List<Runnable> tasksSortOut = new ArrayList<>();
+
+                                for (String s : compatibleSynthons.keySet()) {
+                                    Runnable ri = new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            StereoMolecule mutatedSynthon = new StereoMolecule();
+                                            boolean compatible = true;
+                                            IDCodeParser icp = new IDCodeParser();
+                                            icp.parse(mutatedSynthon, s);
+                                            //parser.parse(mutatedSynthon, s);
+                                            //for(SSSearcherWithIndex sssearcher : searchers) {
+                                            for (StereoMolecule xi : searcherFragments) {
+                                                SSSearcherWithIndex sssearcher = sssHelper.getSSSForFragment(Thread.currentThread(), xi);
+                                                sssearcher.setMolecule(mutatedSynthon, (long[]) null);
+                                                if (sssearcher.isFragmentInMolecule())
+                                                    compatible = false;
+                                            }
+                                            if (!compatible) //matches also role from second reaction --> don't add to library
+                                                return;
+                                                //continue;
+
+                                            mutateConnectorAtoms(mutatedSynthon, final_offset);
+                                            synchronized(mutatedSynthons) {
+                                                mutatedSynthons.put(mutatedSynthon.getIDCode(), compatibleSynthons.get(s));
+                                            }
+                                        }
+                                    };
+                                    tasksSortOut.add(ri);
                                 }
-                                libSynthons.get(j).putAll(mutatedSynthons);
+                                System.out.println("Synthons to be processed [sort out]: "+tasksSortOut.size());
+                                statusOutput.accept("Synthons to be processed [sort out]: "+tasksSortOut.size());
+                                long tsa2 = System.currentTimeMillis();
+                                tasksSortOut.parallelStream().forEach(xi -> xi.run());
+                                System.out.println("Synthons [sort out]: done, time= "+(System.currentTimeMillis()-tsa2));
+                                statusOutput.accept("Synthons [sort out]: done, time= "+(System.currentTimeMillis()-tsa2));
 
+                                synchronized (libSynthons) {
+                                    libSynthons.get(j).putAll(mutatedSynthons);
+                                }
                             }
-
                         }
                     }
-
+                    //System.out.println("Process tasks: "+tasksForReactants.size());
+                    //tasksForReactants.parallelStream().forEach( xi -> xi.run() );
+                    //System.out.println("done!");
                 }
 
             }
@@ -562,11 +658,12 @@ public class ChemicalSpaceCreator2 {
         }
 
         long size = sizes.stream().reduce(0L,(e1,e2) -> e1+e2);
+        statusOutput.accept("Done, totalSize="+size);
         System.out.println("totSize");
         System.out.println(size);
     }
 
-    private static StereoMolecule dummyReaction(String bbIDCode, Reaction rxn, Map<Integer,StereoMolecule> reactants, int reactantID){
+    private static StereoMolecule dummyReaction(String bbIDCode, Reaction rxn, Map<Integer,StereoMolecule> reactants, int reactantID) throws Exception {
         StereoMolecule product = null;
         SSSearcher searcher = new SSSearcher();
         searcher.setFragment(rxn.getReactant(reactantID));
@@ -608,6 +705,7 @@ public class ChemicalSpaceCreator2 {
     }
 
     private  void writeCombinatorialLibrary(CombinatorialLibrary combiLib) throws IOException {
+        statusOutput.accept("Write combinatorial library..");
         File htmcdir = new File(this.outdirectory + "/CombinatorialLibraries/");
         htmcdir.mkdir();
         File htmcSubDir = new File(htmcdir.getAbsolutePath() + "/" +  combiLib.reaction.getName());
@@ -748,7 +846,7 @@ public class ChemicalSpaceCreator2 {
             i++;
         }
 
-
+        statusOutput.accept("Write combinatorial library.. [DONE]");
     }
 
     private static class CombinatorialLibrary {
@@ -897,13 +995,12 @@ public class ChemicalSpaceCreator2 {
     }
 
 
-    public static boolean matchesReactionRole(Reaction rxn, SSSearcherWithIndex[] searchers, int component, StereoMolecule reactant,
-                                              long[] index) {
+    public static boolean matchesReactionRole(Reaction rxn, SSSearcherWithIndex[] searchers, int component, StereoMolecule reactant, long[] index) {
         boolean isMatch = true;
         SSSearcherWithIndex searcher = searchers[component];
+        //SSSearcherWithIndex searcher = searcherHelper.getSSSForFragment(Thread.currentThread(),sssFragments[component]);
         searcher.setMolecule(reactant,index);
         if (searcher.isFragmentInMolecule()) {
-
             //check if reactant also matches other roles in the reaction, if yes, exclude it (to prevent self-polymerization)
             for(int j=0;j<rxn.getReactants();j++) {
                 if(component==j)
@@ -913,19 +1010,47 @@ public class ChemicalSpaceCreator2 {
                 }
                 else {
                     SSSearcherWithIndex searcher2 = searchers[j];
+                    //SSSearcherWithIndex searcher2 = searcherHelper.getSSSForFragment(Thread.currentThread(),sssFragments[j]);
                     searcher2.setMolecule(reactant,index);
                     if(searcher2.isFragmentInMolecule()) {
                         isMatch=false;
                     }
                 }
-
             }
         }
         else {
             isMatch = false;
         }
         return isMatch;
+    }
 
+    public static boolean matchesReactionRole(Reaction rxn, MultithreadedSSSHelper searcherHelper, StereoMolecule[] sssFragments , int component, StereoMolecule reactant, long[] index) {
+        boolean isMatch = true;
+        //SSSearcherWithIndex searcher = searchers[component];
+        SSSearcherWithIndex searcher = searcherHelper.getSSSForFragment(Thread.currentThread(),sssFragments[component]);
+        searcher.setMolecule(reactant,index);
+        if (searcher.isFragmentInMolecule()) {
+            //check if reactant also matches other roles in the reaction, if yes, exclude it (to prevent self-polymerization)
+            for(int j=0;j<rxn.getReactants();j++) {
+                if(component==j)
+                    continue;
+                else if (rxn.getReactant(component).getIDCode().equals(rxn.getReactant(j).getIDCode())) {
+                    continue; //same substructure definition for the reactants
+                }
+                else {
+                    //SSSearcherWithIndex searcher2 = searchers[j];
+                    SSSearcherWithIndex searcher2 = searcherHelper.getSSSForFragment(Thread.currentThread(),sssFragments[j]);
+                    searcher2.setMolecule(reactant,index);
+                    if(searcher2.isFragmentInMolecule()) {
+                        isMatch=false;
+                    }
+                }
+            }
+        }
+        else {
+            isMatch = false;
+        }
+        return isMatch;
     }
 
 

@@ -5,13 +5,13 @@
     <parent>
         <artifactId>leet</artifactId>
         <groupId>tech.molecules</groupId>
-        <version>dev-SNAPSHOT</version>
+        <version>0.0.10</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>leet-chem-coredb-analytics</artifactId>
 
-    <version>${revision}</version>
+    <version>0.0.10</version>
     <packaging>jar</packaging>
 
     <name>leet-chem-coredb-analytics</name>
@@ -42,17 +42,17 @@
         <dependency>
             <groupId>tech.molecules</groupId>
             <artifactId>leet-chem-core</artifactId>
-            <version>${revision}</version>
+            <version>0.0.10</version>
         </dependency>
         <dependency>
             <groupId>tech.molecules</groupId>
             <artifactId>leet-chem-coredb</artifactId>
-            <version>${revision}</version>
+            <version>0.0.10</version>
         </dependency>
         <dependency>
             <groupId>tech.molecules</groupId>
             <artifactId>leet-chem-tablemodel</artifactId>
-            <version>${revision}</version>
+            <version>0.0.10</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>

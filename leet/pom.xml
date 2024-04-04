@@ -11,7 +11,7 @@
     <artifactId>leet</artifactId>
     <packaging>pom</packaging>
     <name>leet-chem</name>
-    <version>dev-SNAPSHOT</version>
+    <version>0.0.10</version>
 
     <description>A software library providing cheminformatics and computational chemistry tools and workflows.</description>
     <url>https://github.com/lithom/leet-chem</url>
@@ -19,7 +19,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>8</maven.compiler.release>
-        <revision>0.0.8</revision>
+        <!--<revision>0.0.8</revision>-->
+        <hyperspace.version>2.2.4</hyperspace.version>
     </properties>
 
     <developers>
@@ -62,7 +63,20 @@
             <dependency>
                 <groupId>com.actelion.research</groupId>
                 <artifactId>openchemlib</artifactId>
-                <version>2023.7.4</version>
+                <!--<version>2023.7.4</version>-->
+                <version>2024.1.1</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.idorsia.research</groupId>
+                <artifactId>openchemlib-hyperspace-core</artifactId>
+                <version>${hyperspace.version}</version><!--<version>${revision}</version>-->
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.idorsia.research</groupId>
+                <artifactId>openchemlib-hyperspace-tools</artifactId>
+                <version>${hyperspace.version}</version><!--<version>${revision}</version>-->
                 <scope>compile</scope>
             </dependency>
             <dependency>
@@ -135,8 +149,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>8</source>
-                    <target>8</target>
+                    <source>11</source>
+                    <target>11</target>
                 </configuration>
             </plugin>
             <plugin> <!-- this will set the version of all child modules to the version specified in the parent pom.-->
@@ -169,7 +183,9 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
+
+            <!--only excluded because intellij maven problem-->
+            <!--<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.2.0</version>
@@ -184,7 +200,7 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin>-->
 
 <!--            <plugin>-->
 <!--                <groupId>org.apache.maven.plugins</groupId>-->
@@ -200,6 +216,7 @@
 <!--                    </execution>-->
 <!--                </executions>-->
 <!--            </plugin>-->
+
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
@@ -211,6 +228,8 @@
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 </configuration>
             </plugin>
+
+
         </plugins>
     </build>
 

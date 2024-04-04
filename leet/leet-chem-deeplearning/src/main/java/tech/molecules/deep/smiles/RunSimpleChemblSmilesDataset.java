@@ -5,11 +5,21 @@ import com.actelion.research.chem.conf.Conformer;
 import com.actelion.research.chem.conf.ConformerSet;
 import com.actelion.research.chem.conf.ConformerSetGenerator;
 import org.jetbrains.bio.npy.NpyFile;
+import org.openmolecules.chem.conf.so.ConformationRule;
+import org.openmolecules.chem.conf.so.PlaneRule;
+import org.openmolecules.chem.conf.so.StraightLineRule;
+import org.openmolecules.chem.conf.so.TorsionRule;
 import tech.molecules.leet.chem.ChemUtils;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class RunSimpleChemblSmilesDataset {
@@ -19,9 +29,13 @@ public class RunSimpleChemblSmilesDataset {
      */
     public static final int LENGTH_STRING_SEQUENCE = 64;
 
-    public static final int LENGTH_MAX_SMILES = 40;
+    //public static final int LENGTH_MAX_SMILES = 40;
+    public static final int LENGTH_MAX_SMILES = 56;
 
     public static final int NUM_ATOMS = 32;
+
+    // max number of non-hydrogen atoms+hydrogen atoms
+    public static final int NUM_MAX_ALL_ATOMS = 64;
 
     public static final int LENGTH_ALPHABET_MAX = 50;
 
@@ -48,17 +62,16 @@ public class RunSimpleChemblSmilesDataset {
         //createCSVFiles(infile_b, "b2",32);
 
         //String infile_c = "C:\\Temp\\leet_input\\chembl_size90_input_smiles.csv";
-        String infile_c = "C:\\datasets\\chembl_size90_input_smiles.csv";
+        //String infile_c = "C:\\datasets\\chembl_size90_input_smiles.csv";
+        String infile_c = "C:\\Users\\thoma\\Downloads\\data.tar\\data\\atom_bond_137k\\train.csv";
 
-        createDistanceMatrixDataset(infile_c, "smi64_atoms32_alphabet50_MEDIUM_08_3D");
+        createDistanceMatrixDataset(infile_c, "smi64_atoms32_NEW_MEDIUM_05_with3D_withHirshfeld", true);
         //createCSVFiles(infile_c, "xx60", 60);
         //createCSVFiles(infile_c, "xx90_2", 90);
     }
 
 
-    public static void createDistanceMatrixDataset(String infile, String identifier) {
-
-
+    public static void createDistanceMatrixDataset(String infile, String identifier, boolean hirshfeld) {
         BufferedReader in = null;
         try {
             in = new BufferedReader(new FileReader(new File(infile)));
@@ -68,22 +81,51 @@ public class RunSimpleChemblSmilesDataset {
 
 
         List<String> selectedMolecules = new ArrayList<>();
+        Map<String,List<Double>> hirshfeldCharges = new HashMap<>();
 
         try {
             String line = null;
             while ((line = in.readLine()) != null) {
-                if (selectedMolecules.size() > 12000) {
+                if (selectedMolecules.size() > 200000) {
+                //if (selectedMolecules.size() > 100) {
                     //if (selectedMolecules.size() > 200000) {
                     break;
                 }
                 try {
                     SmilesParser sp = new SmilesParser();
                     StereoMolecule mi = new StereoMolecule();
-                    sp.parse(mi, line);
-                    mi.stripSmallFragments();
+
+                    String   line_smiles = line;
+                    String[] line_splits = line.split(",");
+                    List<Double> hirshfeldCharges_i = new ArrayList<>();
+                    if(hirshfeld) {
+                        line_smiles = line_splits[0];
+
+                        Pattern pattern = Pattern.compile("\\\"\\[(.*?)\\]\\\"");
+                        Matcher matcher = pattern.matcher(line);
+                        if (matcher.find()) {
+                            String capturedChargesString = matcher.group(1);
+                            for(String ci : capturedChargesString.split(",")) {
+                                double di = Double.parseDouble(ci);
+                                hirshfeldCharges_i.add(di);
+                            }
+                        }
+                        if(hirshfeldCharges_i.size() > NUM_MAX_ALL_ATOMS) {
+                            sp.parse(mi, line_smiles);
+                            continue;
+                        }
+                    }
+
+                    sp.parse(mi, line_smiles);
                     mi.ensureHelperArrays(Molecule.cHelperCIP);
-                    mi.stripIsotopInfo();
-                    mi.removeExplicitHydrogens();
+                    if(false) {
+                        mi.stripSmallFragments();
+                        mi.ensureHelperArrays(Molecule.cHelperCIP);
+                        mi.stripIsotopInfo();
+                        mi.removeExplicitHydrogens();
+                    }
+                    hirshfeldCharges.put(mi.getIDCode(),hirshfeldCharges_i);
+
                     int numCAtoms = ChemUtils.countAtoms(mi, Collections.singletonList(6));
                     double ratioCAtoms = (1.0 * numCAtoms) / mi.getAtoms();
                     if (ratioCAtoms < 0.4) {
@@ -92,10 +134,22 @@ public class RunSimpleChemblSmilesDataset {
                     if (mi.getAtoms() < 8) {
                         continue;
                     }
-                    //if (mi.getAtoms() > 32) {
-                    if (mi.getAtoms() > 18) {
+                    //if (mi.getAtoms() > 20) {
+                    //if (mi.getAtoms() > 18) {
+                    //if(mi.getAtoms() > 18) {
+                    if(mi.getAtoms() > 32) {
                         continue;
                     }
+                    int num_hydrogens = 0;
+                    for(int zi=0;zi<mi.getAtoms();zi++) {num_hydrogens+=mi.getAllHydrogens(zi);}
+                    if(num_hydrogens + mi.getAtoms() > NUM_MAX_ALL_ATOMS) {
+                        continue;
+                    }
+
+                    if(hirshfeldCharges.get(mi.getIDCode()).size()>64) {
+                        System.out.println("huh?");
+                    }
+
                     selectedMolecules.add(mi.getIDCode());
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -105,13 +159,33 @@ public class RunSimpleChemblSmilesDataset {
             throw new RuntimeException(e);
         }
 
-        // sort according to size roughly..
+        boolean compute3D = true;
+
+        Map<Character,Integer> encoding = createEncodingForCharacterList("#()+-/123456=@BCFHINOPS[\\]ceilnorsy");
+
         Collections.shuffle(selectedMolecules);
-        List<SmilesMolSample> data = createDistanceMatrixDataset(selectedMolecules, true);
-        List<SmilesMolSample3D> data_3d = createConformerDataset(data,16);
-        //List<SmilesMolSample3D> data_fake3d = data.stream().map(xi -> new SmilesMolSample3D(xi,new ArrayList<>())).collect(Collectors.toList());
-        //exportSmilesSamples(data_fake3d,identifier,false,0);
-        exportSmilesSamples(data_3d,identifier,true, 16);
+        List<List<String>> selectedMoleculesBatches = createBatches(selectedMolecules,4000);
+
+        for(int zi=0;zi<selectedMoleculesBatches.size();zi++) {
+            List<String> selectedMolecules_i = selectedMoleculesBatches.get(zi);
+            List<SmilesMolSample> data = createDistanceMatrixDataset(selectedMolecules_i, true);
+            List<SmilesMolSample3D> dataSamples = new ArrayList();
+            if (compute3D) {
+                List<SmilesMolSample3D> data_3d = createConformerDataset(data, 16, 12);
+                dataSamples = data_3d;
+
+                if(hirshfeld) {
+                    for(SmilesMolSample3D mi : data_3d) {
+                        mi.setHirshfeldCharges(hirshfeldCharges.get(mi.idcode));
+                    }
+                }
+            } else {
+                List<SmilesMolSample3D> data_no3d = data.stream().map(xi -> new SmilesMolSample3D(xi, new ArrayList<>())).collect(Collectors.toList());
+                dataSamples = data_no3d;
+            }
+            //exportSmilesSamples(data_fake3d,identifier,false,0);
+            exportSmilesSamples(dataSamples, identifier+"_batch"+zi+"__", encoding , compute3D, 16);
+        }
     }
 
 
@@ -134,67 +208,95 @@ public class RunSimpleChemblSmilesDataset {
      * @param maxConformersPerStereoIsomer
      * @return
      */
-    public static List<SmilesMolSample3D> createConformerDataset(List<SmilesMolSample> samples, int maxConformersPerStereoIsomer) {
-        List<SmilesMolSample3D> conformers3D = new ArrayList<>();
+    public static List<SmilesMolSample3D> createConformerDataset(List<SmilesMolSample> samples, int maxConformersPerStereoIsomer, int threads) {
+
+        List<SmilesMolSample3D> conformers3D = Collections.synchronizedList(new ArrayList<>());
+
+        int numThreads = (threads > 0) ? threads : Runtime.getRuntime().availableProcessors();
+        ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+        List<Future> conformerTasks = new ArrayList<>();
+
         for(SmilesMolSample xi : samples) {
+            Runnable task = new Runnable() {
+                @Override
+                public void run() {
+
+                    try {
+                        StereoMolecule mi = ChemUtils.parseIDCode(xi.idcode);
+                        Canonizer ca = new Canonizer(mi);
+                        mi = ca.getCanMolecule();
+
+                        StereoIsomerEnumerator sie = new StereoIsomerEnumerator(mi, false);
+                        if (sie.getStereoIsomerCount() > 1) {
+                            System.out.println("Skip, too many stereo isomers: " + sie.getStereoIsomerCount());
+                        }
+
+                        ConformerSetGenerator csg = new ConformerSetGenerator(maxConformersPerStereoIsomer);
+                        ConformerSet csi = csg.generateConformerSet(mi);
+
+                        List<Coordinates[]> data3D = new ArrayList<>();
+                        List<double[][]> data3D_1 = new ArrayList<>();
+                        for (Conformer cx : csi) {
+                            StereoMolecule mx = cx.toMolecule();
+
+                            // apply random transformation?
+                            if (true) {
+                                Random ri = new Random();
+                                double rotX = ri.nextDouble();
+                                double rotY = ri.nextDouble();
+                                double rotZ = ri.nextDouble();
+                                for (int zi = 0; zi < mx.getAllAtoms(); zi++) {
+                                    double xx = mx.getAtomX(zi);
+                                    double yy = mx.getAtomY(zi);
+                                    double zz = mx.getAtomZ(zi);
+                                    double xr[] = rotate3D(xx, yy, zz, rotX, rotY, rotZ);
+                                    mx.setAtomX(zi, xr[0]);
+                                    mx.setAtomY(zi, xr[1]);
+                                    mx.setAtomZ(zi, xr[2]);
+                                }
+                            }
+
+                            //Coordinates[] ci = mx.getAtomCoordinates();
+                            //data3D.add(ci);
+
+                            double[][] coords = new double[3][NUM_ATOMS];
+                            //for (int zi = 0; zi < data3D.size(); zi++) {
+                            for (int za = 0; za < NUM_ATOMS; za++) {
+                                if (za < mx.getAtoms()) {
+                                    coords[0][xi.mapCanonicalToSmiles.get(za)] = mx.getAtomX(za);
+                                    coords[1][xi.mapCanonicalToSmiles.get(za)] = mx.getAtomY(za);
+                                    coords[2][xi.mapCanonicalToSmiles.get(za)] = mx.getAtomZ(za);
+                                }
+                            }
+
+                            //}
+                            data3D_1.add(coords);
+                        }
+                        System.out.println("Created conformers: " + data3D_1.size());
+                        if(data3D_1.size()==0) {
+                            System.out.println("WARN!! No conformers generated for: "+mi.getIDCode());
+                        }
+                        else {
+                            conformers3D.add(new SmilesMolSample3D(xi, data3D_1));
+                        }
+                    } catch (
+                            Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            };
+            conformerTasks.add(executor.submit(task));
+        }
+        // Collect and process results
+        for (Future future : conformerTasks) {
             try {
-                StereoMolecule mi = ChemUtils.parseIDCode(xi.idcode);
-                Canonizer ca = new Canonizer(mi);
-                mi = ca.getCanMolecule();
-
-                StereoIsomerEnumerator sie = new StereoIsomerEnumerator(mi, false);
-                if (sie.getStereoIsomerCount() > 1) {
-                    System.out.println("Skip, too many stereo isomers: " + sie.getStereoIsomerCount());
-                }
-
-                ConformerSetGenerator csg = new ConformerSetGenerator(maxConformersPerStereoIsomer);
-                ConformerSet csi = csg.generateConformerSet(mi);
-
-                List<Coordinates[]> data3D = new ArrayList<>();
-                List<double[][]> data3D_1 = new ArrayList<>();
-                for (Conformer cx : csi) {
-                    StereoMolecule mx = cx.toMolecule();
-
-                    // apply random transformation?
-                    if (true) {
-                        Random ri = new Random();
-                        double rotX = ri.nextDouble();
-                        double rotY = ri.nextDouble();
-                        double rotZ = ri.nextDouble();
-                        for (int zi = 0; zi < mx.getAllAtoms(); zi++) {
-                            double xx = mx.getAtomX(zi);
-                            double yy = mx.getAtomY(zi);
-                            double zz = mx.getAtomZ(zi);
-                            double xr[] = rotate3D(xx, yy, zz, rotX, rotY, rotZ);
-                            mx.setAtomX(zi, xr[0]);
-                            mx.setAtomY(zi, xr[1]);
-                            mx.setAtomZ(zi, xr[2]);
-                        }
-                    }
-
-                    //Coordinates[] ci = mx.getAtomCoordinates();
-                    //data3D.add(ci);
-
-                    double[][] coords = new double[3][NUM_ATOMS];
-                    //for (int zi = 0; zi < data3D.size(); zi++) {
-                    for (int za = 0; za < NUM_ATOMS; za++) {
-                        if(za<mx.getAtoms()) {
-                            coords[0][xi.mapCanonicalToSmiles.get(za)] = mx.getAtomX(za);
-                            coords[1][xi.mapCanonicalToSmiles.get(za)] = mx.getAtomY(za);
-                            coords[2][xi.mapCanonicalToSmiles.get(za)] = mx.getAtomZ(za);
-                        }
-                    }
-                    //}
-                    data3D_1.add(coords);
-                }
-                System.out.println("Created conformers: " + data3D_1.size());
-
-                conformers3D.add(new SmilesMolSample3D(xi, data3D_1));
-            }
-            catch(Exception ex) {
-                ex.printStackTrace();
+                future.get(); // This call blocks until the task is complete.
+            } catch (Exception e) {
+                // Handle exceptions appropriately
+                e.printStackTrace();
             }
         }
+        executor.shutdown(); // Shutdown the executor service
         return conformers3D;
     }
 
@@ -234,8 +336,12 @@ public class RunSimpleChemblSmilesDataset {
         public final int[][] fullDistMatrix;
         public final int[][] smallDistMatrix;
         public final int[]   chemInfo;
+
+        public final byte[][]   chemInfo2;
         public final int[]   distForFirst;
         public final int[]   distForLast;
+
+        public final boolean[][] sharedPlaneConstraint;
 
         public final boolean[][][] distAdjMatrices;
 
@@ -245,10 +351,13 @@ public class RunSimpleChemblSmilesDataset {
         public final byte[][] atomProperties;
         public final boolean[][] adjacency;
 
+        public double[] hirshfeldCharges;
+
         public final int numAtoms;
 
         public SmilesMolSample(String idcode, Map<Integer,Integer> mapCanonicalToSmiles, String smilesWithProblem,
-                               int[][] fullDistMatrix, int[][] smallDistMatrix, int[] chemInfo, int[] distForFirst, int[] distForLast,
+                               int[][] fullDistMatrix, int[][] smallDistMatrix, int[] chemInfo, byte[][] chemInfo2, int[] distForFirst, int[] distForLast,
+                               boolean[][] sharedPlaneConstraint,
                                boolean[][][] distAdjMatrices, byte[][][] atomTypesAtDistanceN, byte[][][] atomTypesAtNeighborhoodN,
                                byte[][] atomProperties, boolean[][] adjacency, int numAtoms) {
             this.idcode = idcode;
@@ -257,8 +366,10 @@ public class RunSimpleChemblSmilesDataset {
             this.fullDistMatrix  = fullDistMatrix;
             this.smallDistMatrix = smallDistMatrix;
             this.chemInfo = chemInfo;
+            this.chemInfo2 = chemInfo2;
             this.distForFirst = distForFirst;
             this.distForLast = distForLast;
+            this.sharedPlaneConstraint = sharedPlaneConstraint;
             this.distAdjMatrices = distAdjMatrices;
             this.atomTypesAtDistanceN = atomTypesAtDistanceN;
             this.atomTypesAtNeighborhoodN = atomTypesAtNeighborhoodN;
@@ -274,7 +385,8 @@ public class RunSimpleChemblSmilesDataset {
         public SmilesMolSample3D(SmilesMolSample sample, List<double[][]> conformations) {
             this(sample.idcode,sample.mapCanonicalToSmiles,sample.smilesWithProblem,
                     sample.fullDistMatrix,sample.smallDistMatrix,
-                    sample.chemInfo,sample.distForFirst, sample.distForLast,
+                    sample.chemInfo,sample.chemInfo2,sample.distForFirst, sample.distForLast,
+                    sample.sharedPlaneConstraint,
                     sample.distAdjMatrices, sample.atomTypesAtDistanceN,
                     sample.atomTypesAtNeighborhoodN,
                     sample.atomProperties,sample.adjacency,sample.numAtoms,
@@ -282,17 +394,54 @@ public class RunSimpleChemblSmilesDataset {
         }
 
         public SmilesMolSample3D(String idcode, Map<Integer, Integer> mapCanonicalToSmiles, String smilesWithProblem,
-                                 int[][] fullDistMatrix, int[][] smallDistMatrix, int[] chemInfo, int[] distForFirst, int[] distForLast,
+                                 int[][] fullDistMatrix, int[][] smallDistMatrix, int[] chemInfo, byte[][] chemInfo2, int[] distForFirst, int[] distForLast,
+                                 boolean[][] sharedPlaneConstraint,
                                  boolean[][][] distAdjMatrices, byte[][][] atomTypesAtDistanceN,
                                  byte[][][] atomTypesAtNeighborhoodN,
                                  byte[][] atomProperties, boolean[][] adjacency, int numAtoms,
                                  List<double[][]> conformations) {
             super(idcode, mapCanonicalToSmiles, smilesWithProblem, fullDistMatrix, smallDistMatrix,
-                    chemInfo, distForFirst,distForLast, distAdjMatrices,atomTypesAtDistanceN, atomTypesAtNeighborhoodN,
+                    chemInfo, chemInfo2, distForFirst,distForLast, sharedPlaneConstraint, distAdjMatrices,atomTypesAtDistanceN, atomTypesAtNeighborhoodN,
                     atomProperties, adjacency, numAtoms
                     );
             this.conformations = conformations;
         }
+
+        public void setHirshfeldCharges(List<Double> hfcharges) {
+            this.hirshfeldCharges = new double[NUM_MAX_ALL_ATOMS];
+            int idx = 0;
+            for(double di : hfcharges) {
+                this.hirshfeldCharges[idx]=di; idx++;
+            }
+        }
+    }
+
+
+    private static int getOxoCount(StereoMolecule mol, int atom) {
+        int count = 0;
+        for (int i=0; i<mol.getConnAtoms(atom); i++)
+            if (mol.getConnBondOrder(atom, i) == 2
+                    && mol.getAtomicNo(mol.getConnAtom(atom, i)) == 8)
+                count++;
+
+        return count;
+    }
+
+    /**
+     * @param mol
+     * @param atom
+     * @return number of double-bonded N,O,S
+     */
+    private static int getFakeOxoCount(StereoMolecule mol, int atom) {
+        int count = 0;
+        for (int i=0; i<mol.getConnAtoms(atom); i++)
+            if (mol.getConnBondOrder(atom, i) == 2
+                    && (mol.getAtomicNo(mol.getConnAtom(atom, i)) == 7
+                    || mol.getAtomicNo(mol.getConnAtom(atom, i)) == 8
+                    || mol.getAtomicNo(mol.getConnAtom(atom, i)) == 16))
+                count++;
+
+        return count;
     }
 
     /**
@@ -359,11 +508,17 @@ public class RunSimpleChemblSmilesDataset {
                     }
                 }
 
-                String smi_with_problem_description = smi + "y" + sb_problemDescription.toString();
-                if (smi_with_problem_description.length() > LENGTH_STRING_SEQUENCE) {
-                    System.out.println("String sequence too long: " + smi_with_problem_description.length());
-                    continue;
+                // If Small DM is used, then this has to be included (true)
+                boolean useProblemDescription = false;
+                String smi_with_problem_description = smi;
+                if(useProblemDescription) {
+                    smi_with_problem_description = smi + "y" + sb_problemDescription.toString();
+                    if (smi_with_problem_description.length() > LENGTH_STRING_SEQUENCE) {
+                        System.out.println("String sequence too long: " + smi_with_problem_description.length());
+                        continue;
+                    }
                 }
+
 
                 // pad string to have correct length: pad randomly
                 //StringBuilder sb_smi_padded = new StringBuilder(smi);
@@ -432,6 +587,91 @@ public class RunSimpleChemblSmilesDataset {
                     atomProperties[ mapCanonicalToSmiles.get(za) ][4] = bonds3;
                     atomProperties[ mapCanonicalToSmiles.get(za) ][5] = bondsDeloc;
                 }
+
+                byte[][] atomChemInfoStuff = new byte[NUM_ATOMS][17];
+                for (int za = 0; za < mi.getAtoms(); za++) {
+                    for(int zb=0;zb<6;zb++) { atomChemInfoStuff[za][zb] = atomProperties[za][zb]; } // za pos is already correct, so no mapCanonical.. needed.
+                    int bondsRing = 0;
+                    int bondsRotatable = 0;
+                    for(int zb=0;zb<mi.getConnAtoms(za);zb++) {
+                        if (mi.isSmallRingBond(mi.getConnBond(za, zb))) {
+                            bondsRing++;
+                        }
+                        if (mi.isPseudoRotatableBond(mi.getConnBond(za, zb))) {
+                            bondsRotatable++;
+                        }
+                    }
+                    byte nh = (byte) (mi.getImplicitHydrogens(za)+mi.getExplicitHydrogens(za));
+                    int mappedAtomPos = mapCanonicalToSmiles.get(za);
+                    atomChemInfoStuff[mappedAtomPos][6] = nh;
+                    atomChemInfoStuff[mappedAtomPos][7] = (byte) mi.getAtomRingBondCount(za);
+                    atomChemInfoStuff[mappedAtomPos][8] = (byte) (mi.getAtomCharge(za)+3);
+                    atomChemInfoStuff[mappedAtomPos][9] = (byte) ((mi.isStabilizedAtom(za))?1:0);
+                    atomChemInfoStuff[mappedAtomPos][10] = (byte) (bondsRotatable);
+
+                    int atomTypeO = 0;
+                    if( AtomFunctionAnalyzer.isAcidicOxygen(mi,za) ) {
+                        atomTypeO = 1;
+                        if(AtomFunctionAnalyzer.isAcidicOxygenAtPhosphoricAcid(mi,za)) {
+                            atomTypeO = 2;
+                        }
+                    }
+
+                    int atomTypeN = 0;
+                    if( AtomFunctionAnalyzer.isAmide(mi,za) ) {
+                        atomTypeN = 1;
+                        if(AtomFunctionAnalyzer.isAmine(mi,za)) {
+                            atomTypeN = 2;
+                            if(AtomFunctionAnalyzer.isAlkylAmine(mi,za)) {
+                                atomTypeN = 3;
+                            }
+                            else if(AtomFunctionAnalyzer.isArylAmine(mi,za)) {
+                                atomTypeN = 4;
+                            }
+                        }
+                    }
+                    int atomTypeN2 = 0;
+                    if( AtomFunctionAnalyzer.isBasicNitrogen(mi,za)) {
+                        atomTypeN2 = 1;
+                    }
+                    atomChemInfoStuff[mappedAtomPos][11] = (byte) atomTypeO;
+                    atomChemInfoStuff[mappedAtomPos][12] = (byte) atomTypeN;
+                    atomChemInfoStuff[mappedAtomPos][13] = (byte) atomTypeN2;
+                    atomChemInfoStuff[mappedAtomPos][14] = (byte) getOxoCount(mi,za);
+                    atomChemInfoStuff[mappedAtomPos][15] = (byte) getFakeOxoCount(mi,za);
+                    atomChemInfoStuff[mappedAtomPos][16] = (byte) mi.getAtomPi(za);
+                }
+
+                ArrayList<ConformationRule> planeRules = new ArrayList<>();
+                PlaneRule.calculateRules(planeRules,mi);
+                //ArrayList<ConformationRule> torsionRules = new ArrayList<>();
+                //TorsionRule.calculateRules(torsionRules,mi);
+                //ArrayList<ConformationRule> straightLineRules = new ArrayList<>();
+                //StraightLineRule.calculateRules(straightLineRules,mi);
+                boolean sharedPlaneRule[][] = new boolean[NUM_ATOMS][NUM_ATOMS];
+                for(ConformationRule confRule : planeRules) {
+                    PlaneRule planeRule = (PlaneRule) confRule;
+                    // Get the value of the field
+                    int[] extractedPlaneAtoms = new int[0];
+                    // extract the field..
+                    try {
+                        Class PlaneRuleClass = planeRule.getClass();
+                        Field planeAtomField = PlaneRuleClass.getDeclaredField("mPlaneAtom");
+                        planeAtomField.setAccessible(true);
+                        extractedPlaneAtoms = (int[]) planeAtomField.get(planeRule);
+                        for(int zx=0;zx<extractedPlaneAtoms.length;zx++) {
+                            for(int zy=0;zy<extractedPlaneAtoms.length;zy++) {
+                                sharedPlaneRule[ mapCanonicalToSmiles.get(zx) ][ mapCanonicalToSmiles.get(zy) ] = true;
+                            }
+                        }
+                    } catch (NoSuchFieldException e) {
+                        e.printStackTrace();
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+
 
                 boolean[][] adjacency = new boolean[NUM_ATOMS][NUM_ATOMS];
                 for(int za=0;za<mi.getAtoms();za++) {
@@ -551,7 +791,8 @@ public class RunSimpleChemblSmilesDataset {
 
                 //data.add(Triple.of(smi_padded, smallDistanceMap, chemInfoStuff));
                 data.add(new SmilesMolSample(mols.get(zi), mapCanonicalToSmiles, smi_padded, fullDistanceMap,
-                        smallDistanceMap, chemInfoStuff, distancesFromFirst, distancesFromLast,
+                        smallDistanceMap, chemInfoStuff, atomChemInfoStuff, distancesFromFirst, distancesFromLast,
+                        sharedPlaneRule,
                         distAdjMatrices, atomTypesAtDistanceN, atomTypesAtNeighborhoodN,
                         atomProperties, adjacency, mi.getAtoms()
                         ));
@@ -597,46 +838,117 @@ public class RunSimpleChemblSmilesDataset {
         return atoms;
     }
 
+    public static <T> List<List<T>> createBatches(List<T> list, int batchSize) {
+        List<List<T>> batches = new ArrayList<>();
+
+        for (int i = 0; i < list.size(); i += batchSize) {
+            int end = Math.min(i + batchSize, list.size());
+            batches.add(list.subList(i, end));
+        }
+
+        return batches;
+    }
+
+
+    // Collects all strings that contain only characters from charSet
+    public static List<SmilesMolSample3D> collectStrings(Set<Character> charSet, List<SmilesMolSample3D> stringList) {
+        List<SmilesMolSample3D> validStrings = new ArrayList<>();
+
+        for (SmilesMolSample3D mol : stringList) {
+            boolean isValid = true;
+            for (char c : mol.smilesWithProblem.toCharArray()) {
+                if (!charSet.contains(c)) {
+                    isValid = false;
+                    break;
+                }
+            }
+            if (isValid) {
+                validStrings.add(mol);
+            }
+        }
+        System.out.println("Valid smiles: "+validStrings.size()+" / "+stringList.size());
+        return validStrings;
+    }
+
+    public static Map<Character,Integer> createEncodingForCharacterList(String characters) {
+        Map<Character,Integer> encoding = new HashMap<>();
+        for(int zi=0;zi<characters.length();zi++) {
+            if(encoding.containsKey(characters.charAt(zi))) {
+                throw new Error("Encoding bad..");
+            }
+            encoding.put(characters.charAt(zi),zi);
+        }
+        return encoding;
+    }
 
     /**
      * Outputs just one conformation per structure
      *
-     * @param data
+     * @param data_in
      * @param identifier
      */
-    public static void exportSmilesSamples(List<SmilesMolSample3D> data, String identifier, boolean has3d, int max_conformations) {
+    public static void exportSmilesSamples(List<SmilesMolSample3D> data_in, String identifier, Map<Character,Integer> encoding , boolean has3d, int max_conformations) {
         // now export data into two .npy files:
         String filename_Smiles        = identifier+"_Smiles.npy";
         String filename_SmilesEncoded = identifier+"_SmilesEncoded.npy";
         String filename_DM            = identifier+"_DM.npy";
         String filename_fullDM            = identifier+"_fullDM.npy";
         String filename_ChemInfo             = identifier+"_ChemInfo.npy";
+        String filename_AtomProperties2             = identifier+"_atomProperties2.npy";
         String filename_distFirst            = identifier+"_distFirst.npy";
         String filename_distLast             = identifier+"_distLast.npy";
+        String filename_planeRules           = identifier+"_sharedPlaneRule.npy";
         String filename_adjMatrices          = identifier+"_adjMatrices.npy";
         String filename_atomTypeMatrices     = identifier+"_atomTypeMatrices.npy";
         String filename_atomTypeMatricesNeighborhood = identifier+"_atomTypeMatricesNeighborhood.npy";
         String filename_atomProperties  = identifier+"_atomProperties.npy";
         String filename_adjacency       = identifier+"_adjacency.npy";
+        String filename_hirshfeldCharges = identifier+"_hirshfeldCharges.npy";
         String filename_numAtoms        = identifier+"_numAtoms.npy";
         String filename_conformation  = identifier+"_conformation.npy";
         String filename_conformations_a  = identifier+"_multipleConformations.npy";
         String filename_conformations_b  = identifier+"_multipleConformationsVector.npy";
 
-        Set<Character> alphabet = new HashSet<>();
-        data.stream().forEach(xi -> {for( char ci : xi.smilesWithProblem.toCharArray()){ alphabet.add(ci);}});
-        List<Character> list_alphabet = alphabet.stream().sorted().collect(Collectors.toList());
-        System.out.println("alphabet size: "+list_alphabet.size());
-        System.out.println();
-        for(Character ci : list_alphabet) {
-            System.out.print(ci);
+
+        Map<Character, Integer> charEncoding = new HashMap<>();
+        List<SmilesMolSample3D> data = new ArrayList<>();
+
+        if(encoding != null) {
+            charEncoding = encoding;
+            // sort out all smiles data that does contain non encoded characters:
+            data = collectStrings(new HashSet<>(charEncoding.keySet()),data_in);
         }
-        System.out.println();
-        Map<Character,Integer> charEncoding = new HashMap<>();
-        int cnt = 0;
-        for(Character ci : list_alphabet) {
-            charEncoding.put(ci,cnt);
-            cnt++;
+        else {
+            data = data_in;
+            Set<Character> alphabet = new HashSet<>();
+            data.stream().forEach(xi -> {
+                for (char ci : xi.smilesWithProblem.toCharArray()) {
+                    alphabet.add(ci);
+                }
+            });
+            List<Character> list_alphabet = alphabet.stream().sorted().collect(Collectors.toList());
+            System.out.println("alphabet size: " + list_alphabet.size());
+            System.out.println();
+            for (Character ci : list_alphabet) {
+                System.out.print(ci);
+            }
+            Map<Character, Integer> charCounts = new HashMap<>();
+            data.stream().forEach(xi -> {
+                for (char ci : xi.smilesWithProblem.toCharArray()) {
+                    charCounts.putIfAbsent(ci, 0);
+                    charCounts.put(ci, charCounts.get(ci) + 1);
+                }
+            });
+            System.out.println("Character counts:\n\n");
+            for (Character ci : charCounts.keySet()) {
+                System.out.println(ci + " -> " + charCounts.get(ci));
+            }
+            System.out.println();
+            int cnt = 0;
+            for (Character ci : list_alphabet) {
+                charEncoding.put(ci, cnt);
+                cnt++;
+            }
         }
 
 
@@ -722,6 +1034,15 @@ public class RunSimpleChemblSmilesDataset {
             idx++;
         }
 
+        float[] hirshfeldCharges_unrolled = new float[data.size()*NUM_MAX_ALL_ATOMS];
+        idx = 0;
+        for(int zi=0;zi<data.size();zi++) {
+            for( double fx : data.get(zi).hirshfeldCharges) {
+                hirshfeldCharges_unrolled[idx] = (float) fx;
+                idx++;
+            }
+        }
+
 
         float[] conformation_unrolled = new float[data.size()*NUM_ATOMS*3];
 
@@ -734,12 +1055,16 @@ public class RunSimpleChemblSmilesDataset {
             idx = 0;
 
             for (int zx = 0; zx < data.size(); zx++) {
-                for (double[] coords : data.get(zx).conformations.get(0)) {
-                    for (double cxi : coords) {
-                        conformation_unrolled[idx] = (float) cxi;
-                        idx++;
-                    }
+                //for (double[] coords : data.get(zx).conformations.get(0)) {
+                for(int zv = 0 ; zv < NUM_ATOMS ; zv++) {
+                    conformation_unrolled[idx] = (float) data.get(zx).conformations.get(0)[0][zv];
+                    idx++;
+                    conformation_unrolled[idx] = (float) data.get(zx).conformations.get(0)[1][zv];
+                    idx++;
+                    conformation_unrolled[idx] = (float) data.get(zx).conformations.get(0)[2][zv];
+                    idx++;
                 }
+                //}
             }
 
             idx = 0;
@@ -832,6 +1157,34 @@ public class RunSimpleChemblSmilesDataset {
         }
 
         idx = 0;
+        byte[] atomProperties2Unrolled = new byte[data.size()*NUM_ATOMS*17];
+        for(int zx=0;zx<data.size();zx++) {
+            for(int zd=0;zd<NUM_ATOMS;zd++) {
+                byte[] arr = new byte[17];
+                if( data.get(zx).chemInfo2.length > zd ) {
+                    arr = data.get(zx).chemInfo2[zd];
+                }
+                for(byte bi : arr) {
+                    atomProperties2Unrolled[idx] = bi;
+                    idx++;
+                }
+            }
+        }
+
+        idx = 0;
+        boolean[] sharedPlaneRulesUnrolled = new boolean[data.size()*NUM_ATOMS*NUM_ATOMS];
+        for(int zx=0;zx<data.size();zx++) {
+            for( boolean[] arr : data.get(zx).sharedPlaneConstraint) {
+                for(boolean bi : arr) {
+                    sharedPlaneRulesUnrolled[idx] = bi;
+                    idx++;
+                }
+            }
+        }
+
+
+
+        idx = 0;
         boolean[] adjacencyUnrolled = new boolean[data.size()*NUM_ATOMS*NUM_ATOMS];
         for(int zx=0;zx<data.size();zx++) {
             for( boolean[] arr : data.get(zx).adjacency) {
@@ -853,12 +1206,14 @@ public class RunSimpleChemblSmilesDataset {
         NpyFile.write(Path.of(filename_adjMatrices), adjMatricesAtDistUnrolled, new int[]{data.size(), ADJ_MATRICES_AT_DIST_MAX_DISTANCE, NUM_ATOMS, NUM_ATOMS});
         NpyFile.write(Path.of(filename_atomTypeMatrices), atomTypeAtDistMatricesUnrolled, new int[]{data.size(), NUM_ATOMS , ATOM_TYPES_AT_DIST_MAX_DISTANCE, 13});
         NpyFile.write(Path.of(filename_atomTypeMatricesNeighborhood), atomTypeInNeighborhoodMatricesUnrolled, new int[]{data.size(), NUM_ATOMS , ATOM_TYPES_AT_DIST_MAX_DISTANCE, 13});
-
         NpyFile.write(Path.of(filename_atomProperties), atomPropertiesUnrolled, new int[]{data.size(), NUM_ATOMS , 6});
+        NpyFile.write(Path.of(filename_AtomProperties2), atomProperties2Unrolled, new int[]{data.size(), NUM_ATOMS , 17});
+        NpyFile.write(Path.of(filename_planeRules), sharedPlaneRulesUnrolled, new int[]{data.size(), NUM_ATOMS , NUM_ATOMS});
         NpyFile.write(Path.of(filename_adjacency), adjacencyUnrolled, new int[]{data.size(), NUM_ATOMS , NUM_ATOMS});
         NpyFile.write(Path.of(filename_numAtoms), numAtoms_unrolled, new int[]{data.size()});
 
         if(has3d) {
+            NpyFile.write(Path.of(filename_hirshfeldCharges), hirshfeldCharges_unrolled, new int[]{data.size(), NUM_MAX_ALL_ATOMS});
             NpyFile.write(Path.of(filename_conformation), conformation_unrolled, new int[]{data.size(), NUM_ATOMS, 3});
             NpyFile.write(Path.of(filename_conformations_a), conformations_unrolled, new int[]{data.size(), maxConformations, NUM_ATOMS, 3});
             NpyFile.write(Path.of(filename_conformations_b), conformations_vector_unrolled, new int[]{data.size(), maxConformations});

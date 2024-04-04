@@ -5,12 +5,12 @@
     <parent>
         <artifactId>leet</artifactId>
         <groupId>tech.molecules</groupId>
-        <version>dev-SNAPSHOT</version>
+        <version>0.0.10</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>leet-chem-nucleus</artifactId>
-    <version>${revision}</version>
+    <version>0.0.10</version>
     <packaging>jar</packaging>
 
     <name>leet-chem-nucleus</name>
@@ -42,12 +42,12 @@
         <dependency>
             <groupId>tech.molecules</groupId>
             <artifactId>leet-chem-core</artifactId>
-            <version>${revision}</version>
+            <version>0.0.10</version>
         </dependency>
         <dependency>
             <groupId>tech.molecules</groupId>
             <artifactId>leet-chem-table</artifactId>
-            <version>${revision}</version>
+            <version>0.0.10</version>
         </dependency>
 
         <dependency>

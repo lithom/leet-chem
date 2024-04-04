@@ -1,0 +1,15 @@
+{
+  "input_file": "C:\\deep\\localdata_a\\data_medium_02\\smi64_atoms32_NEW_MEDIUM_02_with3D",
+  "output_dir": "C:\\Temp\\deep_localdata\\smilinator3d_01_new",
+  "basemodel_dim": 128,
+  "basemodel_layers": 4,
+  "basemodel_file": "C:\\Temp\\deep_localdata\\r03_new\\model_7.pth",
+  "diffusion_model_dim": 192,
+  "diffusion_model_layers": 6,
+  "diffusion_model_start_file": "C:\\Temp\\deep_localdata\\smilinator3d_01_new\\diffusion_model2.pth",
+  "optim_learning_rate": 0.0002,
+  "optim_num_epochs": 2000,
+  "optim_batch_size": 512,
+  "optim_batches_per_minibatch": 16,
+  "device": "cuda"
+}

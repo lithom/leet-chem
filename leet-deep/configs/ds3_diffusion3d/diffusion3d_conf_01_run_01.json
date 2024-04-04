@@ -1,0 +1,15 @@
+{
+  "input_file": "C:\\deep\\localdata_a\\data_medium_02\\smi64_atoms32_NEW_MEDIUM_02_with3D",
+  "output_dir": "C:\\Temp\\deep_localdata\\ds3_diffusion3d_conf_01_run_01",
+  "basemodel_dim": 128,
+  "basemodel_layers": 3,
+  "basemodel_file": "C:\\temp\\deep_localdata\\ds3_base_conf_02_run_01\\model_198.pth",
+  "diffusion_model_dim": 128,
+  "diffusion_model_layers": 6,
+  "diffusion_model_start_file": "C:\\temp\\deep_localdata\\ds3_diffusion3d_conf_01_run_01\\diffusion_model59.pth",
+  "optim_learning_rate": 0.00025,
+  "optim_num_epochs": 2000,
+  "optim_batch_size": 512,
+  "optim_batches_per_minibatch": 16,
+  "device": "cuda"
+}

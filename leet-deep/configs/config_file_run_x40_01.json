@@ -1,0 +1,12 @@
+{
+  "input_file_data": "C:\\dev7\\leet\\smilesdata_xx40_1_all.csv",
+  "input_file_alphabet": "C:\\dev7\\leet\\xx40_alphabet.txt",
+  "output_dir": "C:\\Temp\\Run_xx40_d128_l5_01_Seq2Seq_2",
+  "model_dim": 128,
+  "model_layers": 5,
+  "model_start_file": "C:\\Temp\\Run_xx40_d128_l5_01_Seq2Seq_2\\model_140.pth",
+  "optim_learning_rate": 0.00025,
+  "optim_num_epochs": 400,
+  "optim_batch_size": 256,
+  "device": "cuda"
+}

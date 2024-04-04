@@ -1,0 +1,22 @@
+{
+  "input_file_smiles": "C:\\deep\\localdata_a\\inputdata\\smi64_atoms32_alphabet50_MEDIUM_08_no3D_SmilesEncoded.npy",
+  "input_file_dm": "C:\\deep\\localdata_a\\inputdata\\smi64_atoms32_alphabet50_MEDIUM_08_no3D_DM.npy",
+  "input_file_cheminfo": "C:\\deep\\localdata_a\\inputdata\\smi64_atoms32_alphabet50_MEDIUM_08_no3D_ChemInfo.npy",
+  "input_file_dist_first_atom": "C:\\deep\\localdata_a\\inputdata\\smi64_atoms32_alphabet50_MEDIUM_08_no3D_distFirst.npy",
+  "input_file_full_dm": "C:\\deep\\localdata_a\\inputdata\\smi64_atoms32_alphabet50_MEDIUM_08_no3D_fullDM.npy",
+  "input_file_adj_matrices": "C:\\deep\\localdata_a\\inputdata\\smi64_atoms32_alphabet50_MEDIUM_08_no3D_adjMatrices.npy",
+  "input_file_atom_type_matrices": "C:\\deep\\localdata_a\\inputdata\\smi64_atoms32_alphabet50_MEDIUM_08_no3D_atomTypeMatrices.npy",
+  "input_file_num_atoms": "C:\\deep\\localdata_a\\inputdata\\smi64_atoms32_NEW_MEDIUM_01_with3D_numAtoms.npy",
+  "input_file_conformation": "C:\\deep\\localdata_a\\inputdata\\smi64_atoms32_alphabet50_MEDIUM_08_no3D_conformation.npy",
+  "conformer_blinding_rate": 0.2,
+  "conformer_bounding_box_length": 50.0,
+  "output_dir": "C:\\Temp\\deep_localdata\\r05",
+  "model_dim": 48,
+  "model_layers": 4,
+  "model_start_file": "C:\\Temp\\deep_localdata\\r04\\model_23.pth",
+  "optim_learning_rate": 0.0004,
+  "optim_num_epochs": 700,
+  "optim_batch_size": 128,
+  "optim_batches_per_minibatch": 32,
+  "device": "cuda"
+}
